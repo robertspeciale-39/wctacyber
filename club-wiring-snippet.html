@@ -1,0 +1,37 @@
+<!-- ============================================================
+     WCTA /club → chat interstitial wiring
+     Paste this INSIDE the club page template, just before </body>
+     (your club.html keeps its markup in the __bundler/template
+     string — this goes at the end of that inner template's body,
+     right after the existing Pannellum/clock <script>).
+     The existing Command Center <a> needs NO changes.
+     ============================================================ -->
+<script>
+(function(){
+  var CHAT = "https://chat.wctacyber.org";
+  var SPLASH = "/chat-splash.html";           // adjust if hosted elsewhere
+  var btn = document.querySelector('a[href="' + CHAT + '"]');
+  if (!btn) return;
+
+  btn.addEventListener("click", function(e){
+    // graceful degradation: reduced-motion users go straight through
+    if (matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    e.preventDefault();
+
+    // full-screen overlay iframe — the click gesture stays in this
+    // document, so the splash's Web Audio is allowed to start
+    var f = document.createElement("iframe");
+    f.src = SPLASH;
+    f.allow = "autoplay";
+    f.setAttribute("title", "Connecting to WCTA Command Center");
+    f.style.cssText =
+      "position:fixed;inset:0;width:100vw;height:100vh;border:0;" +
+      "z-index:9999;background:#000;opacity:0;transition:opacity .25s ease-out";
+    document.body.appendChild(f);
+    requestAnimationFrame(function(){ f.style.opacity = "1"; });
+
+    // belt & braces: if the splash never hands off, we do
+    setTimeout(function(){ location.replace(CHAT); }, 16000);
+  });
+})();
+</script>
