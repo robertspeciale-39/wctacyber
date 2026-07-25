@@ -617,31 +617,59 @@
 
   function pad(n) { return String(n).padStart(3, "0"); }
 
+  var failed = 0;
+
   function load() {
     var done = 0;
     var pending = SET.n;
+
+    function tally() {
+      done++;
+      var pct = Math.round((done / pending) * 100);
+      bootFill.style.width = pct + "%";
+      bootPct.textContent = pct;
+      if (done === pending) finish();
+    }
 
     for (var i = 1; i <= SET.n; i++) {
       (function (idx) {
         var img = new Image();
         img.decoding = "async";
-        img.onload = img.onerror = function () {
-          frames[idx - 1] = img;
-          done++;
-          var pct = Math.round((done / pending) * 100);
-          bootFill.style.width = pct + "%";
-          bootPct.textContent = pct;
-          if (done === pending) finish();
-        };
+        img.onload  = function () { frames[idx - 1] = img; tally(); };
+        img.onerror = function () { failed++; tally(); };
         img.src = SET.dir + "f_" + pad(idx) + ".webp";
       })(i);
     }
   }
 
+  // If the sequence is missing (most often: it never made it into the deploy),
+  // don't sit on a black canvas — drop back to the single poster image and say
+  // so loudly in the console. A silent black hero looks like the page is broken.
+  function posterFallback() {
+    var wrap = document.getElementById("stage-wrap");
+    canvas.style.display = "none";
+    wrap.style.background = '#000 url("assets/poster.webp") center / cover no-repeat';
+    console.error(
+      "[wcta] " + failed + " of " + SET.n + " hero frames failed to load from '" +
+      SET.dir + "'. Falling back to assets/poster.webp.\n" +
+      "Check that the frame sequence was actually deployed — open " +
+      SET.dir + "f_001.webp directly in a browser. If it 404s, the files are " +
+      "missing from the server, not broken in the page."
+    );
+  }
+
   function finish() {
-    ready = true;
-    resize();
-    draw();
+    if (failed === SET.n) {
+      // total miss — assets absent
+      posterFallback();
+    } else {
+      if (failed > 0) {
+        console.warn("[wcta] " + failed + " hero frame(s) missing; scrubbing with the rest.");
+      }
+      ready = true;
+      resize();
+      draw();
+    }
     setTimeout(function () {
       boot.classList.add("done");
       setTimeout(function () { boot.style.display = "none"; }, 520);
@@ -670,7 +698,15 @@
     if (i === lastFrame && !force) return;
     lastFrame = i;
 
+    // Tolerate gaps: if this frame is missing, use the nearest one that loaded
+    // rather than leaving the canvas on a stale or blank paint.
     var img = frames[i];
+    if (!img || !img.width) {
+      for (var d = 1; d < SET.n; d++) {
+        if (frames[i - d] && frames[i - d].width) { img = frames[i - d]; break; }
+        if (frames[i + d] && frames[i + d].width) { img = frames[i + d]; break; }
+      }
+    }
     if (!img || !img.width) return;
 
     // cover-fit
