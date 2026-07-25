@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AP Cybersecurity — WCTA</title>
+<meta name="description" content="AP Cybersecurity course information and resources for West Career &amp; Technical Academy students and parents.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+<style>
+  @font-face {
+    font-family: "Trek Movie";
+    src: url("/assets/fonts/trek-movie.ttf") format("truetype");
+    font-weight: 400 900;
+    font-style: normal;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "TOS Title";
+    src: url("/assets/fonts/tos-title.ttf") format("truetype");
+    font-weight: 400 900;
+    font-style: normal;
+    font-display: swap;
+  }
+
+  :root {
+    --purple: #42003b;
+    --purple-deep: #12000f;
+    --purple-mid: #8a1a7e;
+    --purple-bright: #ef6bdd;
+    --gold: #d4a017;
+    --gold-l: #f0c64a;
+    --bg: #0c000a;
+    --border-2: #4a1a45;
+    --gray-300: #d8c7d4;
+    --gray-500: #9c839a;
+    --sans: "Inter", Arial, Helvetica, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { background:var(--bg); color:#fff; font-family:var(--sans); -webkit-font-smoothing:antialiased; overflow-x:hidden; }
+
+  .hero {
+    position:relative;
+    min-height: 78vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;
+    padding: 80px 24px 64px;
+    background:
+      radial-gradient(900px 620px at 50% 22%, rgba(239,107,221,.28), transparent 62%),
+      radial-gradient(700px 500px at 50% 100%, rgba(212,160,23,.12), transparent 60%),
+      radial-gradient(1400px 1000px at 50% 50%, var(--purple) 0%, var(--purple-deep) 65%, #000 100%);
+    border-bottom: 1px solid var(--border-2);
+    overflow:hidden;
+  }
+  .hero::after { content:""; position:absolute; inset:0; background:repeating-linear-gradient(0deg, rgba(0,0,0,.15) 0 1px, transparent 1px 3px); opacity:.18; pointer-events:none; }
+  .hero .scan { position:absolute; inset:0; z-index:1; pointer-events:none; height:220px; top:0; bottom:auto;
+    background: linear-gradient(180deg, transparent 0%, rgba(239,107,221,.05) 45%, rgba(239,107,221,.13) 50%, rgba(239,107,221,.05) 55%, transparent 100%);
+    animation: heroscan 9s linear infinite; mix-blend-mode: screen; }
+  @keyframes heroscan { 0% { transform: translateY(-260px); } 100% { transform: translateY(78vh); } }
+  .hero .logo-glyph { position:relative; z-index:2; width:168px; height:auto; margin-bottom:22px;
+    filter: drop-shadow(0 22px 50px rgba(0,0,0,.5)) drop-shadow(0 0 46px rgba(239,107,221,.4)); }
+  .hero .eyebrow { position:relative; z-index:2; font-family:var(--mono); font-size:12px; font-weight:700; letter-spacing:.34em; text-transform:uppercase; color:var(--gold-l); margin-bottom:14px; }
+  .hero h1.title { position:relative; z-index:2; font-family:"Trek Movie","TOS Title","Inter",sans-serif; font-weight:700; font-size:clamp(42px,7vw,84px); letter-spacing:.03em; line-height:1; color:#fff; text-shadow:0 4px 40px rgba(239,107,221,.35); }
+  .hero .tagline { position:relative; z-index:2; margin-top:16px; font-size:16px; color:var(--gray-300); max-width:52ch; }
+
+  .shell { max-width:1080px; margin:0 auto; padding:64px 32px 96px; }
+
+  .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; margin-bottom:20px; }
+  .stat { background:rgba(23,0,20,.7); border:1px solid var(--border-2); border-top:3px solid var(--purple-bright); padding:20px 18px; }
+  .stat .num { font-family:"Trek Movie","TOS Title","Inter",sans-serif; font-size:clamp(24px,3vw,32px); color:#fff; font-weight:700; }
+  .stat .lbl { margin-top:6px; font-family:var(--mono); font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--gray-500); line-height:1.5; }
+
+  .section { margin-bottom:56px; }
+  .section .label { display:flex; align-items:center; gap:12px; font-family:var(--mono); font-size:11px; font-weight:700; letter-spacing:.3em; text-transform:uppercase; color:var(--purple-bright); margin-bottom:18px; }
+  .section .label .rule { flex:1; height:1px; background:linear-gradient(90deg, rgba(239,107,221,.5), rgba(239,107,221,0)); }
+  .section h2 { font-family:"Trek Movie","TOS Title","Inter",sans-serif; font-weight:700; font-size:clamp(24px,2.8vw,34px); color:#fff; margin-bottom:16px; }
+
+  .card { background:rgba(18,0,15,.8); border:1px solid var(--border-2); padding:30px 32px; }
+  .card p { font-size:16px; line-height:1.7; color:var(--gray-300); margin-bottom:14px; }
+  .card p:last-child { margin-bottom:0; }
+  .card strong { color:#fff; font-weight:700; }
+
+  .cta-row { margin-top:24px; }
+  .cta-btn { display:inline-flex; align-items:center; gap:14px; text-decoration:none; font-family:"Inter",sans-serif; font-size:16px; font-weight:800; letter-spacing:.01em;
+    padding:16px 26px; background:linear-gradient(135deg, var(--gold), var(--gold-l)); color:#241300; border-radius:4px; transition:transform .18s, box-shadow .18s; box-shadow:0 10px 24px rgba(212,160,23,.18); }
+  .cta-btn:hover { transform:translateY(-2px); box-shadow:0 14px 30px rgba(212,160,23,.3); }
+  .cta-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+
+  .nav-row { margin-top:64px; display:flex; justify-content:center; }
+  .nav-btn { display:inline-flex; align-items:center; gap:16px; text-decoration:none; font-family:"Inter",sans-serif; font-size:16px; font-weight:700;
+    padding:16px 28px; min-width:300px; justify-content:center; color:#fff; border:2px solid var(--purple-bright); border-radius:2px; transition:.18s; }
+  .nav-btn:hover { background:rgba(239,107,221,.14); transform:translateY(-1px); }
+  .nav-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .nav-btn .arrow { color:var(--purple-bright); }
+
+  @media (max-width:640px) {
+    .hero { padding:64px 20px 48px; min-height:auto; }
+    .shell { padding:44px 20px 72px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero .scan { animation: none; opacity: 0; }
+  }
+</style>
+</head>
+<body>
+
+<section class="hero">
+  <div class="scan"></div>
+  <img class="logo-glyph" src="/assets/ap-cyber-icon.png" alt="AP Cybersecurity">
+  <div class="eyebrow">West CTA &middot; College Board AP</div>
+  <h1 class="title">AP Cybersecurity</h1>
+  <p class="tagline">Defense-in-depth, real threats, and a yearlong path aligned to the NICE Workforce Framework.</p>
+</section>
+
+<main class="shell">
+  <section class="section">
+    <div class="label"><span>Why AP Cybersecurity?</span><span class="rule"></span></div>
+    <div class="stats-row">
+      <div class="stat"><div class="num">514,000+</div><div class="lbl">Open U.S. cybersecurity jobs (CyberSeek)</div></div>
+      <div class="stat"><div class="num">29%</div><div class="lbl">Projected U.S. security analyst job growth, 2024&ndash;2034 (BLS)</div></div>
+      <div class="stat"><div class="num">143%</div><div class="lbl">YoY growth in AI Engineer postings, #1 fastest-growing title (LinkedIn 2026)</div></div>
+      <div class="stat"><div class="num">100+</div><div class="lbl">Open cybersecurity roles in the Las Vegas metro right now</div></div>
+    </div>
+    <div class="card">
+      <p>CyberSeek currently tracks about 514,000 open cybersecurity jobs across the U.S., and the current workforce can only fill roughly three out of every four of them. The Bureau of Labor Statistics expects the shortage to keep widening, with information security analyst jobs projected to grow 29% between 2024 and 2034. AI hiring is moving in the same direction: BLS projects 34% growth for data scientists over the same span, and LinkedIn ranked AI Engineer the fastest-growing job title in the country for 2026, with postings up 143% year over year.</p>
+      <p>That demand shows up close to home too. Cybersecurity analysts in the Las Vegas area earn between about $108,000 and $157,000 a year, according to Robert Half&rsquo;s 2026 salary data, and local employers like Switch, Zappos, Allegiant Air, and Credit One are actively hiring for the role. Job boards regularly list more than 100 open cybersecurity positions across the Las Vegas metro, ranging from entry-level SOC analyst work to cloud security architecture.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="label"><span>AP Cybersecurity Course Overview</span><span class="rule"></span></div>
+    <div class="card">
+      <p>AP Cybersecurity trains students in the field and aligns closely with standard first-year collegiate cybersecurity courses. Students explore defense-in-depth strategies and learn to address specific vulnerabilities, attacks, mitigations, and detection measures across a variety of domains, including physical spaces, computer networks, devices, applications, and data.</p>
+      <p>Developed in partnership with college faculty and industry leaders, this yearlong course aligns with the NICE Workforce Framework.</p>
+      <div class="cta-row">
+        <a class="cta-btn" href="https://apcentral.collegeboard.org/courses/ap-cybersecurity" target="_blank" rel="noopener">
+          <span>AP Cybersecurity Course Overview</span><span>&rarr;</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <nav class="nav-row" aria-label="Page navigation">
+    <a class="nav-btn" href="https://www.wctacyber.org/index">
+      <span class="arrow">&larr;</span><span>Return to Splash</span>
+    </a>
+  </nav>
+</main>
+</body></html>
