@@ -207,6 +207,16 @@
   .botbar .spacer { flex: 1; }
   .botbar .seg { display: flex; align-items: center; gap: 8px; }
 
+  /* Easter-egg trigger. Styled here rather than in the arcade stylesheet
+     because that sheet is not loaded until someone clicks this. */
+  .botbar .egg {
+    font: inherit; letter-spacing: inherit;
+    color: #333; background: none; border: 0; padding: 0 2px;
+    cursor: pointer; transition: color .2s ease;
+  }
+  .botbar .egg:hover,
+  .botbar .egg:focus-visible { color: var(--nv-green); outline: none; }
+
   /* Progress rail — encodes position in the descent */
   .rail {
     position: fixed;
@@ -606,6 +616,8 @@
   <span class="spacer"></span>
   <span class="seg hide-sm">West Career &amp; Technical Academy</span>
   <span class="seg">v3.2 · 2025–26</span>
+  <button class="seg egg" id="egg" aria-label="Unrecognised service"
+          title="unrecognised service on this host">[ ? ]</button>
 </footer>
 
 <script>
@@ -804,6 +816,10 @@
   }
 })();
 </script>
+
+<!-- Easter egg. Watches a footer glyph and nothing else; the arcade's CSS,
+     engine and maze data are only fetched once someone goes looking. -->
+<script defer src="assets/arcade/unlock.js"></script>
 
 </body>
 </html>

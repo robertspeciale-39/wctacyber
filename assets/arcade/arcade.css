@@ -1,0 +1,295 @@
+/* =====================================================================
+   WCTA ARCADE — overlay chrome
+   Loaded only after the terminal challenge is solved, so none of this
+   costs the index page anything on first paint.
+   ===================================================================== */
+
+.wa-root {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: #000;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  color: #a7a7a7;
+  opacity: 0;
+  transition: opacity .28s ease;
+}
+
+.wa-root.on { opacity: 1; }
+
+/* --- the screen ----------------------------------------------------- */
+.wa-screen {
+  position: relative;
+  display: block;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  background: #000;
+  box-shadow:
+    0 0 0 1px #1f1f1f,
+    0 0 60px rgba(30, 92, 255, .18),
+    0 0 140px rgba(0, 0, 0, .9);
+}
+
+/* Scanlines + a soft vignette. Purely cosmetic, and the first thing to go
+   when the visitor has asked for reduced motion. */
+.wa-crt {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, .22) 3px,
+      rgba(0, 0, 0, .22) 4px),
+    radial-gradient(ellipse at center,
+      rgba(0, 0, 0, 0) 55%,
+      rgba(0, 0, 0, .55) 100%);
+  mix-blend-mode: multiply;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wa-root { transition: none; }
+  .wa-crt { display: none; }
+}
+
+/* The stage wraps the canvas so the CRT layer and the score panel can be
+   positioned against it without either affecting canvas scaling. */
+.wa-stage {
+  position: relative;
+  line-height: 0;
+}
+
+/* --- score / game-over panel, laid over the screen ------------------- */
+#waPanel {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(0, 0, 0, .96);
+  line-height: 1.5;
+}
+
+#waPanel.on { display: flex; }
+
+.wa-sc {
+  width: 100%;
+  max-width: 260px;
+  font-size: 10px;
+  letter-spacing: .1em;
+}
+
+.wa-sc-hd {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  letter-spacing: .2em;
+  border-bottom: 1px solid #1f1f1f;
+  padding-bottom: 6px;
+  margin-bottom: 8px;
+}
+
+.wa-sc-src {
+  margin-left: auto;
+  font-size: 8px;
+  color: #76b900;
+}
+
+.wa-sc-src.off { color: #757575; }
+
+.wa-sc-row {
+  display: flex;
+  gap: 8px;
+  padding: 2px 0;
+  color: #a7a7a7;
+}
+
+.wa-sc-row.wa-sc-me { color: #ffe600; }
+.wa-sc-rank { color: #575757; }
+.wa-sc-who { width: 3.5em; color: #fff; }
+.wa-sc-row.wa-sc-me .wa-sc-who { color: #ffe600; }
+.wa-sc-lv { color: #575757; }
+.wa-sc-pts { margin-left: auto; }
+
+.wa-sc-empty { color: #575757; padding: 6px 0; }
+
+.wa-sc-final {
+  font-size: 18px;
+  color: #ffe600;
+  letter-spacing: .12em;
+  padding: 6px 0 10px;
+}
+
+.wa-sc-entry { display: flex; gap: 10px; padding: 4px 0 10px; }
+
+.wa-sc-slot {
+  width: 26px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  border-bottom: 2px solid #1f1f1f;
+}
+
+.wa-sc-slot.on {
+  color: #ffe600;
+  border-bottom-color: #ffe600;
+  animation: wa-blink 1s steps(2, start) infinite;
+}
+
+@keyframes wa-blink { 50% { opacity: .35; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .wa-sc-slot.on { animation: none; }
+}
+
+.wa-sc-hint { color: #575757; font-size: 9px; }
+
+/* --- header / footer strips ----------------------------------------- */
+.wa-bar {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  width: min(92vw, 720px);
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #757575;
+}
+
+.wa-bar .wa-spacer { flex: 1; }
+.wa-bar b { color: #fff; font-weight: 600; }
+.wa-bar .wa-g { color: #76b900; }
+
+.wa-key {
+  border: 1px solid #1f1f1f;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #a7a7a7;
+}
+
+/* --- buttons -------------------------------------------------------- */
+.wa-btn {
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: #a7a7a7;
+  background: transparent;
+  border: 1px solid #1f1f1f;
+  border-radius: 3px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease;
+}
+
+.wa-btn:hover,
+.wa-btn:focus-visible {
+  color: #fff;
+  border-color: #76b900;
+  outline: none;
+}
+
+/* --- terminal challenge panel --------------------------------------- */
+.wa-term {
+  width: min(92vw, 640px);
+  background: rgba(0, 0, 0, .94);
+  border: 1px solid #1f1f1f;
+  border-radius: 4px;
+  padding: 18px 20px 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #a7a7a7;
+  box-shadow: 0 0 80px rgba(0, 0, 0, .9);
+}
+
+/* The transcript grows with every wrong guess; cap it and let it scroll,
+   or a persistent visitor pushes the input line off the bottom of the page. */
+.wa-term .wa-out {
+  white-space: pre-wrap;
+  margin: 0 0 10px;
+  max-height: 52vh;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.wa-term .wa-out .g { color: #76b900; }
+.wa-term .wa-out .r { color: #e52020; }
+.wa-term .wa-out .w { color: #fff; }
+.wa-term .wa-out .d { color: #575757; }
+
+.wa-line { display: flex; align-items: center; gap: 8px; }
+.wa-line .wa-ps1 { color: #76b900; flex: none; }
+
+.wa-in {
+  flex: 1;
+  font: inherit;
+  color: #fff;
+  background: transparent;
+  border: 0;
+  outline: none;
+  caret-color: #76b900;
+}
+
+/* --- footer easter-egg trigger on the index page --------------------- */
+.botbar .egg,
+button.egg {
+  font: inherit;
+  font-size: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: #3a3a3a;
+  background: transparent;
+  border: 0;
+  padding: 0 2px;
+  cursor: pointer;
+  transition: color .2s ease;
+}
+
+.botbar .egg:hover,
+.botbar .egg:focus-visible {
+  color: #76b900;
+  outline: none;
+}
+
+/* --- narrow screens --------------------------------------------------
+   Students will open this on a phone. The control legend is the first
+   thing to go: on touch the keys are irrelevant anyway, since the game is
+   driven by swiping. */
+@media (max-width: 560px) {
+  .wa-root { gap: 10px; padding: 8px; }
+
+  .wa-bar {
+    width: 100%;
+    gap: 10px;
+    font-size: 9px;
+    letter-spacing: .12em;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .wa-bar .wa-key,
+  .wa-bar .wa-key + span { display: none; }
+
+  .wa-term { font-size: 11px; padding: 14px 14px 12px; }
+  .wa-term .wa-out { max-height: 58vh; }
+
+  .wa-sc { max-width: 200px; font-size: 9px; }
+  .wa-sc-final { font-size: 15px; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  /* Touch players get the gesture, not the keyboard legend. */
+  .wa-bar .wa-touch-hint { display: inline; }
+}
