@@ -88,7 +88,7 @@
   .cta-btn:hover { transform:translateY(-2px); box-shadow:0 14px 30px rgba(212,160,23,.3); }
   .cta-btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
 
-  .nav-row { margin-top:64px; display:flex; justify-content:center; }
+  .nav-row { margin-top:64px; display:flex; justify-content:center; flex-wrap:wrap; gap:16px; }
   .nav-btn { display:inline-flex; align-items:center; gap:16px; text-decoration:none; font-family:"Inter",sans-serif; font-size:16px; font-weight:700;
     padding:16px 28px; min-width:300px; justify-content:center; color:#fff; border:2px solid var(--purple-bright); border-radius:2px; transition:.18s; }
   .nav-btn:hover { background:rgba(239,107,221,.14); transform:translateY(-1px); }
@@ -145,6 +145,9 @@
   <nav class="nav-row" aria-label="Page navigation">
     <a class="nav-btn" href="https://www.wctacyber.org/index">
       <span class="arrow">&larr;</span><span>Return to Splash</span>
+    </a>
+    <a class="nav-btn" href="https://apps.wctacyber.org">
+      <span>WCTA Cyber Apps</span><span class="arrow">&rarr;</span>
     </a>
   </nav>
 </main>
