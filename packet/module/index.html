@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>Module · Packet</title>
+<link rel="icon" href="../assets/brand-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/cs-shell.css">
+</head>
+<body class="matrix">
+
+<div class="shell">
+  <div id="chrome"></div>
+  <div id="roundbar"></div>
+  <main class="main active">
+    <div class="wrap" id="page"></div>
+  </main>
+</div>
+
+<script src="../assets/cs-core.js"></script>
+<script src="../assets/hub.js"></script>
+<script>
+(async function () {
+  const page = document.getElementById('page');
+  let d;
+  try { d = await PT.data(); }
+  catch (e) { PT.mountChrome({}); page.innerHTML = HUB.fail(e); return; }
+  PT.mountChrome({});
+  PT.mountRoundbar(d, () => render());
+
+  const n = parseInt(new URLSearchParams(location.search).get('m'), 10);
+  const m = d.moduleByN[n];
+  if (!m) {
+    page.innerHTML = '<div class="note" style="--hue:var(--danger)">' +
+      '<span class="note-label">No such module</span>Pick one from the ' +
+      '<a href="' + PT.rel('') + '" style="color:var(--primary)">hub</a>. Modules run 1 to 23.</div>';
+    return;
+  }
+  document.title = 'Module ' + m.n + ' · ' + m.title + ' · Packet';
+
+  const unit = d.units.units[m.unit];
+  const hue = HUB.hueVar(m.strand);
+  const strand = d.rounds.strands[m.strand];
+
+  // ── the explainer, if one has been written ─────────────────────────
+  let explainer = null;
+  if (m.explainer) {
+    try {
+      const r = await fetch(PT.rel('content/module-' + String(m.n).padStart(2, '0') + '.html'));
+      if (r.ok) explainer = await r.text();
+    } catch (e) { /* falls through to the empty state */ }
+  }
+
+  const SPINE = [
+    { key: 'read',   label: 'Read',   sub: 'The explainer' },
+    { key: 'watch',  label: 'Watch',  sub: 'Video' },
+    { key: 'drill',  label: 'Drill',  sub: 'Build the reflex' },
+    { key: 'lab',    label: 'Lab',    sub: 'Packet Tracer' },
+    { key: 'check',  label: 'Check',  sub: 'Quiz yourself' },
+    { key: 'recall', label: 'Recall', sub: 'One-page sheet' }
+  ];
+
+  function blockBody(key) {
+    if (key === 'read') {
+      return explainer
+        ? '<div class="prose">' + explainer + '</div>'
+        : HUB.empty('EXPLAINER COMING',
+            'Not written yet. Read NetAcad Module ' + m.n + ' and use the objectives on the right as your checklist.');
+    }
+    if (key === 'watch') {
+      const vids = (d.videos.byModule[String(m.n)] || []);
+      if (!vids.length) return HUB.empty('NO VIDEOS YET', 'Nothing curated for this module. Ask Mr. Speciale to add one.');
+      return '<div class="card-list">' + vids.slice().sort((a,b) => (b.mine?1:0)-(a.mine?1:0)).map(HUB.videoCard).join('') + '</div>';
+    }
+    if (key === 'drill') {
+      const apps = unit.apps || [];
+      if (!apps.length) return HUB.empty('NO DRILL', 'This module has no mechanical skill to drill. Read and lab it.');
+      const built = apps.map(s => d.resBySlug[s]).filter(a => a && a.status === 'done' && a.url);
+      const embed = built.length
+        ? '<div class="embed" style="margin-bottom:var(--sp-4)">' +
+            '<div class="embed-bar"><span class="res-meta" style="margin:0">' + PT.esc(built[0].name) + '</span>' +
+            '<a class="copy-btn" style="position:static" href="' + PT.esc(built[0].url) + '" target="_blank" rel="noopener">FULL SCREEN</a></div>' +
+            '<iframe src="' + PT.esc(built[0].url) + '" title="' + PT.esc(built[0].name) + '" loading="lazy"></iframe>' +
+          '</div>'
+        : '';
+      return embed + '<div class="card-list">' + apps.map(s => HUB.resourceCard(d, s, hue)).join('') + '</div>';
+    }
+    if (key === 'lab') {
+      const labs = unit.labs || [];
+      if (!labs.length) return HUB.empty('NO LAB', 'No Packet Tracer lab attached to this unit yet.');
+      return '<div class="card-list">' + labs.map(s => HUB.resourceCard(d, s, hue)).join('') + '</div>';
+    }
+    if (key === 'check') {
+      return unit.quiz
+        ? '<div class="card-list">' + HUB.resourceCard(d, unit.quiz, hue) + '</div>'
+        : HUB.empty('NO QUIZ', 'Nothing attached yet.');
+    }
+    if (key === 'recall') {
+      const sheets = unit.sheets || [];
+      if (!sheets.length) return HUB.empty('NO SHEET', 'No cheat sheet for this unit yet.');
+      return '<div class="card-list">' + sheets.map(s => HUB.resourceCard(d, s, hue)).join('') + '</div>';
+    }
+    return '';
+  }
+
+  function render() {
+    const scope = PT.scopeOf(d, PT.round());
+    const inScope = scope.has(m.n);
+    const fr = HUB.firstRound(d, m.n);
+    const prog = PT.progress(m.n);
+    const prev = d.moduleByN[m.n - 1], next = d.moduleByN[m.n + 1];
+
+    page.innerHTML =
+      '<div class="page-head" style="--hue:' + hue + '">' +
+        '<div class="page-eyebrow">Module ' + m.n + ' · ' + PT.esc(unit.id.toUpperCase()) + ' ' + PT.esc(unit.title) + '</div>' +
+        '<h1 class="page-title">' + PT.esc(m.title) + '</h1>' +
+        '<p class="page-sum">' + PT.esc(m.summary) + '</p>' +
+        '<div class="page-pills">' +
+          '<span class="pill pill-hue" style="--hue:' + hue + '">STRAND ' + strand.id + ' · ' + PT.esc(strand.name) + '</span>' +
+          '<span class="pill ' + (inScope ? 'pill-hue' : 'pill-mute') + '" style="--hue:var(--primary)">' +
+            (inScope ? 'IN SCOPE NOW' : 'UNLOCKS AT ' + PT.esc(fr ? fr.short : '?')) + '</span>' +
+          '<a class="pill pill-mute" href="' + PT.rel('unit/?u=' + unit.id) + '">' + PT.esc(unit.id.toUpperCase()) + ' OVERVIEW →</a>' +
+        '</div>' +
+      '</div>' +
+
+      (m.watchfor ? '<div class="full-col"><div class="note" style="--hue:' + hue + '">' +
+        '<span class="note-label">What the quiz asks</span>' + PT.esc(m.watchfor) + '</div></div>' : '') +
+
+      '<div class="layout">' +
+        '<div class="spine">' +
+          SPINE.map((s, i) =>
+            '<section class="spine-block' + (prog[s.key] ? ' done' : '') + '" style="--hue:' + hue + '" id="blk-' + s.key + '">' +
+              '<div class="spine-hdr">' +
+                '<span class="spine-step" aria-hidden="true">' + (i + 1) + '</span>' +
+                '<h2 class="spine-name">' + s.label + '<span class="res-meta" style="margin:0 0 0 var(--sp-3);display:inline">' + PT.esc(s.sub) + '</span></h2>' +
+                '<button class="check" data-step="' + s.key + '" aria-pressed="' + (prog[s.key] ? 'true' : 'false') + '">' +
+                  (prog[s.key] ? 'DONE' : 'MARK DONE') + '</button>' +
+              '</div>' +
+              '<div class="spine-body">' + blockBody(s.key) + '</div>' +
+            '</section>').join('') +
+
+          '<nav class="two-col" style="margin-top:var(--sp-4)" aria-label="Adjacent modules">' +
+            (prev ? '<a class="res-card" href="?m=' + prev.n + '"><span class="res-main">' +
+              '<span class="res-meta" style="margin:0">← MODULE ' + prev.n + '</span>' +
+              '<span class="res-title">' + PT.esc(prev.title) + '</span></span></a>' : '<span></span>') +
+            (next ? '<a class="res-card" href="?m=' + next.n + '"><span class="res-main">' +
+              '<span class="res-meta" style="margin:0">MODULE ' + next.n + ' →</span>' +
+              '<span class="res-title">' + PT.esc(next.title) + '</span></span></a>' : '<span></span>') +
+          '</nav>' +
+        '</div>' +
+
+        '<aside class="rail">' +
+          '<div class="panel"><div class="panel-hdr"><h2 class="panel-title">You should be able to</h2></div>' +
+            '<div class="panel-body prose"><ul>' +
+              m.objectives.map(o => '<li>' + PT.esc(o) + '</li>').join('') +
+            '</ul></div></div>' +
+
+          '<div class="panel"><div class="panel-hdr"><h2 class="panel-title">Vocabulary</h2>' +
+            '<span class="res-meta" style="margin:0">' + m.vocab.length + ' terms</span></div>' +
+            '<div class="panel-body"><div class="chips">' +
+              m.vocab.map(v => '<span class="chip">' + PT.esc(v) + '</span>').join('') +
+            '</div></div></div>' +
+
+          (m.commands && m.commands.length
+            ? '<div class="panel"><div class="panel-hdr"><h2 class="panel-title">Commands</h2></div>' +
+              '<div class="panel-body"><div class="codeblock">' +
+                '<button class="copy-btn">COPY</button><pre>' +
+                m.commands.map(c => c.trim().startsWith('!')
+                  ? '<span class="cmt">' + PT.esc(c) + '</span>' : PT.esc(c)).join('\n') +
+                '</pre></div></div></div>'
+            : '') +
+
+          '<div class="panel"><div class="panel-hdr"><h2 class="panel-title">' + PT.esc(unit.id.toUpperCase()) + ' mastery gate</h2></div>' +
+            '<div class="panel-body prose"><p>' + PT.esc(unit.gate) + '</p></div></div>' +
+
+          '<div class="panel"><div class="panel-hdr"><h2 class="panel-title">NetAcad</h2></div>' +
+            '<div class="panel-body prose"><p>' + PT.esc(unit.netacad) + '</p>' +
+            '<p><a href="https://www.netacad.com/" target="_blank" rel="noopener" style="color:var(--primary)">Open NetAcad →</a></p></div></div>' +
+        '</aside>' +
+      '</div>';
+
+    page.querySelectorAll('.check[data-step]').forEach(b => b.addEventListener('click', () => {
+      const on = PT.toggle(m.n, b.dataset.step);
+      if (PT.active()) { render(); PT.toast(b.dataset.step.toUpperCase() + (on ? ' marked done' : ' unmarked')); }
+      else PT.openProfileDialog();
+    }));
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

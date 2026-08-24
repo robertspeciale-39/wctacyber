@@ -1,0 +1,395 @@
+{
+  "_comment": "The 23 Cisco content modules. Titles reconstructed from the public Networking Basics scope (see cisco-module-map.md). Confirm against the coach course. `strand` is the module's primary spiral strand and drives its colour. `explainer` true means content/module-NN.html exists.",
+  "modules": [
+    {
+      "n": 1,
+      "title": "Communication in a Connected World",
+      "unit": "u1",
+      "strand": "B",
+      "explainer": true,
+      "summary": "What a network is for, and the three roles every device on one plays: host, client, server.",
+      "objectives": [
+        "Explain the purpose of a computer network",
+        "Distinguish hosts, clients, and servers, and explain why one device can be more than one of them",
+        "Describe how a LAN relates to the Internet"
+      ],
+      "vocab": ["network", "host", "client", "server", "peer-to-peer", "LAN", "Internet", "ISP", "bandwidth", "data"],
+      "commands": [],
+      "watchfor": "Vocabulary questions. 'Client' and 'server' are roles, not hardware. The quiz likes that distinction."
+    },
+    {
+      "n": 2,
+      "title": "Network Components, Types, and Connections",
+      "unit": "u1",
+      "strand": "B",
+      "explainer": true,
+      "summary": "Every icon in the Packet Tracer device bar, what it does, and how to read a network diagram.",
+      "objectives": [
+        "Distinguish end devices from intermediary devices",
+        "Identify switches, routers, access points, modems, and NICs by icon and by function",
+        "Recognize LAN vs. WAN and read a basic network diagram",
+        "Distinguish logical from physical topology"
+      ],
+      "vocab": ["end device", "intermediary device", "NIC", "switch", "router", "access point", "modem", "firewall", "LAN", "WAN", "topology", "logical topology", "physical topology", "media", "interface", "port"],
+      "commands": [],
+      "watchfor": "Given a described requirement, pick the right device. Switch vs. router is the most common trap. A switch does not connect different networks."
+    },
+    {
+      "n": 3,
+      "title": "Wireless and Mobile Networks",
+      "unit": "u2",
+      "strand": "D",
+      "explainer": true,
+      "summary": "Wi-Fi and cellular: how a client finds an AP, what an SSID actually is, and the wireless security ladder.",
+      "objectives": [
+        "Explain how wireless clients associate with an access point",
+        "Describe the role of the SSID and what hiding it does and does not accomplish",
+        "Order the wireless security standards and name the current best practice",
+        "Distinguish Wi-Fi from cellular and Bluetooth by range and use case"
+      ],
+      "vocab": ["Wi-Fi", "IEEE 802.11", "SSID", "access point", "wireless client", "association", "channel", "WEP", "WPA", "WPA2", "WPA3", "cellular", "Bluetooth", "NFC", "hotspot"],
+      "commands": [],
+      "watchfor": "The security ordering WEP < WPA < WPA2 < WPA3 is near-guaranteed. Know that SSID hiding and MAC filtering are speed bumps, not controls."
+    },
+    {
+      "n": 4,
+      "title": "Build a Home Network",
+      "unit": "u2",
+      "strand": "B",
+      "explainer": true,
+      "summary": "The integrated wireless router: the one box that is a router, a switch, an AP, and a DHCP server at the same time.",
+      "objectives": [
+        "Identify the WAN port and the LAN ports on an integrated wireless router and explain why they are different",
+        "Configure an SSID and WPA2/WPA3 security",
+        "Configure the LAN-side DHCP scope",
+        "Explain why changing the default admin credentials is the first step, not the last"
+      ],
+      "vocab": ["integrated wireless router", "SOHO", "WAN port", "LAN port", "DHCP", "DHCP scope", "default gateway", "SSID", "WPA2", "WPA3", "default credentials", "firmware"],
+      "commands": [],
+      "watchfor": "Configuration-order questions. The WAN port faces the ISP; the LAN ports and the wireless side are the same network."
+    },
+    {
+      "n": 5,
+      "title": "Communication Principles",
+      "unit": "u2",
+      "strand": "C",
+      "explainer": true,
+      "summary": "Protocols, standards, and the two models, OSI and TCP/IP, plus encapsulation, which is the idea the whole course rests on.",
+      "objectives": [
+        "Explain what a protocol is and why standards exist",
+        "Name the OSI layers in order and map the four-layer TCP/IP model onto them",
+        "Trace encapsulation and de-encapsulation across a network",
+        "Name the PDU at each layer: data, segment, packet, frame, bits"
+      ],
+      "vocab": ["protocol", "standard", "encoding", "message format", "message timing", "encapsulation", "de-encapsulation", "OSI model", "TCP/IP model", "PDU", "segment", "packet", "frame", "bits", "header", "trailer"],
+      "commands": [],
+      "watchfor": "Layer-order recall and PDU naming. Expect 'at which layer does X happen' and 'what is the PDU called at layer N'."
+    },
+    {
+      "n": 6,
+      "title": "Network Media",
+      "unit": "u2",
+      "strand": "B",
+      "explainer": true,
+      "summary": "Copper, fiber, and wireless: what each is good at, what breaks it, and how to pick one from a scenario.",
+      "objectives": [
+        "Identify UTP, STP, coaxial, fiber, and wireless media and their connectors",
+        "Compare media by bandwidth, distance, cost, and interference susceptibility",
+        "Select the right media for a stated scenario",
+        "Explain attenuation, EMI, and crosstalk"
+      ],
+      "vocab": ["copper", "UTP", "STP", "coaxial", "fiber optic", "single-mode", "multimode", "RJ-45", "LC/SC connector", "bandwidth", "throughput", "attenuation", "EMI", "RFI", "crosstalk", "straight-through", "crossover"],
+      "commands": [],
+      "watchfor": "Scenario-to-media questions: long run, electrically noisy factory floor, or between buildings. That is fiber every time."
+    },
+    {
+      "n": 7,
+      "title": "The Access Layer",
+      "unit": "u2",
+      "strand": "C",
+      "explainer": true,
+      "summary": "The Ethernet frame, the MAC address, and how a switch learns where everything is.",
+      "objectives": [
+        "Describe the fields of an Ethernet frame and the structure of a MAC address",
+        "Explain how a switch builds its MAC address table from source addresses",
+        "Predict whether a switch will forward, flood, or filter a given frame",
+        "Explain broadcasts and the scope of a broadcast domain"
+      ],
+      "vocab": ["Ethernet", "frame", "MAC address", "OUI", "preamble", "FCS", "MAC address table", "CAM table", "source learning", "forward", "flood", "filter", "unicast", "broadcast", "multicast", "broadcast domain", "collision domain", "access layer"],
+      "commands": ["show mac address-table"],
+      "watchfor": "Given a MAC table and an incoming frame, what does the switch do? This is the archetypal conceptual-application question."
+    },
+    {
+      "n": 8,
+      "title": "The Internet Protocol",
+      "unit": "u3",
+      "strand": "A",
+      "explainer": false,
+      "summary": "What an IP address is, how the mask splits it, and why Layer 2 and Layer 3 addressing both have to exist.",
+      "objectives": [
+        "Explain the purpose of an IP address and the structure of IPv4",
+        "Separate the network portion from the host portion given any subnet mask",
+        "Express a mask in dotted-decimal and CIDR notation interchangeably",
+        "Distinguish MAC addressing from IP addressing and say when each is used"
+      ],
+      "vocab": ["IPv4", "octet", "subnet mask", "prefix length", "CIDR", "network portion", "host portion", "logical address", "physical address", "dotted decimal"],
+      "commands": ["ipconfig", "ipconfig /all"],
+      "watchfor": "Mask-to-CIDR conversion has to be instant. /24 = 255.255.255.0 should not require thought."
+    },
+    {
+      "n": 9,
+      "title": "IPv4 and Network Segmentation",
+      "unit": "u3",
+      "strand": "A",
+      "explainer": false,
+      "summary": "Address types, reserved ranges, and the question everything else depends on: are these two hosts on the same network?",
+      "objectives": [
+        "Distinguish unicast, multicast, and broadcast traffic",
+        "Identify private (RFC 1918), public, loopback, link-local/APIPA, and multicast ranges",
+        "Determine whether two hosts are on the same subnet",
+        "Explain the consequence when they are not"
+      ],
+      "vocab": ["unicast", "multicast", "broadcast", "RFC 1918", "private address", "public address", "loopback", "APIPA", "link-local", "network address", "broadcast address", "segmentation"],
+      "commands": [],
+      "watchfor": "169.254.x.x means DHCP failed. That is a diagnostic fact, not trivia. Know the three private ranges cold."
+    },
+    {
+      "n": 10,
+      "title": "IPv6 Addressing Formats and Rules",
+      "unit": "u3",
+      "strand": "A",
+      "explainer": false,
+      "summary": "128 bits in hex, the two compression rules, and how to tell an address type at a glance.",
+      "objectives": [
+        "Read, compress, and expand IPv6 addresses correctly",
+        "Identify global unicast, link-local, and multicast addresses by prefix",
+        "Configure IPv6 addressing on hosts and router interfaces",
+        "Explain dual stack"
+      ],
+      "vocab": ["IPv6", "hextet", "leading-zero compression", "double colon", "global unicast", "link-local", "FE80::/10", "multicast", "FF00::/8", "unique local", "dual stack", "EUI-64"],
+      "commands": ["ipv6 unicast-routing", "ipv6 address 2001:db8:acad:1::1/64", "ipv6 address fe80::1 link-local", "show ipv6 interface brief"],
+      "watchfor": "The :: can appear only once in an address. Compression questions are free points if you know both rules."
+    },
+    {
+      "n": 11,
+      "title": "Dynamic Addressing with DHCP",
+      "unit": "u3",
+      "strand": "B",
+      "explainer": false,
+      "summary": "DORA, the pool, and what a client is actually handed besides an address.",
+      "objectives": [
+        "Explain DHCP operation and trace the DORA exchange",
+        "Compare static and dynamic addressing and say when each is correct",
+        "Configure a DHCP pool with gateway and DNS information",
+        "Verify a client lease"
+      ],
+      "vocab": ["DHCP", "DORA", "Discover", "Offer", "Request", "Acknowledge", "lease", "pool", "scope", "excluded address", "default-router", "dns-server", "static addressing", "reservation"],
+      "commands": ["ip dhcp excluded-address 192.168.10.1 192.168.10.9", "ip dhcp pool LAN10", " network 192.168.10.0 255.255.255.0", " default-router 192.168.10.1", " dns-server 8.8.8.8", "show ip dhcp binding", "ipconfig /release", "ipconfig /renew"],
+      "watchfor": "DORA order, and what a rogue DHCP server can do to a network that trusts any offer it receives."
+    },
+    {
+      "n": 12,
+      "title": "Gateways to Other Networks",
+      "unit": "u5",
+      "strand": "C",
+      "explainer": false,
+      "summary": "The default gateway: what a host does when the destination is not local, and what happens when the gateway is wrong.",
+      "objectives": [
+        "Explain the role of the default gateway in packet forwarding",
+        "Describe routers as network boundaries",
+        "Explain the failure mode when a gateway is missing or wrong",
+        "Explain what NAT does in a small network, conceptually"
+      ],
+      "vocab": ["default gateway", "gateway of last resort", "network boundary", "local destination", "remote destination", "NAT", "private-to-public translation"],
+      "commands": ["ipconfig", "ping <gateway>"],
+      "watchfor": "'Can ping local hosts but nothing outside' is a gateway question, every time."
+    },
+    {
+      "n": 13,
+      "title": "The ARP Process",
+      "unit": "u5",
+      "strand": "C",
+      "explainer": false,
+      "summary": "How a host turns an IP address into a MAC address, and why it ARPs for the gateway, not the far host.",
+      "objectives": [
+        "Explain ARP request broadcast and unicast reply",
+        "Read an ARP cache and explain aging and clearing",
+        "Explain how ARP behaves differently for local vs. remote destinations",
+        "Relate ARP to the switch's MAC address table"
+      ],
+      "vocab": ["ARP", "ARP request", "ARP reply", "ARP cache", "ARP table", "aging", "broadcast", "FF:FF:FF:FF:FF:FF", "resolution", "gratuitous ARP"],
+      "commands": ["arp -a", "arp -d", "show arp", "show ip arp"],
+      "watchfor": "The signature idea: for a remote destination you ARP for your gateway's MAC, not the destination host's."
+    },
+    {
+      "n": 14,
+      "title": "Routing Between Networks",
+      "unit": "u5",
+      "strand": "C",
+      "explainer": false,
+      "summary": "The routing table: what is in it, where entries come from, and how the router picks one.",
+      "objectives": [
+        "Explain why a router is required for communication between networks",
+        "Read a routing table: directly connected, static, and default entries",
+        "Configure static and default routes and prove reachability",
+        "Diagnose a route that exists but does not work, usually a missing return route"
+      ],
+      "vocab": ["routing table", "directly connected route", "static route", "default route", "next hop", "exit interface", "administrative distance", "return path", "gateway of last resort"],
+      "commands": ["ip route 192.168.20.0 255.255.255.0 10.0.0.2", "ip route 0.0.0.0 0.0.0.0 209.165.200.226", "ipv6 route 2001:db8:acad:2::/64 2001:db8:acad:99::2", "show ip route", "show ip route static", "show ip interface brief"],
+      "watchfor": "A one-way ping failure is almost always a missing return route. Routing is symmetric or it is broken."
+    },
+    {
+      "n": 15,
+      "title": "TCP and UDP",
+      "unit": "u6",
+      "strand": "C",
+      "explainer": false,
+      "summary": "The transport layer: reliability versus speed, ports and sockets, and the numbers you have to know cold.",
+      "objectives": [
+        "Distinguish TCP from UDP by behavior and by use case",
+        "Explain ports and sockets",
+        "Recall the well-known port numbers on demand",
+        "Explain the three-way handshake, acknowledgment, and sequencing"
+      ],
+      "vocab": ["transport layer", "TCP", "UDP", "segment", "datagram", "port", "socket", "well-known port", "ephemeral port", "three-way handshake", "SYN", "ACK", "sequence number", "connection-oriented", "connectionless", "windowing"],
+      "commands": [],
+      "watchfor": "20/21 FTP · 22 SSH · 23 Telnet · 25 SMTP · 53 DNS · 67/68 DHCP · 69 TFTP · 80 HTTP · 110 POP3 · 143 IMAP · 443 HTTPS. Memorize these."
+    },
+    {
+      "n": 16,
+      "title": "Application Layer Services",
+      "unit": "u6",
+      "strand": "B",
+      "explainer": false,
+      "summary": "DNS, HTTP, email, and FTP: configuring them on a Packet Tracer server and tracing what a client actually does.",
+      "objectives": [
+        "Explain and configure DNS, HTTP/HTTPS, email, FTP, and DHCP on a Packet Tracer server",
+        "Trace a name-to-address resolution end to end",
+        "Describe the client/server model at the application layer",
+        "Explain why a DNS failure looks like a connectivity failure to a user"
+      ],
+      "vocab": ["DNS", "A record", "resolver", "name resolution", "HTTP", "HTTPS", "SMTP", "POP3", "IMAP", "FTP", "TFTP", "client/server", "URL", "web server", "mail server"],
+      "commands": ["nslookup", "nslookup www.example.com"],
+      "watchfor": "'Ping by IP works, ping by name fails' is DNS. That single symptom pair shows up constantly."
+    },
+    {
+      "n": 17,
+      "title": "Network Testing Utilities",
+      "unit": "u6",
+      "strand": "E",
+      "explainer": false,
+      "summary": "The tools, what each one actually proves, and the fixed order you run them in.",
+      "objectives": [
+        "Use ping, tracert/traceroute, ipconfig, ifconfig/ip, and nslookup correctly",
+        "State what each utility proves and what it does not",
+        "Isolate a fault by layer and narrate the reasoning",
+        "Execute the standard diagnostic sequence without prompting"
+      ],
+      "vocab": ["ping", "ICMP", "echo request", "echo reply", "tracert", "traceroute", "TTL", "hop", "ipconfig", "ifconfig", "nslookup", "latency", "packet loss", "round-trip time", "layered isolation"],
+      "commands": ["ipconfig", "ping 127.0.0.1", "ping <own IP>", "ping <gateway>", "ping <remote router>", "ping <remote host>", "tracert <remote host>", "nslookup <name>"],
+      "watchfor": "Diagnose systematically instead of randomly changing settings. Expect 'which command would you run next' questions."
+    },
+    {
+      "n": 18,
+      "title": "Network Design",
+      "unit": "u7",
+      "strand": "D",
+      "explainer": false,
+      "summary": "Hierarchical design, redundancy, and choosing devices to meet a stated requirement instead of a habit.",
+      "objectives": [
+        "Explain hierarchical network design and the access/distribution/core roles",
+        "Explain reliability, scalability, redundancy, and fault tolerance",
+        "Select devices and topology to meet a stated requirement",
+        "Explain quality-of-service considerations at a basic level"
+      ],
+      "vocab": ["hierarchical design", "access layer", "distribution layer", "core layer", "redundancy", "fault tolerance", "scalability", "availability", "single point of failure", "quality of service", "convergence"],
+      "commands": [],
+      "watchfor": "Requirement-to-design questions. Redundancy means no single failure takes the network down. Name the single point of failure."
+    },
+    {
+      "n": 19,
+      "title": "Cloud and Virtualization",
+      "unit": "u7",
+      "strand": "D",
+      "explainer": false,
+      "summary": "Virtual machines, virtual networks, and where the line between local and cloud actually sits.",
+      "objectives": [
+        "Explain virtual machines and the role of a hypervisor",
+        "Describe virtual networks and data centers",
+        "Distinguish the cloud service models",
+        "Distinguish local from cloud resources in a given scenario"
+      ],
+      "vocab": ["virtualization", "hypervisor", "type 1 hypervisor", "type 2 hypervisor", "virtual machine", "guest OS", "host OS", "virtual network", "data center", "cloud", "SaaS", "PaaS", "IaaS", "public cloud", "private cloud", "hybrid cloud"],
+      "commands": [],
+      "watchfor": "Service-model sorting: who manages what. SaaS you use, PaaS you build on, IaaS you run."
+    },
+    {
+      "n": 20,
+      "title": "Number Systems",
+      "unit": "u7",
+      "strand": "A",
+      "explainer": false,
+      "summary": "Binary, decimal, and hex conversion: the prerequisite skill for Module 23 and the whole Semifinals.",
+      "objectives": [
+        "Convert fluently between binary, decimal, and hexadecimal",
+        "Express any IPv4 address and mask in binary",
+        "Express MAC and IPv6 values in hex",
+        "Perform binary ANDing to derive a network address"
+      ],
+      "vocab": ["binary", "decimal", "hexadecimal", "base 2", "base 10", "base 16", "bit", "byte", "nibble", "octet", "place value", "binary ANDing", "most significant bit"],
+      "commands": [],
+      "watchfor": "Speed matters more than method. 128 64 32 16 8 4 2 1 should be automatic."
+    },
+    {
+      "n": 21,
+      "title": "Ethernet Switching",
+      "unit": "u4",
+      "strand": "C",
+      "explainer": false,
+      "summary": "The switch forwarding decision in depth: the deep-dive counterpart to Module 7. Unlocks at Round 2.",
+      "objectives": [
+        "Walk the full switch forwarding decision: learn source, look up destination, then forward, flood, or filter",
+        "Explain MAC table aging and what a table miss produces",
+        "Predict switch behavior for a given frame and table state",
+        "Relate collision domains and broadcast domains to switch ports"
+      ],
+      "vocab": ["MAC address table", "CAM table", "source learning", "unknown unicast", "flooding", "filtering", "aging timer", "store-and-forward", "cut-through", "frame forwarding", "collision domain", "broadcast domain", "full duplex"],
+      "commands": ["show mac address-table", "show interfaces status", "clear mac address-table dynamic"],
+      "watchfor": "Out of numeric order. This unlocks at Round 2, before Modules 12–17. Do not skip it waiting for its number to come up."
+    },
+    {
+      "n": 22,
+      "title": "Network Layer",
+      "unit": "u4",
+      "strand": "C",
+      "explainer": false,
+      "summary": "How a router forwards a packet, what the headers carry, and the one fact that ties the whole course together.",
+      "objectives": [
+        "Describe Layer 3 operation and the fields of an IPv4 and an IPv6 packet header",
+        "Explain host forwarding logic: local or remote, and what happens in each case",
+        "Trace a packet across a router boundary",
+        "Name what changes at each hop (MAC addresses) and what does not (IP addresses)"
+      ],
+      "vocab": ["network layer", "IPv4 header", "TTL", "protocol field", "IPv6 header", "hop limit", "packet", "routing decision", "host forwarding", "default gateway", "encapsulation at each hop", "de-encapsulation"],
+      "commands": ["show ip route", "show ip interface brief"],
+      "watchfor": "The signature lesson: across a routed path, Layer 2 addresses are rewritten at every hop while Layer 3 addresses stay the same end to end."
+    },
+    {
+      "n": 23,
+      "title": "IPv4 Address Structure",
+      "unit": "u7",
+      "strand": "A",
+      "explainer": false,
+      "summary": "Subnetting. The highest-value skill in the Semifinals, and the most common place points are lost.",
+      "objectives": [
+        "Perform binary ANDing to derive a network address",
+        "Given a network and prefix, produce every subnet: network address, first and last usable host, broadcast address, and usable host count",
+        "Choose an appropriate subnet size for a stated host requirement",
+        "Convert between dotted-decimal mask and CIDR prefix instantly"
+      ],
+      "vocab": ["subnet", "subnet mask", "CIDR prefix", "borrowed bits", "magic number", "block size", "network address", "broadcast address", "first usable host", "last usable host", "usable host count", "subnet boundary", "VLSM"],
+      "commands": [],
+      "watchfor": "Produce on demand: mask, prefix, network, broadcast, first host, last host, host count, and the right subnet size for a requirement."
+    }
+  ]
+}

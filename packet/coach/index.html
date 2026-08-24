@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>Coach · Packet</title>
+<link rel="icon" href="../assets/brand-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/cs-shell.css">
+</head>
+<body class="matrix">
+
+<div class="shell">
+  <div id="chrome"></div>
+  <main class="main active">
+    <div class="wrap">
+      <div class="page-head">
+        <div class="page-eyebrow">Coach</div>
+        <h1 class="page-title">Round scope, pacing, and what still needs building</h1>
+        <p class="page-sum">Public on purpose: there are no answer keys here. Keys, rubrics and pretest
+          standards live with the lab folders, not on the web.</p>
+      </div>
+      <div id="page"></div>
+    </div>
+  </main>
+</div>
+
+<script src="../assets/cs-core.js"></script>
+<script src="../assets/hub.js"></script>
+<script>
+(async function () {
+  const page = document.getElementById('page');
+  let d;
+  try { d = await PT.data(); }
+  catch (e) { PT.mountChrome({nav:'Coach'}); page.innerHTML = HUB.fail(e); return; }
+  PT.mountChrome({ nav: 'Coach' });
+
+  // ── round scope card, the one to print and tape to the wall ────────
+  const scopeCard =
+    '<section class="full-col"><div class="sheet">' +
+      '<h2>Round scope card</h2>' +
+      '<p class="res-desc">Which modules unlock when. Scope is cumulative, so a module never leaves. ' +
+        'Print this one.</p>' +
+      '<h3>Unlock table</h3>' +
+      '<div class="tbl-wrap"><table class="cs-table"><thead><tr>' +
+        '<th>Round</th><th>Modules in scope</th><th>Quiz</th><th>Units complete</th><th>Date</th>' +
+      '</tr></thead><tbody>' +
+      d.rounds.order.map(id => {
+        const r = d.rounds.rounds[id];
+        return '<tr><td><b>' + PT.esc(r.name) + '</b></td>' +
+          '<td style="font-family:var(--font-mono);font-size:var(--fs-2xs)">' + PT.esc(PT.fmtRange(r.modules).replace('Modules ', '')) + '</td>' +
+          '<td>' + PT.esc(r.quiz) + '</td>' +
+          '<td style="font-family:var(--font-mono);font-size:var(--fs-2xs)">' + r.units.map(u => u.toUpperCase()).join(' ') + '</td>' +
+          '<td>' + (r.date ? PT.esc(r.date) + ' · ' + PT.esc(PT.countdown(r.date)) : '<span style="color:var(--text-dim)">not set</span>') + '</td></tr>';
+      }).join('') +
+      '</tbody></table></div>' +
+      '<div class="note" style="--hue:var(--u4);margin-top:var(--sp-5)">' +
+        '<span class="note-label">The non-obvious consequence</span>' +
+        'Modules 21–22 arrive at Round 2, ahead of Modules 12–17. Teaching in strict numeric order leaves ' +
+        'the team unprepared for Round 2. U4 exists specifically to fix that.</div>' +
+      '<div class="note" style="--hue:var(--danger);margin-top:var(--sp-3)">' +
+        '<span class="note-label">Open item, confirm every season</span>' +
+        'This table is reconstructed from published CyberPatriot progression. It is the load-bearing ' +
+        'assumption behind the unit order and every build priority. Confirm it against coach materials ' +
+        'when the season posts, then update <code>data/rounds.json</code> and the whole site follows.</div>' +
+    '</div></section>';
+
+  // ── pacing ──────────────────────────────────────────────────────────
+  const pacing =
+    '<section class="full-col">' +
+      '<div class="sec-hdr"><h2 class="sec-title">Pacing</h2>' +
+      '<span class="sec-note">Nine blocks, ~5 hrs each · 30–40% instruction / 60–70% hands-on</span></div>' +
+      '<div class="tbl-wrap"><table class="cs-table"><thead><tr>' +
+        '<th>Block</th><th>Unit</th><th>Modules</th><th>Target round</th><th>Mastery gate</th>' +
+      '</tr></thead><tbody>' +
+      d.units.order.map(uid => {
+        const u = d.units.units[uid];
+        return '<tr><td style="font-family:var(--font-mono)">' + u.block + '</td>' +
+          '<td><a href="' + PT.rel('unit/?u=' + uid) + '" style="color:var(--primary);text-decoration:none"><b>' +
+            uid.toUpperCase() + '</b> ' + PT.esc(u.title) + '</a></td>' +
+          '<td style="font-family:var(--font-mono);font-size:var(--fs-2xs)">' +
+            (u.modules.length ? u.modules.join(', ') : 'all') + '</td>' +
+          '<td>' + PT.esc(d.rounds.rounds[u.unlock].name) + '</td>' +
+          '<td style="max-width:38ch">' + PT.esc(u.gate) + '</td></tr>';
+      }).join('') +
+      '</tbody></table></div>' +
+      '<div class="note" style="margin-top:var(--sp-4)"><span class="note-label">Session shape</span>' +
+        'Instruction (~40 min per module cluster) → drill app (~20 min) → lab (~60 min) → checkpoint quiz ' +
+        '(~15 min) → debrief. If a session drifts lecture-heavy, cut content rather than lab time.</div>' +
+    '</section>';
+
+  // ── build status ────────────────────────────────────────────────────
+  const kinds = ['apps', 'labs', 'quizzes', 'sheets'];
+  const all = kinds.flatMap(k => (d.resources[k] || []).map(x => Object.assign({ kind: k }, x)));
+  const byPriority = ['P0', 'P1', 'P2', 'P3'];
+  const status =
+    '<section class="full-col">' +
+      '<div class="sec-hdr"><h2 class="sec-title">Build status</h2>' +
+      '<span class="sec-note">' + all.filter(x => x.status === 'done').length + ' of ' + all.length + ' assets built</span></div>' +
+      '<div class="stat-grid">' +
+        byPriority.map(p => {
+          const set = all.filter(x => x.priority === p);
+          const done = set.filter(x => x.status === 'done').length;
+          const hue = { P0: 'var(--u1)', P1: 'var(--u2)', P2: 'var(--u3)', P3: 'var(--u4)' }[p];
+          return '<div class="stat-card">' +
+            '<div class="stat-val" style="color:' + hue + '">' + done + '<span style="font-size:var(--fs-lg);color:var(--text-dim)">/' + set.length + '</span></div>' +
+            '<div class="stat-label">' + p + ' · ' + (p === 'P0' ? 'Practice + R1' : p === 'P1' ? 'Round 2' : p === 'P2' ? 'State' : 'Semifinals') + '</div></div>';
+        }).join('') +
+      '</div>' +
+      '<div class="tbl-wrap"><table class="cs-table"><thead><tr>' +
+        '<th>Priority</th><th>Asset</th><th>Type</th><th>Unit</th><th>Status</th>' +
+      '</tr></thead><tbody>' +
+      all.slice().sort((a, b) => a.priority.localeCompare(b.priority) || a.kind.localeCompare(b.kind))
+        .map(x => '<tr><td style="font-family:var(--font-mono)">' + x.priority + '</td>' +
+          '<td><b>' + PT.esc(x.name) + '</b><br><span class="res-meta">' + PT.esc(x.slug) + '</span></td>' +
+          '<td>' + x.kind.replace(/s$/, '') + '</td>' +
+          '<td style="font-family:var(--font-mono)">' + x.unit.toUpperCase() + '</td>' +
+          '<td>' + (x.status === 'done'
+            ? '<span class="pill pill-hue" style="--hue:var(--u1)">✓ BUILT</span>'
+            : x.status === 'wip'
+              ? '<span class="pill pill-hue" style="--hue:var(--u3)">◐ IN PROGRESS</span>'
+              : '<span class="pill pill-mute">○ TODO</span>') + '</td></tr>').join('') +
+      '</tbody></table></div>' +
+    '</section>';
+
+  // ── after-action ────────────────────────────────────────────────────
+  const aar =
+    '<section class="full-col"><div class="three-col">' +
+      [['Knowledge', 'They did not know it. Routes back to a unit. Reteach and re-gate.', 'var(--u1)'],
+       ['Speed', 'They knew it and ran out of clock. Routes to a drill app and a timed rerun.', 'var(--u3)'],
+       ['Process', 'Skipped a task, misread instructions, forgot to save. Routes to the round playbook.', 'var(--u5)']]
+      .map(([t, b, h]) =>
+        '<div class="panel"><div class="panel-hdr"><h2 class="panel-title" style="color:' + h + '">' + t + '</h2></div>' +
+        '<div class="panel-body prose"><p>' + b + '</p></div></div>').join('') +
+    '</div>' +
+    '<div class="note"><span class="note-label">Every mock round ends this way</span>' +
+      'Name the points lost in each of the three categories before anyone goes home. A loss you cannot ' +
+      'categorise is a loss you will repeat.</div></section>';
+
+  page.innerHTML = scopeCard + pacing + status + aar;
+})();
+</script>
+</body>
+</html>

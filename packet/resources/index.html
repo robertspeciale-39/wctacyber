@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>Resources · Packet</title>
+<link rel="icon" href="../assets/brand-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/cs-shell.css">
+</head>
+<body class="matrix">
+
+<div class="shell">
+  <div id="chrome"></div>
+  <main class="main active">
+    <div class="wrap">
+      <div class="page-head">
+        <div class="page-eyebrow">Reference</div>
+        <h1 class="page-title">Resources</h1>
+        <p class="page-sum">Everything built for this track, plus the outside links worth having.</p>
+      </div>
+      <div id="page"></div>
+    </div>
+  </main>
+</div>
+
+<script src="../assets/cs-core.js"></script>
+<script src="../assets/hub.js"></script>
+<script>
+(async function () {
+  const page = document.getElementById('page');
+  let d;
+  try { d = await PT.data(); }
+  catch (e) { PT.mountChrome({nav:'Resources'}); page.innerHTML = HUB.fail(e); return; }
+  PT.mountChrome({ nav: 'Resources' });
+
+  const KINDS = [
+    ['sheets',  'Cheat sheets',  'One page each, print them'],
+    ['apps',    'Drill apps',    'Speed and reflex'],
+    ['labs',    'Packet Tracer labs', 'Build guides and answer keys'],
+    ['quizzes', 'Quizzes',       'Canvas / QTI']
+  ];
+
+  const built = s => s.status === 'done' && s.url;
+
+  page.innerHTML =
+    KINDS.map(([kind, title, note]) => {
+      const items = d.resources[kind] || [];
+      const ready = items.filter(built);
+      return '<section class="full-col">' +
+        '<div class="sec-hdr"><h2 class="sec-title">' + title + '</h2>' +
+        '<span class="sec-note">' + ready.length + ' of ' + items.length + ' built · ' + note + '</span></div>' +
+        '<div class="card-list">' +
+          items.slice().sort((a, b) => (built(b) ? 1 : 0) - (built(a) ? 1 : 0) || a.priority.localeCompare(b.priority))
+               .map(it => HUB.resourceCard(d, it.slug, HUB.hueVar(d.units.units[it.unit].primary))).join('') +
+        '</div></section>';
+    }).join('') +
+
+    d.links.groups.map(g =>
+      '<section class="full-col">' +
+        '<div class="sec-hdr"><h2 class="sec-title">' + PT.esc(g.name) + '</h2>' +
+        (g.note ? '<span class="sec-note">' + PT.esc(g.note) + '</span>' : '') + '</div>' +
+        '<div class="card-list">' + g.links.map(l =>
+          '<a class="res-card" style="--hue:var(--u3)" href="' + PT.esc(l.url) + '" target="_blank" rel="noopener">' +
+            '<span class="res-icon" aria-hidden="true">↗</span>' +
+            '<span class="res-main">' +
+              '<span class="res-title">' + PT.esc(l.name) + '</span>' +
+              '<span class="res-desc">' + PT.esc(l.desc) + '</span>' +
+              '<span class="res-meta">' + PT.esc(new URL(l.url).hostname) + '</span>' +
+            '</span></a>').join('') +
+        '</div>' +
+      '</section>').join('');
+})();
+</script>
+</body>
+</html>

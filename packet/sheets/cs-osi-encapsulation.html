@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>OSI, TCP/IP &amp; Encapsulation · Packet</title>
+<link rel="icon" href="../assets/brand-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/cs-shell.css">
+</head>
+<body class="matrix">
+<div class="shell">
+  <div id="chrome"></div>
+  <main class="main active">
+    <div class="wrap" style="max-width:960px">
+      <div class="page-head">
+        <div class="page-eyebrow">Cheat sheet · U2 · print this</div>
+        <h1 class="page-title">OSI, TCP/IP &amp; Encapsulation</h1>
+        <p class="page-sum">Layer order, PDU names, and what device acts at which layer. Round 1
+          asks about this more than anything else.</p>
+      </div>
+
+      <div class="sheet">
+        <h2>The layer map</h2>
+        <div class="tbl-wrap"><table class="cs-table">
+        <thead><tr><th>#</th><th>OSI layer</th><th>TCP/IP</th><th>PDU</th><th>Address used</th><th>Lives here</th></tr></thead>
+        <tbody>
+        <tr><td>7</td><td>Application</td><td rowspan="3">Application</td><td rowspan="3">Data</td><td rowspan="3">None</td><td>HTTP, DNS, FTP, SMTP, DHCP</td></tr>
+        <tr><td>6</td><td>Presentation</td><td>Encoding, encryption, compression</td></tr>
+        <tr><td>5</td><td>Session</td><td>Starting and ending conversations</td></tr>
+        <tr><td>4</td><td><b>Transport</b></td><td>Transport</td><td><b>Segment</b></td><td>Port number</td><td>TCP, UDP</td></tr>
+        <tr><td>3</td><td><b>Network</b></td><td>Internet</td><td><b>Packet</b></td><td>IP address</td><td>IPv4, IPv6, ICMP, <b>routers</b></td></tr>
+        <tr><td>2</td><td><b>Data Link</b></td><td rowspan="2">Network Access</td><td><b>Frame</b></td><td>MAC address</td><td>Ethernet, ARP, <b>switches</b></td></tr>
+        <tr><td>1</td><td><b>Physical</b></td><td><b>Bits</b></td><td>None</td><td>Cables, connectors, radio, <b>hubs</b></td></tr>
+        </tbody></table></div>
+
+        <div class="sheet-cols">
+          <div class="prose" style="max-width:none">
+            <h4>Bottom to top</h4>
+            <p><b>P</b>lease <b>D</b>o <b>N</b>ot <b>T</b>hrow <b>S</b>ausage <b>P</b>izza <b>A</b>way</p>
+          </div>
+          <div class="prose" style="max-width:none">
+            <h4>Top to bottom</h4>
+            <p><b>A</b>ll <b>P</b>eople <b>S</b>eem <b>T</b>o <b>N</b>eed <b>D</b>ata <b>P</b>rocessing</p>
+          </div>
+        </div>
+
+        <h3>Encapsulation, going down the stack</h3>
+        <div class="codeblock"><button class="copy-btn">COPY</button><pre>L7  [               DATA               ]     data
+L4  [ TCP ][         DATA             ]     segment
+L3  [ IP ][ TCP ][   DATA             ]     packet
+L2  [ ETH ][ IP ][ TCP ][ DATA ][ FCS ]     frame
+L1   1011 0100 1110 0010 1001 1101 ...      bits</pre></div>
+
+        <ul class="prose" style="max-width:none">
+          <li>The original data never changes. Each layer wraps what it was handed.</li>
+          <li><strong>Only Layer 2 adds a trailer.</strong> The FCS checks the whole frame for
+              errors.</li>
+          <li>De-encapsulation is the same thing in reverse at the receiver.</li>
+          <li>The PDU name tells you which header is currently outermost, which tells you which
+              device can act on it.</li>
+        </ul>
+
+        <h3>What changes at each hop</h3>
+        <div class="note" style="--hue:var(--u3)"><span class="note-label">The single highest-value fact in this course</span>
+          Across a routed path, the <b>Layer 2 addresses are rewritten at every hop</b> while the
+          <b>Layer 3 addresses stay the same end to end</b>. A router strips the old Ethernet
+          header and builds a new one for the next link. The IP header rides through untouched,
+          except that TTL drops by one.</div>
+
+        <div class="tbl-wrap"><table class="cs-table">
+        <thead><tr><th>Field</th><th>Changes at each router hop?</th></tr></thead>
+        <tbody>
+        <tr><td>Source MAC</td><td><b style="color:var(--u5)">Yes</b>, becomes the exiting interface</td></tr>
+        <tr><td>Destination MAC</td><td><b style="color:var(--u5)">Yes</b>, becomes the next hop</td></tr>
+        <tr><td>Source IP</td><td><b style="color:var(--u1)">No</b></td></tr>
+        <tr><td>Destination IP</td><td><b style="color:var(--u1)">No</b></td></tr>
+        <tr><td>TTL</td><td>Decrements by 1</td></tr>
+        </tbody></table></div>
+
+        <h3>Which device acts at which layer</h3>
+        <div class="tbl-wrap"><table class="cs-table">
+        <thead><tr><th>Device</th><th>Reads</th><th>Rewrites</th><th>Ignores</th></tr></thead>
+        <tbody>
+        <tr><td>Hub</td><td>Nothing</td><td>Nothing</td><td>Everything</td></tr>
+        <tr><td>Switch</td><td>Ethernet header</td><td>Nothing</td><td>The packet inside</td></tr>
+        <tr><td>Router</td><td>IP header</td><td>The Ethernet header</td><td>The payload</td></tr>
+        </tbody></table></div>
+
+        <h3>Troubleshoot by layer</h3>
+        <ol class="prose" style="max-width:none">
+          <li><b>L1</b> Is the link light on?</li>
+          <li><b>L2</b> Is the MAC address table showing the device on the port you expect?</li>
+          <li><b>L3</b> Does <code>ipconfig</code> show a real address, mask, and gateway? Can
+              you ping the gateway?</li>
+          <li><b>L4</b> Is the service listening on the port you think it is?</li>
+          <li><b>L7</b> Does the name resolve? Try <code>nslookup</code>.</li>
+        </ol>
+        <p class="prose" style="max-width:none;margin-top:var(--sp-4)">Work upward from the bottom. A Layer 3 problem is
+          impossible to fix if Layer 1 is broken, and most of the time Layer 1 is what is broken.</p>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="../assets/cs-core.js"></script>
+<script>PT.mountChrome({});</script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<p>The box your ISP left in your house is four devices in one case. Module 4 pulls it apart,
+and once you see the four parts separately, home networking stops being mysterious.</p>
+
+<h3>The four devices inside one box</h3>
+
+<ul>
+  <li>A <strong>modem</strong>, translating the ISP's signal into Ethernet. Sometimes this is
+      a separate box.</li>
+  <li>A <strong>router</strong>, connecting your home network to the ISP's network.</li>
+  <li>A <strong>switch</strong>, which is what those four LAN ports on the back actually are.</li>
+  <li>An <strong>access point</strong>, providing the Wi-Fi.</li>
+</ul>
+
+<p>Packet Tracer models this as a single device called a wireless router. Configuring it is
+GUI work rather than IOS commands, which is why this module has no command list.</p>
+
+<h3>WAN port versus LAN ports</h3>
+
+<p>This is the part people get wrong, and it is worth being blunt about.</p>
+
+<p>The <strong>WAN port</strong> (often labeled "Internet") faces your ISP. It gets a public
+address, usually from the ISP by DHCP. It is <em>one</em> port and it is a different network
+from everything else on the device.</p>
+
+<p>The <strong>LAN ports</strong> and the wireless side are all the <em>same</em> network as
+each other. A laptop on Wi-Fi and a desktop plugged into LAN port 2 are on the same subnet and
+can reach each other without the router doing any routing at all.</p>
+
+<p>So the wireless router is a boundary with the public network on one side and your private
+network on the other. Everything on the private side shares one public address through NAT,
+which Module 12 covers properly.</p>
+
+<blockquote>If a lab tells you the router "can reach the internet but no device on the LAN can,"
+check whether something is plugged into the WAN port that should be in a LAN port. It is the
+most common cabling mistake in this module.</blockquote>
+
+<h3>The configuration order that works</h3>
+
+<p>Do it in this order every time. Skipping around is how you lock yourself out of a device
+mid-lab.</p>
+
+<ol>
+  <li><strong>Change the admin password.</strong> First, not last. Default credentials for
+      every consumer model are published online, and a competition lab will score this.</li>
+  <li><strong>Set the WAN side.</strong> Usually DHCP from the ISP. Static only if the
+      scenario gives you an address.</li>
+  <li><strong>Set the LAN side.</strong> The router's own LAN address becomes the default
+      gateway for every device on the network. Something like <code>192.168.0.1</code>.</li>
+  <li><strong>Configure the DHCP scope.</strong> Start address, how many addresses, lease
+      time. Leave room at the low end of the range for devices you want to address statically,
+      like a printer or a server.</li>
+  <li><strong>Set the SSID.</strong> Give it a name that does not identify the household or
+      the room number.</li>
+  <li><strong>Set wireless security.</strong> WPA2 at minimum, WPA3 if offered, with a long
+      passphrase.</li>
+  <li><strong>Save, then test with a real client.</strong> Associate a laptop, confirm it got
+      an address in your scope, ping the gateway.</li>
+</ol>
+
+<h3>DHCP, briefly</h3>
+
+<p>The router hands each client four things: an IP address, a subnet mask, a default gateway,
+and a DNS server. Miss any one of them and something breaks in a way that looks unrelated.</p>
+
+<p>No address at all shows up as an <strong>APIPA</strong> address starting
+<code>169.254</code>. That is the client giving up and assigning itself something. When you
+see 169.254 in <code>ipconfig</code>, the DHCP server did not answer. Do not start editing IP
+settings by hand, go find out why the offer never arrived.</p>
+
+<p>Module 11 covers the DORA exchange in detail. For now, know the four things a lease
+delivers and know what 169.254 means.</p>
+
+<h3>Why this matters in the competition</h3>
+
+<p>The Round 1 lab is built around this module. You will get a wireless router, a client or
+two, and a requirements list. The scored items are almost always the same set: correct SSID,
+correct security type, correct DHCP scope, admin password changed, and a client that actually
+associates and gets an address.</p>
+
+<p>Configure in the order above, then <em>verify from the client</em>. A router that is
+configured correctly and a client that is actually working are two different claims, and only
+the second one earns points.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Explain why the WAN port is a different network from the LAN ports.</li>
+  <li>List the four things a DHCP lease hands a client.</li>
+  <li>Say what a <code>169.254</code> address means and what you would check first.</li>
+</ul>

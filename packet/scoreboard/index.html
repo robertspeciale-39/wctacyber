@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>Scoreboard · Packet</title>
+<link rel="icon" href="../assets/brand-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/cs-shell.css">
+</head>
+<body class="matrix">
+
+<div class="shell">
+  <div id="chrome"></div>
+  <div id="roundbar"></div>
+  <main class="main active">
+    <div class="wrap">
+      <div class="page-head board-hide">
+        <div class="page-eyebrow">Team</div>
+        <h1 class="page-title">Scoreboard</h1>
+        <p class="page-sum">Everyone whose name is saved <em>in this browser</em>, ranked by readiness for the
+          round selected above. On the team-room machine that is the whole team. On your own laptop it is
+          just you. Paste a teammate's code below to put them on the board.</p>
+        <div class="page-pills">
+          <button class="btn btn-ghost" id="proj">Projector mode</button>
+          <button class="btn btn-ghost" id="copy-mine">Copy my stats</button>
+          <button class="btn btn-ghost" onclick="PT.openProfileDialog()">Add a name</button>
+        </div>
+      </div>
+
+      <div class="full-col"><div class="board" id="board"></div></div>
+
+      <div class="two-col board-hide">
+        <div class="panel">
+          <div class="panel-hdr"><h2 class="panel-title">Drill personal bests</h2></div>
+          <div class="panel-body"><div id="bests"></div></div>
+        </div>
+        <div class="panel">
+          <div class="panel-hdr"><h2 class="panel-title">Add a teammate's code</h2></div>
+          <div class="panel-body">
+            <p class="res-desc" style="margin-bottom:var(--sp-3)">They hit <b>Copy my stats</b> on their own
+              machine and send you the code. Pasting it adds them to this board as a guest. It does not
+              change their progress or yours.</p>
+            <div class="filter-bar">
+              <input type="text" id="code" placeholder="Paste code here" aria-label="Teammate progress code">
+              <button class="btn" id="code-go">Add</button>
+            </div>
+            <div id="guests"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="../assets/cs-core.js"></script>
+<script src="../assets/hub.js"></script>
+<script>
+(async function () {
+  const board = document.getElementById('board');
+  let d;
+  try { d = await PT.data(); }
+  catch (e) { PT.mountChrome({nav:'Scoreboard'}); board.innerHTML = HUB.fail(e); return; }
+  PT.mountChrome({ nav: 'Scoreboard' });
+  PT.mountRoundbar(d, render);
+
+  // Guests are session-only on purpose. A pasted snapshot is a snapshot, not
+  // a synced account, and leaving them around would go stale silently.
+  let guests = [];
+
+  document.getElementById('proj').addEventListener('click', () => {
+    document.body.classList.toggle('projector');
+    if (document.documentElement.requestFullscreen && document.body.classList.contains('projector')) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else if (document.exitFullscreen && document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+  });
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && document.body.classList.contains('projector')) {
+      document.body.classList.remove('projector');
+    }
+  });
+
+  document.getElementById('copy-mine').addEventListener('click', () => {
+    const code = PT.exportProfile();
+    if (!code) { PT.openProfileDialog(); return; }
+    const done = () => PT.toast('Copied. Send that to your coach');
+    if (navigator.clipboard) navigator.clipboard.writeText(code).then(done).catch(() => prompt('Copy this:', code));
+    else prompt('Copy this:', code);
+  });
+
+  document.getElementById('code-go').addEventListener('click', () => {
+    const input = document.getElementById('code');
+    const o = PT.decodeProfile(input.value);
+    if (!o) { PT.toast('That code did not parse'); return; }
+    guests = guests.filter(g => g.h.toLowerCase() !== o.h.toLowerCase());
+    guests.push(o);
+    input.value = '';
+    render();
+    PT.toast(o.h + ' added as a guest');
+  });
+
+  function readinessFrom(progress, scope) {
+    let done = 0;
+    scope.forEach(n => {
+      const rec = progress['m' + n] || {};
+      PT.STEPS.forEach(s => { if (rec[s]) done++; });
+    });
+    const total = scope.size * PT.STEPS.length;
+    return { done, total, pct: total ? Math.round(done / total * 100) : 0 };
+  }
+
+  function render() {
+    const scope = PT.scopeOf(d, PT.round());
+    const me = PT.active();
+    const rows = PT.profiles().map(p => {
+      const r = readinessFrom(PT.progressOf(p.id), scope);
+      return { name: p.handle, pct: r.pct, done: r.done, total: r.total, me: me && p.id === me.id, guest: false };
+    }).concat(guests.map(g => {
+      const r = readinessFrom(g.p || {}, scope);
+      return { name: g.h, pct: r.pct, done: r.done, total: r.total, me: false, guest: true };
+    }));
+
+    rows.sort((a, b) => b.pct - a.pct || a.name.localeCompare(b.name));
+
+    board.innerHTML = rows.length
+      ? rows.map((r, i) =>
+          '<div class="board-row' + (r.me ? ' me' : '') + '">' +
+            '<span class="board-rank">' + (i + 1) + '</span>' +
+            '<span><span class="board-name">' + PT.esc(r.name) +
+              (r.guest ? ' <span class="badge" style="background:var(--surface-3);color:var(--text-dim)">GUEST</span>' : '') +
+            '</span>' +
+            '<span class="board-sub">' + r.done + ' / ' + r.total + ' steps</span></span>' +
+            '<span class="board-bar"><span style="width:' + r.pct + '%"></span></span>' +
+            '<span class="board-pct">' + r.pct + '%</span>' +
+          '</div>').join('')
+      : HUB.empty('NOBODY ON THE BOARD YET', 'Add a name to start tracking. Progress lives in this browser only.');
+
+    const b = PT.bests();
+    const slugs = Object.keys(b);
+    document.getElementById('bests').innerHTML = slugs.length
+      ? '<div class="card-list">' + slugs.map(s => {
+          const r = d.resBySlug[s];
+          const t = b[s].seconds;
+          return '<div class="res-card"><span class="res-main">' +
+            '<span class="res-title">' + PT.esc(r ? r.name : s) + '</span>' +
+            '<span class="res-meta">best ' + Math.floor(t / 60) + 'm ' + (t % 60) + 's · ' +
+              new Date(b[s].at).toLocaleDateString() + '</span></span></div>';
+        }).join('') + '</div>'
+      : HUB.empty('NO TIMES YET', 'Drill apps record your best time here once they are built.');
+  }
+
+  render();
+  window.addEventListener('pt:profile', render);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<p>Module 6 is Layer 1: the actual physical stuff that carries the signal. The questions are
+almost always scenarios. You get a situation and pick the media that fits it, so learn this
+module by its trade-offs rather than by its numbers.</p>
+
+<h3>The three families</h3>
+
+<h4>Copper</h4>
+<p>Electrical signals on twisted pairs of wire. Cheap, easy to terminate, everywhere.
+<strong>UTP</strong> (unshielded twisted pair) is the standard office and classroom cable with
+an RJ-45 connector. <strong>STP</strong> (shielded twisted pair) adds foil or braid around the
+pairs to fight interference, and costs more.</p>
+
+<p>The number to remember for copper is <strong>100 meters</strong>. That is the maximum run
+for Ethernet over twisted pair. Past that the signal degrades too far to be reliable. If a
+scenario mentions a distance over 100 m, copper is not the answer.</p>
+
+<p>Twisting the pairs is not decoration. It cancels out interference between the wires, which
+is why the twist rate matters and why you should not untwist more than half an inch when you
+terminate a cable.</p>
+
+<h4>Fiber optic</h4>
+<p>Pulses of light in glass. Immune to electromagnetic interference because light does not
+care about magnetic fields. Enormous bandwidth. Runs far: hundreds of meters for
+<strong>multimode</strong>, many kilometers for <strong>single-mode</strong>. It costs more,
+and terminating it takes skill and equipment.</p>
+
+<p>Fiber is the answer whenever a scenario mentions long distance, high interference, or
+connecting buildings.</p>
+
+<h4>Wireless</h4>
+<p>Radio. No cable to run, mobile clients, and easy to add devices. In exchange you get shared
+bandwidth, interference, security exposure that wired media does not have, and range that
+walls eat.</p>
+
+<p>Wireless is the answer when the scenario emphasizes mobility or the impossibility of
+running cable.</p>
+
+<h3>Picking one</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Scenario says…</th><th>Answer</th><th>Because</th></tr></thead>
+<tbody>
+<tr><td>Desk to wall jack, normal office</td><td>UTP</td><td>Cheapest thing that works.</td></tr>
+<tr><td>Factory floor, welding equipment, motors</td><td>Fiber (or STP)</td><td>Heavy EMI. Fiber is immune; STP is the copper compromise.</td></tr>
+<tr><td>Between two buildings</td><td>Fiber</td><td>Over 100 m, and it avoids grounding problems between buildings.</td></tr>
+<tr><td>Switch closet backbone, high traffic</td><td>Fiber</td><td>Bandwidth headroom.</td></tr>
+<tr><td>Laptops, phones, a warehouse scanner</td><td>Wireless</td><td>Devices move.</td></tr>
+<tr><td>Historic building, cannot drill walls</td><td>Wireless</td><td>No cable path exists.</td></tr>
+</tbody></table></div>
+
+<h3>The three ways copper goes wrong</h3>
+
+<p>These three words show up constantly, and students mix them up. Learn them as three
+different causes.</p>
+
+<ul>
+  <li><strong>Attenuation</strong> is the signal getting weaker over distance. It is why the
+      100 m limit exists. The cause is length.</li>
+  <li><strong>EMI</strong> and <strong>RFI</strong> are outside electrical or radio noise
+      getting into the cable: motors, fluorescent lights, power lines. The cause is the
+      environment.</li>
+  <li><strong>Crosstalk</strong> is the signal from one pair in the cable bleeding into
+      another pair. The cause is the cable itself, usually poor termination or untwisted pairs.</li>
+</ul>
+
+<p>Fiber is immune to EMI, RFI, and crosstalk, because it carries light rather than
+electricity. It still has attenuation, just far less of it.</p>
+
+<h3>Bandwidth and throughput, again</h3>
+
+<p>Module 1 introduced this and Module 6 is where it gets concrete.
+<strong>Bandwidth</strong> is the rated capacity of the media. <strong>Throughput</strong> is
+what you measure. <strong>Goodput</strong> is throughput minus protocol overhead, which is the
+part that is actually your file.</p>
+
+<p>A Cat 6 cable rated for 1 Gbps will not deliver 1 Gbps of file transfer. Headers,
+acknowledgments, and retransmissions all consume some of it. That is normal, not a fault.</p>
+
+<h3>Straight-through and crossover</h3>
+
+<p>Historically, connecting two <em>different</em> kinds of device (PC to switch, switch to
+router) used a straight-through cable, and connecting two of the <em>same</em> kind (switch to
+switch, PC to PC) used a crossover.</p>
+
+<p>Modern equipment negotiates this automatically with Auto-MDIX, so it rarely matters in
+practice. It still matters in Packet Tracer, where picking the wrong cable gives you a dark
+link and no explanation. When a link will not come up and the ports are correct, the cable
+type is the next thing to check.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>State the copper distance limit without thinking about it.</li>
+  <li>Give the cause of attenuation, EMI, and crosstalk, one cause each.</li>
+  <li>Read three scenarios and pick the media for each in under ten seconds.</li>
+</ul>

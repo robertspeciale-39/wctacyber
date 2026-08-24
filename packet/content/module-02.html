@@ -1,0 +1,96 @@
+<p>This module is the Packet Tracer device bar with names attached. Every icon you will drag
+onto a workspace for the rest of the season shows up here, and the lab half of the Practice
+Round is mostly "can you pick the right one and cable it correctly."</p>
+
+<h3>End devices and intermediary devices</h3>
+
+<p>An <strong>end device</strong> is where data starts or stops: a PC, a laptop, a phone, a
+printer, a server, an IP camera. If you can point at it and say "the message is <em>for</em>
+that," it is an end device. Every end device on a network is the source or the destination of
+something.</p>
+
+<p>An <strong>intermediary device</strong> moves data between end devices. It is never the
+final destination of the user's traffic, it is the road. Switches, routers, access points,
+modems, and firewalls all live here.</p>
+
+<p>That split is the one the quiz cares about, so learn it as a split rather than as two
+lists to memorize.</p>
+
+<h3>The four you must never confuse</h3>
+
+<h4>Switch</h4>
+<p>Connects devices <em>within one network</em>. It works with MAC addresses at Layer 2, it
+has many ports, and it is what every wired device in a room plugs into. A switch cannot get
+you to a different network. Remember that sentence, because half of the device-selection
+questions in this course are testing it.</p>
+
+<h4>Router</h4>
+<p>Connects <em>different networks</em> to each other. It works with IP addresses at Layer 3
+and it makes a forwarding decision for every packet. It is the boundary of your network and
+the exit toward everything else. Routers have few ports, because each port faces an entire
+network rather than a single device.</p>
+
+<h4>Access point</h4>
+<p>Extends a wired network to wireless clients. An AP is essentially a wireless switch port.
+It does not route, and on its own it does not hand out addresses.</p>
+
+<h4>Modem</h4>
+<p>Translates between the signal your ISP delivers and Ethernet. Cable, DSL, and fiber all
+need one. In a home, the modem, router, switch, and AP are usually one physical box, which is
+exactly why people get the four confused. Module 4 pulls that box apart.</p>
+
+<p>A <strong>NIC</strong>, the network interface card, is the part of an end device that
+actually attaches to the media. It is where the MAC address lives.</p>
+
+<h3>Logical and physical topology</h3>
+
+<p>Packet Tracer gives you two workspaces, and they map onto two ways of describing a network.</p>
+
+<p>The <strong>physical topology</strong> is where things sit and what cable runs where: this
+switch is in the closet, that cable goes through the ceiling to room 214. The
+<strong>logical topology</strong> is how data flows and how addressing is organized,
+regardless of where the boxes physically are.</p>
+
+<p>Two devices can be in the same room and on different networks. Two devices can be in
+different buildings and on the same network. That is the whole point of separating the two
+views, and it is why the logical workspace is where you will spend nearly all your time.</p>
+
+<h3>Reading a diagram</h3>
+
+<p>Every topology drawing in this course follows the same conventions. Learn to read one in
+about five seconds:</p>
+
+<ul>
+  <li>A straight solid line is a wired Ethernet link.</li>
+  <li>A jagged or lightning-style line is a serial WAN link.</li>
+  <li>Dotted or wave lines are wireless.</li>
+  <li>A cloud is a network somebody else owns and you do not configure.</li>
+  <li>Labels near a line are interface names. <code>G0/0</code> is GigabitEthernet 0/0,
+      <code>F0/1</code> is FastEthernet 0/1, <code>S0/0/0</code> is a serial interface.</li>
+</ul>
+
+<p>Interface naming looks fussy until the first time you configure the wrong port and spend
+ten minutes wondering why the link is down. The number after the slash is the port on the
+card. The number before it is which card.</p>
+
+<h3>Why this matters in the competition</h3>
+
+<p>The Practice Round lab hands you a written requirement and asks you to build it. You will
+be scored on device choice and on cabling before anything else works at all. Two habits fix
+most of the points lost here:</p>
+
+<ol>
+  <li><strong>Read the whole requirement before you drag anything.</strong> Count the networks
+      it describes. More than one network means you need a router, no matter how the diagram
+      is drawn.</li>
+  <li><strong>Check the link lights before you open a CLI.</strong> A dark link is a physical
+      problem, and no amount of configuration will fix it.</li>
+</ol>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Name five intermediary devices and say what each one connects.</li>
+  <li>Explain why a switch cannot reach a different network.</li>
+  <li>Point at <code>G0/1</code> on a router in Packet Tracer without hunting for it.</li>
+</ul>

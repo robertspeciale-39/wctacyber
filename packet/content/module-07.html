@@ -1,0 +1,149 @@
+<p>Module 7 is where the course stops describing networks and starts explaining how one
+actually works. The switch decision you learn here is the archetypal
+conceptual-application question in this competition: you get a MAC address table and an
+incoming frame, and you predict what the switch does.</p>
+
+<h3>The Ethernet frame</h3>
+
+<p>Every frame on a wired LAN has the same shape. You do not need to memorize byte counts,
+but you do need to know what is in it and in what order.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Field</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>Preamble</td><td>A pattern that lets the receiver sync its clock. It is not counted as part of the frame's data.</td></tr>
+<tr><td><b>Destination MAC</b></td><td>Who this frame is for. First, because a switch wants to make its decision as early as possible.</td></tr>
+<tr><td><b>Source MAC</b></td><td>Who sent it. This is the field the switch learns from.</td></tr>
+<tr><td>Type / Length</td><td>What is inside: usually IPv4, IPv6, or ARP.</td></tr>
+<tr><td>Payload</td><td>The packet from Layer 3.</td></tr>
+<tr><td>FCS</td><td>Frame Check Sequence. Error detection over the whole frame. Fails the check, the frame is dropped silently.</td></tr>
+</tbody></table></div>
+
+<p>Destination comes before source. That ordering is deliberate and it gets asked.</p>
+
+<h3>The MAC address</h3>
+
+<p>A MAC address is 48 bits, written as 12 hexadecimal digits, burned into the NIC at the
+factory. It looks like <code>00:1A:2B:3C:4D:5E</code> or <code>001A.2B3C.4D5E</code> depending
+on who is writing it.</p>
+
+<p>The first half is the <strong>OUI</strong>, the Organizationally Unique Identifier, which
+IEEE assigns to the manufacturer. The second half is the serial number that vendor assigned.
+Together they are meant to be globally unique.</p>
+
+<p>The one special value to know: <code>FF:FF:FF:FF:FF:FF</code> is the broadcast address.
+Every device on the local network processes a frame sent there.</p>
+
+<p>MAC addresses are <em>flat</em>. There is no structure that says where a device is, which
+is exactly why they only work inside one network and why IP addresses have to exist. Module 8
+picks that up.</p>
+
+<h3>How the switch learns</h3>
+
+<p>A switch boots with an empty MAC address table and fills it by watching traffic. The rule
+is one sentence: <strong>learn from the source, decide on the destination.</strong></p>
+
+<p>When a frame arrives, the switch records the <em>source</em> MAC and the port it came in
+on. Then it looks up the <em>destination</em> MAC and does one of three things.</p>
+
+<figure>
+<svg viewBox="0 0 700 268" width="100%" role="img"
+     aria-label="Switch decision tree: on a frame arrival, learn the source MAC, then if the destination is broadcast or unknown, flood; if it is known on a different port, forward; if it is known on the same port, filter.">
+  <style>
+    .n  { font: 600 12px 'JetBrains Mono', monospace; fill: var(--text-bright) }
+    .q  { font: 500 11px 'JetBrains Mono', monospace; fill: var(--text-2) }
+    .a  { font: 700 12px 'JetBrains Mono', monospace }
+    .d  { font: 400 11px Inter, sans-serif; fill: var(--text-2) }
+  </style>
+  <rect x="250" y="8" width="200" height="38" rx="6" fill="var(--surface-3)" stroke="var(--line-strong)"/>
+  <text class="n" x="350" y="32" text-anchor="middle">FRAME ARRIVES</text>
+
+  <path d="M350 46 L350 70" stroke="var(--line-strong)" stroke-width="1.5" fill="none"/>
+  <rect x="230" y="70" width="240" height="38" rx="6" fill="var(--u2s)" stroke="var(--u2)"/>
+  <text class="n" x="350" y="94" text-anchor="middle">LEARN THE SOURCE MAC</text>
+
+  <path d="M350 108 L350 126 M110 126 L590 126 M110 126 L110 140 M350 126 L350 140 M590 126 L590 140"
+        stroke="var(--line-strong)" stroke-width="1.5" fill="none"/>
+
+  <text class="q" x="110" y="158" text-anchor="middle">destination unknown</text>
+  <text class="q" x="110" y="172" text-anchor="middle">or broadcast?</text>
+  <rect x="30" y="184" width="160" height="34" rx="6" fill="var(--u5s)" stroke="var(--u5)"/>
+  <text class="a" x="110" y="206" text-anchor="middle" fill="var(--u5)">FLOOD</text>
+  <text class="d" x="110" y="238" text-anchor="middle">out every port except</text>
+  <text class="d" x="110" y="252" text-anchor="middle">the one it came in on</text>
+
+  <text class="q" x="350" y="158" text-anchor="middle">known, on a</text>
+  <text class="q" x="350" y="172" text-anchor="middle">different port?</text>
+  <rect x="270" y="184" width="160" height="34" rx="6" fill="var(--u1s)" stroke="var(--u1)"/>
+  <text class="a" x="350" y="206" text-anchor="middle" fill="var(--u1)">FORWARD</text>
+  <text class="d" x="350" y="238" text-anchor="middle">out that one port only,</text>
+  <text class="d" x="350" y="252" text-anchor="middle">nowhere else</text>
+
+  <text class="q" x="590" y="158" text-anchor="middle">known, on the</text>
+  <text class="q" x="590" y="172" text-anchor="middle">same port?</text>
+  <rect x="510" y="184" width="160" height="34" rx="6" fill="var(--u4s)" stroke="var(--u4)"/>
+  <text class="a" x="590" y="206" text-anchor="middle" fill="var(--u4)">FILTER</text>
+  <text class="d" x="590" y="238" text-anchor="middle">drop it, both devices are</text>
+  <text class="d" x="590" y="252" text-anchor="middle">already on that segment</text>
+</svg>
+<figcaption>Learn from the source, decide on the destination. Three outcomes, no others.</figcaption>
+</figure>
+
+<p><strong>Forward</strong> is the normal case and the whole point of a switch. The frame goes
+out one port instead of all of them, which is what makes a switch better than a hub.</p>
+
+<p><strong>Flood</strong> happens on a broadcast, and on an <em>unknown unicast</em>: a real
+destination the switch has simply not heard from yet. The switch is not guessing, it is
+covering every possibility. When the destination replies, the switch learns its port and
+never floods for it again.</p>
+
+<p><strong>Filter</strong> is the case students forget. If the destination is on the same port
+the frame arrived on, the two devices are already on the same segment and can hear each other
+without help. Forwarding it back out would be pointless, so the switch drops it.</p>
+
+<h3>Aging</h3>
+
+<p>Entries do not live forever. The default aging timer is <strong>300 seconds</strong>. If a
+switch hears nothing from a MAC for five minutes, it removes the entry, and the next frame for
+that address gets flooded until the device speaks again.</p>
+
+<p>That is a feature. Devices move between ports, and a table that never forgot would send
+frames to the wrong place forever.</p>
+
+<h3>Collision domains and broadcast domains</h3>
+
+<p>Two phrases with a clean answer:</p>
+
+<ul>
+  <li><strong>Every switch port is its own collision domain.</strong> Modern switched full
+      duplex links do not have collisions at all.</li>
+  <li><strong>A switch is one broadcast domain.</strong> All of it, every port, unless you
+      split it with VLANs, which are outside this course's scope.</li>
+  <li><strong>A router boundary ends a broadcast domain.</strong> Routers do not forward
+      broadcasts.</li>
+</ul>
+
+<p>So: switches divide collision domains, routers divide broadcast domains.</p>
+
+<h3>Verifying it yourself</h3>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Switch# show mac address-table
+
+Vlan    Mac Address       Type      Ports
+----    -----------       ----      -----
+   1    000a.f2aa.1111    DYNAMIC   Fa0/1
+   1    000a.f2bb.2222    DYNAMIC   Fa0/2</pre></div>
+
+<p>Run this after you ping between two PCs and you will see the table populate. Run it before
+you ping, and it will be empty, which is the fastest way to prove to yourself that the switch
+learns from traffic rather than from configuration.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Say the learning rule in one sentence.</li>
+  <li>Given a table and a frame, produce forward, flood, or filter, and say why.</li>
+  <li>Explain why an unknown unicast gets flooded and why that is not a security hole in a
+      normal switched network.</li>
+  <li>State the aging timer and why it exists.</li>
+</ul>

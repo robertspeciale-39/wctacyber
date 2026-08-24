@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>Packet · West CTA CyberPatriot</title>
+<meta name="description" content="The Cisco Networking Challenge curriculum for the West CTA CyberPatriot team. 23 modules, eight units, laid out by round.">
+<link rel="icon" href="assets/brand-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/cs-shell.css">
+</head>
+<body class="matrix">
+
+<div class="shell">
+  <div id="chrome"></div>
+  <div id="roundbar"></div>
+
+  <main class="main active">
+    <div class="wrap">
+
+      <section class="hero">
+        <div>
+          <h1>Know exactly what the next round asks of you.</h1>
+          <p id="hero-sub">Twenty-three Cisco modules, eight teaching units, five rounds, and they do not
+             line up. Pick your round above and this page shows you only what counts.</p>
+        </div>
+        <div class="ring-wrap" id="ring-wrap"></div>
+      </section>
+
+      <div class="full-col" id="round-note"></div>
+
+      <section class="full-col">
+        <div class="sec-hdr">
+          <h2 class="sec-title">Teaching units</h2>
+          <span class="sec-note">The order we actually work in</span>
+        </div>
+        <div class="unit-strip" id="unit-strip"></div>
+      </section>
+
+      <section class="full-col">
+        <div class="sec-hdr">
+          <h2 class="sec-title">The 23 modules</h2>
+          <span class="sec-note" id="grid-note"></span>
+        </div>
+        <div class="chips" id="strand-legend" style="margin-bottom:var(--sp-4)"></div>
+        <div class="mod-grid" id="mod-grid"></div>
+      </section>
+
+      <section class="full-col">
+        <div class="two-col">
+          <div class="panel">
+            <div class="panel-hdr"><h2 class="panel-title">How this works</h2></div>
+            <div class="panel-body prose">
+              <p>Every module page runs the same six steps: <strong>read</strong> the explainer,
+                 <strong>watch</strong> the videos, <strong>drill</strong> the mechanical skill,
+                 build the <strong>lab</strong>, take the <strong>check</strong> quiz, and keep the
+                 <strong>recall</strong> sheet. Tick each one off as you finish it. The ring above
+                 fills as you go.</p>
+              <p>You are enrolled in Cisco NetAcad, and that is still where the full reading lives.
+                 This site is the scaffolding around it: what to study, in what order, for which round.</p>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-hdr"><h2 class="panel-title">The thing people get wrong</h2></div>
+            <div class="panel-body prose">
+              <p><strong>Modules 21 and 22 unlock at Round 2</strong>, ahead of Modules 12 through 17.
+                 If you work straight down the list from 1 to 23, you will walk into Round 2 without
+                 having read the two modules it is actually built on.</p>
+              <p>That is why the units exist, and why U4 sits where it does. Follow the units, not
+                 the numbers.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+</div>
+
+<script src="assets/cs-core.js"></script>
+<script src="assets/hub.js"></script>
+<script>
+(async function () {
+  const grid = document.getElementById('mod-grid');
+  let d;
+  try { d = await PT.data(); }
+  catch (e) { PT.mountChrome({nav:'Hub'}); grid.innerHTML = HUB.fail(e); return; }
+
+  PT.mountChrome({ nav: 'Hub' });
+  PT.mountRoundbar(d, paint);
+
+  function paint() {
+    const id = PT.round();
+    const scope = PT.scopeOf(d, id);
+    const r = id === 'all' ? null : d.rounds.rounds[id];
+
+    grid.innerHTML = d.modules.modules
+      .slice().sort((a, b) => a.n - b.n)
+      .map(m => HUB.moduleCard(d, m, scope)).join('');
+
+    document.getElementById('unit-strip').innerHTML =
+      d.units.order.map(uid => HUB.unitChip(d, d.units.units[uid], scope)).join('');
+
+    const rd = PT.readiness(d, id);
+    const who = PT.active();
+    document.getElementById('ring-wrap').innerHTML =
+      HUB.ring(rd.pct, r ? r.short : 'all 23') +
+      '<div>' +
+        '<div class="stat-label">' + (who ? PT.esc(who.handle) + "'s progress" : 'No profile yet') + '</div>' +
+        '<div class="res-desc" style="margin-top:var(--sp-2);max-width:22ch">' +
+          rd.done + ' of ' + rd.total + ' steps done across ' + scope.size + ' modules' +
+        '</div>' +
+        (who ? '' : '<button class="btn btn-ghost" style="margin-top:var(--sp-3)" onclick="PT.openProfileDialog()">Add your name</button>') +
+      '</div>';
+
+    document.getElementById('round-note').innerHTML = r
+      ? '<div class="note" style="--hue:var(--primary)"><span class="note-label">' +
+          PT.esc(r.name) + ' · lab: ' + PT.esc(r.lab) + '</span>' + PT.esc(r.note) + '</div>'
+      : '';
+
+    document.getElementById('strand-legend').innerHTML =
+      '<span class="chip" style="border:0;background:none;padding-left:0">COLOUR = KIND OF THINKING:</span>' +
+      Object.values(d.rounds.strands).map(s =>
+        '<span class="pill pill-hue" style="--hue:var(--' + s.hue + ')">' + s.id + ' · ' + PT.esc(s.name) + '</span>'
+      ).join('');
+
+    document.getElementById('grid-note').textContent = r
+      ? scope.size + ' of 23 in scope for ' + r.name
+      : 'Everything, in NetAcad order';
+  }
+
+  paint();
+  window.addEventListener('pt:progress', paint);
+})();
+</script>
+</body>
+</html>

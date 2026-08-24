@@ -1,0 +1,68 @@
+{
+  "_comment": "Round unlock scope. Source of truth: cisco-module-map.md section 2. Scope is CUMULATIVE: once a module unlocks it stays in scope, which is why State includes 21-22 even though its own row reads 1-17. Set `date` to an ISO date (YYYY-MM-DD) when the season posts and the countdown activates.",
+  "order": ["practice", "r1", "r2", "state", "semis"],
+  "rounds": {
+    "practice": {
+      "id": "practice",
+      "short": "PRACTICE",
+      "name": "Practice Round",
+      "modules": [1, 2],
+      "units": ["u1"],
+      "quiz": "Modules 1–2",
+      "lab": "Introductory Packet Tracer content",
+      "date": null,
+      "note": "Tool literacy round. The networking is easy; the points are lost to Packet Tracer itself."
+    },
+    "r1": {
+      "id": "r1",
+      "short": "ROUND 1",
+      "name": "Round 1",
+      "modules": [1, 2, 3, 4, 5, 6, 7],
+      "units": ["u1", "u2"],
+      "quiz": "Modules 3–7",
+      "lab": "Modules 1–7",
+      "date": null,
+      "note": "The quiz is drawn from Modules 3–7 only, and it is heavily terminology. U2 is this round."
+    },
+    "r2": {
+      "id": "r2",
+      "short": "ROUND 2",
+      "name": "Round 2",
+      "modules": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 21, 22],
+      "units": ["u1", "u2", "u3", "u4"],
+      "quiz": "Cumulative",
+      "lab": "Cumulative",
+      "date": null,
+      "note": "Modules 21–22 unlock here, AHEAD of 12–17. Teaching in numeric order leaves you unprepared for this round. That is why U4 exists."
+    },
+    "state": {
+      "id": "state",
+      "short": "STATE",
+      "name": "State Round",
+      "modules": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 21, 22],
+      "units": ["u1", "u2", "u3", "u4", "u5", "u6"],
+      "quiz": "Cumulative",
+      "lab": "Cumulative",
+      "date": null,
+      "note": "Adds 12–17. Packet Tracer stops being a diagramming tool and becomes a troubleshooting environment. This round is won on Strand E."
+    },
+    "semis": {
+      "id": "semis",
+      "short": "SEMIS",
+      "name": "Semifinals",
+      "modules": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+      "units": ["u1", "u2", "u3", "u4", "u5", "u6", "u7", "u8"],
+      "quiz": "Cumulative, all 23 modules",
+      "lab": "Cumulative",
+      "date": null,
+      "note": "Subnetting (Modules 20 + 23) is the single highest-value skill in this round."
+    }
+  },
+  "strands": {
+    "A": { "id": "A", "name": "Addressing & math", "hue": "u1" },
+    "B": { "id": "B", "name": "Device configuration", "hue": "u2" },
+    "C": { "id": "C", "name": "Protocol behavior & packet flow", "hue": "u3" },
+    "D": { "id": "D", "name": "Security awareness", "hue": "u4" },
+    "E": { "id": "E", "name": "Verification & troubleshooting", "hue": "u5" }
+  }
+}

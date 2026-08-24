@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>Videos · Packet</title>
+<link rel="icon" href="../assets/brand-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/cs-shell.css">
+</head>
+<body class="matrix">
+
+<div class="shell">
+  <div id="chrome"></div>
+  <div id="roundbar"></div>
+  <main class="main active">
+    <div class="wrap">
+      <div class="page-head">
+        <div class="page-eyebrow">Watch</div>
+        <h1 class="page-title">Videos by module</h1>
+        <p class="page-sum">Everything curated for the Cisco track, in module order. Modules outside your
+          selected round are dimmed but still here. Nothing is hidden from you.</p>
+      </div>
+      <div class="filter-bar">
+        <input type="text" id="q" placeholder="Search titles, channels, module names…" aria-label="Search videos">
+        <button class="filter-btn active" data-f="scope" aria-pressed="true">In scope only</button>
+        <button class="filter-btn" data-f="has" aria-pressed="false">Has videos</button>
+      </div>
+      <div id="list"></div>
+    </div>
+  </main>
+</div>
+
+<script src="../assets/cs-core.js"></script>
+<script src="../assets/hub.js"></script>
+<script>
+(async function () {
+  const list = document.getElementById('list');
+  let d;
+  try { d = await PT.data(); }
+  catch (e) { PT.mountChrome({nav:'Videos'}); list.innerHTML = HUB.fail(e); return; }
+  PT.mountChrome({ nav: 'Videos' });
+  PT.mountRoundbar(d, render);
+
+  const state = { q: '', scope: true, has: false };
+  document.getElementById('q').addEventListener('input', e => { state.q = e.target.value.toLowerCase(); render(); });
+  document.querySelectorAll('.filter-btn').forEach(b => b.addEventListener('click', () => {
+    state[b.dataset.f] = !state[b.dataset.f];
+    b.classList.toggle('active', state[b.dataset.f]);
+    b.setAttribute('aria-pressed', state[b.dataset.f] ? 'true' : 'false');
+    render();
+  }));
+
+  function render() {
+    const scope = PT.scopeOf(d, PT.round());
+    let total = 0;
+    const html = d.modules.modules.slice().sort((a, b) => a.n - b.n).map(m => {
+      const inScope = scope.has(m.n);
+      if (state.scope && !inScope) return '';
+      let vids = (d.videos.byModule[String(m.n)] || []);
+      if (state.q) {
+        const hay = (m.title + ' ' + m.summary).toLowerCase();
+        const hitModule = hay.includes(state.q);
+        vids = vids.filter(v => hitModule ||
+          (v.title + ' ' + (v.channel || '') + ' ' + (v.note || '')).toLowerCase().includes(state.q));
+        if (!hitModule && !vids.length) return '';
+      }
+      if (state.has && !vids.length) return '';
+      total += vids.length;
+      const hue = HUB.hueVar(m.strand);
+      return '<section class="full-col"' + (inScope ? '' : ' style="opacity:.5"') + '>' +
+        '<div class="sec-hdr">' +
+          '<h2 class="sec-title" style="font-size:var(--fs-lg)">' +
+            '<a href="' + PT.rel('module/?m=' + m.n) + '" style="color:inherit;text-decoration:none">' +
+            '<span class="mod-n" style="--hue:' + hue + ';color:' + hue + '">MODULE ' + m.n + '</span> · ' +
+            PT.esc(m.title) + '</a></h2>' +
+          '<span class="sec-note">' + (vids.length || 'none') + '</span>' +
+        '</div>' +
+        (vids.length
+          ? '<div class="card-list">' + vids.slice().sort((a,b)=>(b.mine?1:0)-(a.mine?1:0)).map(HUB.videoCard).join('') + '</div>'
+          : HUB.empty('NO VIDEOS YET', 'Nothing curated for this module.')) +
+      '</section>';
+    }).join('');
+
+    list.innerHTML = (html.trim() ? html : HUB.empty('NOTHING MATCHES', 'Try clearing the search or the filters.')) +
+      '<div class="note" style="margin-top:var(--sp-6)"><span class="note-label">Adding videos</span>' +
+      'Videos come from <code>data/videos.json</code>. Add an entry under the module number, commit, done, ' +
+      'no other file changes. The file has the format documented at the top.</div>';
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

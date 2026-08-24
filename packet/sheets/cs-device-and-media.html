@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>Devices, Cables &amp; Link Lights · Packet</title>
+<link rel="icon" href="../assets/brand-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/cs-shell.css">
+</head>
+<body class="matrix">
+<div class="shell">
+  <div id="chrome"></div>
+  <main class="main active">
+    <div class="wrap" style="max-width:960px">
+      <div class="page-head">
+        <div class="page-eyebrow">Cheat sheet · U1 · U2 · print this</div>
+        <h1 class="page-title">Devices, Cables &amp; Link Lights</h1>
+        <p class="page-sum">Pick the right box, pick the right wire, read the light before you
+          open a CLI.</p>
+      </div>
+
+      <div class="sheet">
+        <h2>Device selection</h2>
+        <div class="tbl-wrap"><table class="cs-table">
+        <thead><tr><th>Device</th><th>Layer</th><th>Connects</th><th>Decides using</th><th>Use it when</th></tr></thead>
+        <tbody>
+        <tr><td><b>Hub</b></td><td>1</td><td>Devices in one network</td><td>Nothing, repeats everything</td><td>Never, except to demonstrate collisions</td></tr>
+        <tr><td><b>Switch</b></td><td>2</td><td>Devices <i>within</i> one network</td><td>MAC address</td><td>More than one wired device in a room</td></tr>
+        <tr><td><b>Router</b></td><td>3</td><td><i>Different</i> networks</td><td>IP address</td><td>The requirement names two or more networks</td></tr>
+        <tr><td><b>Access point</b></td><td>2</td><td>Wireless clients to a wired LAN</td><td>MAC address</td><td>Clients move, or cable cannot be run</td></tr>
+        <tr><td><b>Modem</b></td><td>1</td><td>ISP signal to Ethernet</td><td>Nothing</td><td>At the edge, facing the provider</td></tr>
+        <tr><td><b>Firewall</b></td><td>3+</td><td>Trusted to untrusted</td><td>Rules</td><td>Traffic needs filtering at a boundary</td></tr>
+        </tbody></table></div>
+        <div class="note" style="--hue:var(--u4)"><span class="note-label">The one that gets tested</span>
+          A switch cannot reach a different network. Count the networks in the requirement. Two
+          or more means a router, no matter what the picture looks like.</div>
+
+        <h3>Interface naming</h3>
+        <div class="sheet-cols">
+          <div class="prose" style="max-width:none">
+            <ul>
+              <li><code>F0/1</code> FastEthernet, 100 Mbps</li>
+              <li><code>G0/0</code> GigabitEthernet, 1 Gbps</li>
+              <li><code>S0/0/0</code> Serial, WAN link</li>
+              <li><code>Vlan1</code> Switch management interface</li>
+            </ul>
+          </div>
+          <div class="prose" style="max-width:none">
+            <p>In <code>G0/1</code>, the <code>0</code> is the module or slot and the
+              <code>1</code> is the port on it. Routers usually number from 0. Switch access
+              ports usually start at <code>F0/1</code>.</p>
+          </div>
+        </div>
+
+        <h3>Cable selection</h3>
+        <div class="tbl-wrap"><table class="cs-table">
+        <thead><tr><th>From → To</th><th>Cable</th></tr></thead>
+        <tbody>
+        <tr><td>PC → Switch</td><td>Straight-through</td></tr>
+        <tr><td>Router → Switch</td><td>Straight-through</td></tr>
+        <tr><td>Switch → Switch</td><td>Crossover</td></tr>
+        <tr><td>PC → PC</td><td>Crossover</td></tr>
+        <tr><td>PC → Router (directly)</td><td>Crossover</td></tr>
+        <tr><td>PC → any device's console port</td><td>Console (rollover)</td></tr>
+        <tr><td>Router → Router over WAN</td><td>Serial DCE/DTE</td></tr>
+        </tbody></table></div>
+        <p class="prose" style="max-width:none">The rule underneath the table: <strong>same kind
+          of device, crossover. Different kinds, straight-through.</strong> A router and a PC are
+          both "end" devices for this purpose, which is why that one surprises people.</p>
+
+        <h3>Media selection</h3>
+        <div class="tbl-wrap"><table class="cs-table">
+        <thead><tr><th>Media</th><th>Max run</th><th>Immune to EMI?</th><th>Pick it when</th></tr></thead>
+        <tbody>
+        <tr><td>UTP copper</td><td>100 m</td><td>No</td><td>Normal indoor runs, lowest cost</td></tr>
+        <tr><td>STP copper</td><td>100 m</td><td>Partly</td><td>Some interference, still need copper</td></tr>
+        <tr><td>Multimode fiber</td><td>Hundreds of m</td><td>Yes</td><td>Building backbone, between floors</td></tr>
+        <tr><td>Single-mode fiber</td><td>Kilometers</td><td>Yes</td><td>Between buildings, campus links</td></tr>
+        <tr><td>Wireless</td><td>Tens of m</td><td>No</td><td>Devices move, or no cable path</td></tr>
+        </tbody></table></div>
+        <p class="prose" style="max-width:none"><strong>Attenuation</strong> is distance.
+          <strong>EMI/RFI</strong> is the environment. <strong>Crosstalk</strong> is the cable
+          itself. Three words, three different causes.</p>
+
+        <h3>Link lights: read this first, always</h3>
+        <div class="tbl-wrap"><table class="cs-table">
+        <thead><tr><th>Light</th><th>Means</th><th>Do this</th></tr></thead>
+        <tbody>
+        <tr><td><b style="color:var(--u1)">● Green</b></td><td>Link is up</td><td>Physical layer is fine. The problem is configuration.</td></tr>
+        <tr><td><b style="color:var(--u3)">● Amber</b></td><td>Port is blocking, or still coming up</td><td>Wait a moment. On a switch this is usually spanning tree.</td></tr>
+        <tr><td><b style="color:var(--u5)">● Red</b></td><td>Link down</td><td>Interface is administratively down. Check <code>no shutdown</code>.</td></tr>
+        <tr><td><b style="color:var(--text-dim)">● Dark</b></td><td>Nothing connected</td><td>Wrong port, wrong cable type, or no cable.</td></tr>
+        </tbody></table></div>
+        <div class="note" style="--hue:var(--u5)"><span class="note-label">Habit worth points</span>
+          The link light is your first diagnostic. Nobody has ever fixed a dark link by typing
+          commands into it.</div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="../assets/cs-core.js"></script>
+<script>PT.mountChrome({});</script>
+</body>
+</html>

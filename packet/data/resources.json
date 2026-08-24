@@ -1,0 +1,60 @@
+{
+  "_comment": "Every buildable asset on the roadmap. Flip `status` to \"done\" and set `url` when a thing ships. The module pages, unit pages and hub all read this. status: todo | wip | done. Keep slugs identical to roadmap.md.",
+  "apps": [
+    { "slug": "subnet-vlsm-forge", "name": "Subnet & VLSM Forge", "unit": "u7", "tier": 1, "priority": "P3", "pattern": "Interactive Tool", "status": "todo", "url": null, "desc": "Generates requirement sets, validates your allocation, explains every failure. Timed mode. Basic mode covers same-subnet determination and mask ↔ CIDR for U3." },
+    { "slug": "packet-journey-sim", "name": "Packet Journey Simulator", "unit": "u4", "tier": 1, "priority": "P0", "pattern": "Simulation", "status": "todo", "url": null, "desc": "Step a frame and a packet: encapsulation, MAC learning, forward/flood/filter, ARP resolution, routing lookup, watching L2 addresses rewrite at each hop while L3 stays fixed." },
+    { "slug": "binary-blitz", "name": "Binary Blitz", "unit": "u7", "tier": 1, "priority": "P1", "pattern": "Drill", "status": "todo", "url": null, "desc": "Pure speed: binary ↔ decimal ↔ hex, mask ↔ CIDR, binary ANDing. Leaderboard against the mastery-gate time." },
+    { "slug": "show-command-triage", "name": "Show Command Triage", "unit": "u6", "tier": 1, "priority": "P2", "pattern": "Drill", "status": "todo", "url": null, "desc": "Symptom in, correct command out. Builds the diagnostic reflex the State Round is built on." },
+    { "slug": "topology-builder-quiz", "name": "Topology Builder Quiz", "unit": "u1", "tier": 2, "priority": "P0", "pattern": "Drill", "status": "todo", "url": null, "desc": "Requirements in, correct device and cable choice out." },
+    { "slug": "routing-table-decider", "name": "Routing Table Decider", "unit": "u5", "tier": 2, "priority": "P2", "pattern": "Drill", "status": "todo", "url": null, "desc": "Given a routing table and a destination, pick the winning route." },
+    { "slug": "dhcp-lease-flow", "name": "DHCP Lease Flow", "unit": "u3", "tier": 2, "priority": "P1", "pattern": "Simulation", "status": "todo", "url": null, "desc": "DORA step-through with the pool, exclusions, gateway and DNS options visible." },
+    { "slug": "acronym-arena", "name": "Acronym Arena", "unit": "u2", "tier": 2, "priority": "P0", "pattern": "Drill", "status": "todo", "url": null, "desc": "Vocabulary speed drill. Round 1's quiz is Modules 3–7, which is heavily terminology." },
+    { "slug": "ipv6-eui64-converter", "name": "IPv6 Converter", "unit": "u3", "tier": 2, "priority": "P1", "pattern": "Interactive Tool", "status": "todo", "url": null, "desc": "Compression and expansion plus address-type identification." },
+    { "slug": "port-protocol-recall", "name": "Port & Protocol Recall", "unit": "u6", "tier": 3, "priority": "P2", "pattern": "Drill", "status": "todo", "url": null, "desc": "Well-known port numbers and TCP-vs-UDP classification to automaticity." },
+    { "slug": "arp-resolution-walk", "name": "ARP Resolution Walk", "unit": "u5", "tier": 3, "priority": "P2", "pattern": "Simulation", "status": "todo", "url": null, "desc": "Local vs. remote ARP behavior. Watch the cache populate and age." },
+    { "slug": "media-selector", "name": "Media Selector", "unit": "u2", "tier": 3, "priority": "P0", "pattern": "Sorter", "status": "todo", "url": null, "desc": "Scenario in, correct media out, with distance, bandwidth and interference constraints." },
+    { "slug": "round-clock-drill", "name": "Round Clock Drill", "unit": "u8", "tier": 3, "priority": "P3", "pattern": "Interactive Tool", "status": "todo", "url": null, "desc": "Round simulator: a task list with point values, a clock, and a triage decision each turn." },
+    { "slug": "osi-encapsulation-stepper", "name": "OSI Encapsulation Stepper", "unit": "u2", "tier": 3, "priority": "P0", "pattern": "Explorer", "status": "todo", "url": null, "desc": "Add and strip headers layer by layer; name the PDU at each stage." }
+  ],
+  "labs": [
+    { "slug": "lab-u1-orientation", "name": "Orientation", "unit": "u1", "priority": "P0", "status": "todo", "url": null, "desc": "Build and cable a 2-switch, 4-PC topology; identify every device type; save; read an Activity Wizard panel." },
+    { "slug": "lab-u2-lan-and-wireless", "name": "LAN and Wireless", "unit": "u2", "priority": "P0", "status": "todo", "url": null, "desc": "SOHO wireless router with SSID and WPA2 plus a connected client; wired LAN alongside; watch the MAC table populate; step one PDU in Simulation mode." },
+    { "slug": "lab-u3-addressing-dhcp", "name": "Addressing and DHCP", "unit": "u3", "priority": "P1", "status": "todo", "url": null, "desc": "Address two LANs by hand in IPv4 and IPv6, then convert one to router-based DHCP and verify leases." },
+    { "slug": "lab-u4-forwarding-forensics", "name": "Forwarding Forensics", "unit": "u4", "priority": "P1", "status": "todo", "url": null, "desc": "Simulation-mode hop-by-hop trace across a two-router path; record source and destination MAC and IP at every hop." },
+    { "slug": "lab-u5-routing-arp", "name": "Routing and ARP", "unit": "u5", "priority": "P2", "status": "todo", "url": null, "desc": "The reference topology: static and default routes, ARP cache inspection, one planted fault." },
+    { "slug": "lab-u6-services-troubleshooting", "name": "Services and Troubleshooting", "unit": "u6", "priority": "P2", "status": "todo", "url": null, "desc": "DNS and HTTP server, two planted faults of different types, diagnosed with the 8-step sequence and narrated." },
+    { "slug": "lab-u7-subnet-design", "name": "Subnet Design", "unit": "u7", "priority": "P3", "status": "todo", "url": null, "desc": "VLSM a /24 across four host requirements, then address and verify a live topology from the written plan." },
+    { "slug": "lab-u8-capstone-a", "name": "Capstone A", "unit": "u8", "priority": "P3", "status": "todo", "url": null, "desc": "Full mock round, topology A." },
+    { "slug": "lab-u8-capstone-b", "name": "Capstone B", "unit": "u8", "priority": "P3", "status": "todo", "url": null, "desc": "Full mock round, topology B, for the second consecutive-run gate." }
+  ],
+  "quizzes": [
+    { "slug": "q-u1-bootcamp", "name": "U1 Boot Camp Check", "unit": "u1", "priority": "P0", "status": "todo", "url": null, "desc": "Intro plus Modules 1–2. Mirrors the Practice Round quiz scope exactly." },
+    { "slug": "q-u2-ethernet", "name": "U2 Ethernet Check", "unit": "u2", "priority": "P0", "status": "todo", "url": null, "desc": "Modules 3–7. Mirrors the Round 1 quiz scope exactly." },
+    { "slug": "q-u3-addressing", "name": "U3 Addressing Check", "unit": "u3", "priority": "P1", "status": "todo", "url": null, "desc": "Modules 8–11." },
+    { "slug": "q-u4-forwarding", "name": "U4 Forwarding Check", "unit": "u4", "priority": "P1", "status": "todo", "url": null, "desc": "Modules 21–22." },
+    { "slug": "q-u5-routing", "name": "U5 Routing Check", "unit": "u5", "priority": "P2", "status": "todo", "url": null, "desc": "Modules 12–14." },
+    { "slug": "q-u6-services", "name": "U6 Services Check", "unit": "u6", "priority": "P2", "status": "todo", "url": null, "desc": "Modules 15–17." },
+    { "slug": "q-u7-subnetting", "name": "U7 Subnetting Check", "unit": "u7", "priority": "P3", "status": "todo", "url": null, "desc": "Modules 18–20 and 23." },
+    { "slug": "q-pretest-veteran", "name": "Veteran Challenge-Out Pretest", "unit": "u3", "priority": "P1", "status": "todo", "url": null, "desc": "U1–U3 challenge-out. Pass and you join at U4." },
+    { "slug": "q-round-sim-practice", "name": "Practice Round Simulator", "unit": "u1", "priority": "P0", "status": "todo", "url": null, "desc": "Timed, open-internet, Modules 1–2." },
+    { "slug": "q-round-sim-1", "name": "Round 1 Simulator", "unit": "u2", "priority": "P0", "status": "todo", "url": null, "desc": "Timed, open-internet, Modules 3–7." },
+    { "slug": "q-round-sim-2", "name": "Round 2 Simulator", "unit": "u4", "priority": "P1", "status": "todo", "url": null, "desc": "Timed, open-internet, Modules 1–11 plus 21–22." },
+    { "slug": "q-round-sim-state", "name": "State Round Simulator", "unit": "u6", "priority": "P2", "status": "todo", "url": null, "desc": "Timed, open-internet, Modules 1–17." },
+    { "slug": "q-round-sim-semis", "name": "Semifinals Simulator", "unit": "u8", "priority": "P3", "status": "todo", "url": null, "desc": "Timed, open-internet, all 23 modules." }
+  ],
+  "sheets": [
+    { "slug": "cs-device-and-media", "name": "Devices, Cables & Link Lights", "unit": "u1", "priority": "P0", "status": "done", "url": "../sheets/cs-device-and-media.html", "desc": "Device types, interface naming, cable selection, link-light meanings." },
+    { "slug": "cs-osi-encapsulation", "name": "OSI, TCP/IP & Encapsulation", "unit": "u2", "priority": "P0", "status": "done", "url": "../sheets/cs-osi-encapsulation.html", "desc": "OSI ↔ TCP/IP map, PDU per layer, encapsulation order." },
+    { "slug": "cs-round-playbook", "name": "Round Playbook", "unit": "u1", "priority": "P0", "status": "done", "url": "../sheets/cs-round-playbook.html", "desc": "Round clock strategy and the fixed configuration order." },
+    { "slug": "cs-wireless-soho", "name": "Wireless & SOHO", "unit": "u2", "priority": "P0", "status": "todo", "url": null, "desc": "SSID, WPA2/WPA3, channel, DHCP scope, admin defaults." },
+    { "slug": "cs-subnet-table", "name": "Subnet Table", "unit": "u7", "priority": "P1", "status": "todo", "url": null, "desc": "Mask ↔ CIDR ↔ magic number ↔ host count." },
+    { "slug": "cs-ipv4-ranges", "name": "IPv4 Ranges", "unit": "u3", "priority": "P1", "status": "todo", "url": null, "desc": "Private/public, loopback, APIPA, multicast; unicast vs. broadcast." },
+    { "slug": "cs-ipv6-quickref", "name": "IPv6 Quick Reference", "unit": "u3", "priority": "P1", "status": "todo", "url": null, "desc": "Compression rules, address types, prefix recognition." },
+    { "slug": "cs-dhcp-dora", "name": "DHCP & DORA", "unit": "u3", "priority": "P1", "status": "todo", "url": null, "desc": "DORA sequence and router DHCP-pool syntax." },
+    { "slug": "cs-forwarding-map", "name": "Forwarding Map", "unit": "u4", "priority": "P1", "status": "todo", "url": null, "desc": "Switch decision tree plus what changes at each routed hop." },
+    { "slug": "cs-routing", "name": "Routing", "unit": "u5", "priority": "P2", "status": "todo", "url": null, "desc": "Static/default route syntax, show ip route field map, ARP behavior." },
+    { "slug": "cs-ports-and-protocols", "name": "Ports & Protocols", "unit": "u6", "priority": "P2", "status": "todo", "url": null, "desc": "Well-known ports, TCP vs. UDP, application services." },
+    { "slug": "cs-diagnostic-sequence", "name": "Diagnostic Sequence", "unit": "u6", "priority": "P2", "status": "todo", "url": null, "desc": "The 8-step troubleshooting order and what each step proves." },
+    { "slug": "cs-binary-hex", "name": "Binary & Hex", "unit": "u7", "priority": "P3", "status": "todo", "url": null, "desc": "Conversion tables and a binary ANDing worked example." }
+  ]
+}

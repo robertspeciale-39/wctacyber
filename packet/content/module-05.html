@@ -1,0 +1,137 @@
+<p>This is the most important module in Unit 2. Encapsulation is the idea the rest of the
+course is built on, and once it clicks, half of the conceptual-application questions in this
+competition answer themselves.</p>
+
+<h3>Protocols and standards</h3>
+
+<p>A <strong>protocol</strong> is a set of rules for communication. Every protocol has to
+settle the same handful of things: how the message is encoded, what format it takes, how big
+it can be, how fast it is sent, whether the receiver confirms it arrived, and what happens
+when something goes wrong.</p>
+
+<p>A <strong>standard</strong> is a protocol that an organization has written down and
+published so different vendors can build equipment that works together. Cisco switches talk to
+HP switches because both follow IEEE 802.3. That interoperability is not luck, it is the
+entire reason standards bodies exist.</p>
+
+<h3>The two models</h3>
+
+<p>The <strong>OSI model</strong> has seven layers and is a teaching and troubleshooting tool.
+The <strong>TCP/IP model</strong> has four layers and describes what actually runs on the
+internet. You need both, because the course and the competition switch between them freely.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>OSI</th><th>TCP/IP</th><th>What happens there</th><th>PDU</th></tr></thead>
+<tbody>
+<tr><td>7 Application<br>6 Presentation<br>5 Session</td><td>Application</td>
+    <td>HTTP, DNS, FTP, SMTP. The part a user or a program touches.</td><td>Data</td></tr>
+<tr><td>4 Transport</td><td>Transport</td>
+    <td>TCP or UDP. Ports, reliability, ordering.</td><td>Segment</td></tr>
+<tr><td>3 Network</td><td>Internet</td>
+    <td>IP. Logical addressing and routing between networks.</td><td>Packet</td></tr>
+<tr><td>2 Data Link</td><td rowspan="2">Network Access</td>
+    <td>Ethernet. MAC addressing on the local link.</td><td>Frame</td></tr>
+<tr><td>1 Physical</td>
+    <td>Cables, connectors, radio. Signals on media.</td><td>Bits</td></tr>
+</tbody></table></div>
+
+<p>Two mnemonics for layer order, bottom to top: <em>Please Do Not Throw Sausage Pizza
+Away</em>. Top to bottom: <em>All People Seem To Need Data Processing</em>. Pick one and use
+it until you no longer need it.</p>
+
+<h3>Encapsulation</h3>
+
+<p>Every layer wraps the data it receives from the layer above in its own header, then hands
+it down. The receiving device does the same thing in reverse. That wrapping is
+<strong>encapsulation</strong> and the unwrapping is <strong>de-encapsulation</strong>.</p>
+
+<figure>
+<svg viewBox="0 0 720 300" width="100%" role="img"
+     aria-label="Encapsulation diagram: data gains a TCP header to become a segment, an IP header to become a packet, and an Ethernet header and trailer to become a frame, then is sent as bits.">
+  <style>
+    .lbl { font: 600 11px 'JetBrains Mono', monospace; fill: var(--text-2); letter-spacing:.06em }
+    .pdu { font: 700 11px 'JetBrains Mono', monospace; letter-spacing:.08em }
+    .bx  { font: 600 11px 'JetBrains Mono', monospace; fill: var(--text-bright) }
+    rect { rx: 4 }
+  </style>
+
+  <!-- row 1: data -->
+  <text class="lbl" x="0" y="30">L7 APPLICATION</text>
+  <text class="pdu" x="0" y="46" fill="var(--u3)">DATA</text>
+  <rect x="460" y="14" width="180" height="34" fill="var(--surface-3)" stroke="var(--line-strong)"/>
+  <text class="bx" x="550" y="36" text-anchor="middle">DATA</text>
+
+  <!-- row 2: segment -->
+  <text class="lbl" x="0" y="90">L4 TRANSPORT</text>
+  <text class="pdu" x="0" y="106" fill="var(--u3)">SEGMENT</text>
+  <rect x="400" y="74" width="60" height="34" fill="var(--u1s)" stroke="var(--u1)"/>
+  <text class="bx" x="430" y="96" text-anchor="middle" fill="var(--u1)">TCP</text>
+  <rect x="460" y="74" width="180" height="34" fill="var(--surface-3)" stroke="var(--line-strong)"/>
+  <text class="bx" x="550" y="96" text-anchor="middle">DATA</text>
+
+  <!-- row 3: packet -->
+  <text class="lbl" x="0" y="150">L3 NETWORK</text>
+  <text class="pdu" x="0" y="166" fill="var(--u3)">PACKET</text>
+  <rect x="340" y="134" width="60" height="34" fill="var(--u2s)" stroke="var(--u2)"/>
+  <text class="bx" x="370" y="156" text-anchor="middle" fill="var(--u2)">IP</text>
+  <rect x="400" y="134" width="60" height="34" fill="var(--u1s)" stroke="var(--u1)"/>
+  <text class="bx" x="430" y="156" text-anchor="middle" fill="var(--u1)">TCP</text>
+  <rect x="460" y="134" width="180" height="34" fill="var(--surface-3)" stroke="var(--line-strong)"/>
+  <text class="bx" x="550" y="156" text-anchor="middle">DATA</text>
+
+  <!-- row 4: frame -->
+  <text class="lbl" x="0" y="210">L2 DATA LINK</text>
+  <text class="pdu" x="0" y="226" fill="var(--u3)">FRAME</text>
+  <rect x="280" y="194" width="60" height="34" fill="var(--u4s)" stroke="var(--u4)"/>
+  <text class="bx" x="310" y="216" text-anchor="middle" fill="var(--u4)">ETH</text>
+  <rect x="340" y="194" width="60" height="34" fill="var(--u2s)" stroke="var(--u2)"/>
+  <text class="bx" x="370" y="216" text-anchor="middle" fill="var(--u2)">IP</text>
+  <rect x="400" y="194" width="60" height="34" fill="var(--u1s)" stroke="var(--u1)"/>
+  <text class="bx" x="430" y="216" text-anchor="middle" fill="var(--u1)">TCP</text>
+  <rect x="460" y="194" width="180" height="34" fill="var(--surface-3)" stroke="var(--line-strong)"/>
+  <text class="bx" x="550" y="216" text-anchor="middle">DATA</text>
+  <rect x="640" y="194" width="50" height="34" fill="var(--u4s)" stroke="var(--u4)"/>
+  <text class="bx" x="665" y="216" text-anchor="middle" fill="var(--u4)">FCS</text>
+
+  <!-- row 5: bits -->
+  <text class="lbl" x="0" y="270">L1 PHYSICAL</text>
+  <text class="pdu" x="0" y="286" fill="var(--u3)">BITS</text>
+  <text x="280" y="276" font-family="'JetBrains Mono', monospace" font-size="13" fill="var(--text-dim)">1011 0100 1110 0010 1001 1101 0110 1010</text>
+</svg>
+<figcaption>Headers accumulate on the way down. The Ethernet layer is the only one that adds
+a trailer as well as a header.</figcaption>
+</figure>
+
+<p>Three things to take from that picture:</p>
+
+<ul>
+  <li><strong>The data never changes.</strong> Every layer adds wrapping around it and the
+      original payload rides along untouched.</li>
+  <li><strong>Only Layer 2 adds a trailer.</strong> The FCS at the end is an error check on
+      the whole frame. Every other layer adds a header only.</li>
+  <li><strong>The name changes at each layer.</strong> Data, segment, packet, frame, bits.
+      Calling a frame a packet is the kind of imprecision that costs a point.</li>
+</ul>
+
+<h3>Why the same bytes get different names</h3>
+
+<p>Students ask why the course insists on five words for what feels like one thing. Because
+different devices care about different parts.</p>
+
+<p>A switch reads the Ethernet header and ignores everything inside it. A router strips the
+Ethernet header, reads the IP header, then builds a <em>brand new</em> Ethernet header for the
+next hop. Naming the PDU tells you which header is currently on the outside, which tells you
+which device can act on it.</p>
+
+<p>That idea is the whole of Module 22, and it is the highest-value concept in Round 2. If
+you understand the picture above, you are already most of the way there.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>List the seven OSI layers in order, then map the four TCP/IP layers onto them.</li>
+  <li>Name the PDU at each layer without hesitating.</li>
+  <li>Say which layer adds a trailer, and what that trailer is for.</li>
+  <li>In Simulation mode, step one PDU and watch the headers appear. That is the U2 mastery
+      gate, and there is no substitute for doing it.</li>
+</ul>

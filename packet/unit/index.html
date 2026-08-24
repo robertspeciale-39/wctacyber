@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>Unit · Packet</title>
+<link rel="icon" href="../assets/brand-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/cs-shell.css">
+</head>
+<body class="matrix">
+
+<div class="shell">
+  <div id="chrome"></div>
+  <div id="roundbar"></div>
+  <main class="main active">
+    <div class="wrap" id="page"></div>
+  </main>
+</div>
+
+<script src="../assets/cs-core.js"></script>
+<script src="../assets/hub.js"></script>
+<script>
+(async function () {
+  const page = document.getElementById('page');
+  let d;
+  try { d = await PT.data(); }
+  catch (e) { PT.mountChrome({}); page.innerHTML = HUB.fail(e); return; }
+  PT.mountChrome({});
+  PT.mountRoundbar(d, render);
+
+  const uid = new URLSearchParams(location.search).get('u');
+  const u = d.units.units[uid];
+  if (!u) {
+    page.innerHTML = '<div class="note" style="--hue:var(--danger)"><span class="note-label">No such unit</span>' +
+      'Units run u1 to u8. <a href="' + PT.rel('') + '" style="color:var(--primary)">Back to the hub</a>.</div>';
+    return;
+  }
+  document.title = u.id.toUpperCase() + ' · ' + u.title + ' · Packet';
+  const hue = HUB.hueVar(u.primary);
+  const unlock = d.rounds.rounds[u.unlock];
+
+  function render() {
+    const scope = PT.scopeOf(d, PT.round());
+    const mods = u.modules.map(n => d.moduleByN[n]);
+
+    page.innerHTML =
+      '<div class="page-head" style="--hue:' + hue + '">' +
+        '<div class="page-eyebrow">Unit ' + u.n + ' · block ' + u.block + ' · unlocks at ' + PT.esc(unlock.name) + '</div>' +
+        '<h1 class="page-title">' + PT.esc(u.title) + '</h1>' +
+        '<p class="page-sum">' + PT.esc(u.why) + '</p>' +
+        '<div class="page-pills">' +
+          u.strands.map(s => '<span class="pill pill-hue" style="--hue:var(--' + d.rounds.strands[s].hue + ')">' +
+            s + ' · ' + PT.esc(d.rounds.strands[s].name) + '</span>').join('') +
+          (u.prereq.length ? '<span class="pill pill-mute">PREREQ ' + u.prereq.map(p => p.toUpperCase()).join(' + ') + '</span>' : '') +
+        '</div>' +
+      '</div>' +
+
+      '<div class="full-col"><div class="note" style="--hue:' + hue + '">' +
+        '<span class="note-label">Mastery gate: this is how we know you are ready</span>' + PT.esc(u.gate) + '</div></div>' +
+
+      '<section class="full-col">' +
+        '<div class="sec-hdr"><h2 class="sec-title">Modules in this unit</h2>' +
+        '<span class="sec-note">' + PT.esc(u.netacad) + '</span></div>' +
+        (mods.length
+          ? '<div class="mod-grid">' + mods.map(m => HUB.moduleCard(d, m, scope)).join('') + '</div>'
+          : HUB.empty('NO MODULES', 'The capstone draws on all 23, so there is no module list of its own.')) +
+      '</section>' +
+
+      '<div class="two-col">' +
+        panel('Drill apps', (u.apps || []).map(s => HUB.resourceCard(d, s, hue)).join('') || HUB.empty('NONE', '')) +
+        panel('Labs', (u.labs || []).map(s => HUB.resourceCard(d, s, hue)).join('') || HUB.empty('NONE', '')) +
+      '</div>' +
+      '<div class="two-col">' +
+        panel('Check', u.quiz ? HUB.resourceCard(d, u.quiz, hue) : HUB.empty('NONE', '')) +
+        panel('Recall sheets', (u.sheets || []).map(s => HUB.resourceCard(d, s, hue)).join('') || HUB.empty('NONE', '')) +
+      '</div>' +
+
+      '<nav class="two-col" aria-label="Adjacent units">' +
+        nav(d.units.order[u.n - 2], '← ') + nav(d.units.order[u.n], '→ ') +
+      '</nav>';
+  }
+
+  function panel(title, body) {
+    return '<div class="panel"><div class="panel-hdr"><h2 class="panel-title">' + title + '</h2></div>' +
+      '<div class="panel-body"><div class="card-list">' + body + '</div></div></div>';
+  }
+  function nav(id, arrow) {
+    if (!id) return '<span></span>';
+    const v = d.units.units[id];
+    return '<a class="res-card" href="?u=' + id + '"><span class="res-main">' +
+      '<span class="res-meta" style="margin:0">' + arrow + id.toUpperCase() + '</span>' +
+      '<span class="res-title">' + PT.esc(v.title) + '</span></span></a>';
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

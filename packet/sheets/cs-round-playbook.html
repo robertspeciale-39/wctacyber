@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#05070a">
+<title>Round Playbook · Packet</title>
+<link rel="icon" href="../assets/brand-mark.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/cs-shell.css">
+</head>
+<body class="matrix">
+<div class="shell">
+  <div id="chrome"></div>
+  <main class="main active">
+    <div class="wrap" style="max-width:960px">
+      <div class="page-head">
+        <div class="page-eyebrow">Cheat sheet · U1 · print this</div>
+        <h1 class="page-title">Round Playbook</h1>
+        <p class="page-sum">How to spend the clock. Nothing on this page is networking
+          knowledge, and it is worth more points than most of what is.</p>
+      </div>
+
+      <div class="sheet">
+        <h2>Before you touch anything</h2>
+        <ol class="prose" style="max-width:none">
+          <li><strong>Read every task first.</strong> All of them. You cannot triage a list you
+              have not read, and the last task is often the easiest one.</li>
+          <li><strong>Sort by points per minute.</strong> A five-point task you can do in one
+              minute beats a fifteen-point task that takes twenty.</li>
+          <li><strong>Note the tasks that depend on other tasks.</strong> Addressing before
+              routing, routing before services. Doing them out of order means doing them twice.</li>
+          <li><strong>Budget the quiz at 20 minutes</strong> and get into the lab.</li>
+        </ol>
+
+        <h3>The fixed configuration order</h3>
+        <p class="prose" style="max-width:none">Use this order every single time, in practice
+          and in competition. It is not the fastest possible order. It is the order that makes
+          skipping a step obvious.</p>
+        <div class="tbl-wrap"><table class="cs-table">
+        <thead><tr><th>#</th><th>Step</th><th>You are done when</th></tr></thead>
+        <tbody>
+        <tr><td>1</td><td><b>Topology</b>: place devices, pick cables</td><td>Every link light is green</td></tr>
+        <tr><td>2</td><td><b>Addressing</b>: every interface and host</td><td><code>ipconfig</code> and <code>show ip interface brief</code> match your plan</td></tr>
+        <tr><td>3</td><td><b>Gateways</b>: on every host</td><td>Each host pings its own gateway</td></tr>
+        <tr><td>4</td><td><b>Routing</b>: static and default routes</td><td><code>show ip route</code> lists every remote network</td></tr>
+        <tr><td>5</td><td><b>Services</b>: DHCP, DNS, HTTP</td><td>A client proves it, not the server</td></tr>
+        <tr><td>6</td><td><b>Verification</b>: end to end</td><td>Ping and <code>tracert</code> across the whole path</td></tr>
+        </tbody></table></div>
+
+        <h3>While you work</h3>
+        <div class="sheet-cols">
+          <div class="prose" style="max-width:none">
+            <h4>Check the score as you go</h4>
+            <p>Open the Activity Wizard completion percentage after <em>each device</em>, not at
+              the end. A task you thought you finished and did not is cheap to fix at minute 12
+              and expensive at minute 55.</p>
+            <h4>Never leave a device unsaved</h4>
+            <p><code>copy running-config startup-config</code> before you move on. Packet Tracer
+              crashes. It always crashes at the worst moment.</p>
+          </div>
+          <div class="prose" style="max-width:none">
+            <h4>When something does not work</h4>
+            <p>Stop. Run the diagnostic sequence instead of changing settings at random.
+              Randomly changing settings is how a broken network becomes two broken networks.</p>
+            <h4>When you are stuck for three minutes</h4>
+            <p>Leave it. Move to the next task, come back. Three minutes of staring is worth
+              more spent on points you can actually get.</p>
+          </div>
+        </div>
+
+        <h3>The last five minutes</h3>
+        <ul class="prose" style="max-width:none">
+          <li>Save every device again.</li>
+          <li>Re-read the task list and check off each item against what you actually built.</li>
+          <li>Run one end-to-end ping from the furthest host to the furthest host.</li>
+          <li>Check the completion percentage one final time.</li>
+        </ul>
+
+        <h3>After the round: name the loss</h3>
+        <p class="prose" style="max-width:none">Every point you did not get falls into exactly
+          one of three buckets. Say which, out loud, before you leave.</p>
+        <div class="three-col">
+          <div class="note" style="--hue:var(--u1)"><span class="note-label">Knowledge</span>
+            You did not know it. Go back to the module.</div>
+          <div class="note" style="--hue:var(--u3)"><span class="note-label">Speed</span>
+            You knew it and ran out of clock. Go drill it.</div>
+          <div class="note" style="--hue:var(--u5)"><span class="note-label">Process</span>
+            You skipped a task, misread it, or forgot to save. Come back to this page.</div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<script src="../assets/cs-core.js"></script>
+<script>PT.mountChrome({});</script>
+</body>
+</html>

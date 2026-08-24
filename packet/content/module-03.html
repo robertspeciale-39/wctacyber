@@ -1,0 +1,90 @@
+<p>Round 1's quiz comes from Modules 3 through 7, and this is the first of them. Wireless is
+also the module with the most guaranteed security question in the whole course, so read the
+security section twice.</p>
+
+<h3>How a client finds a network</h3>
+
+<p>An access point broadcasts a <strong>beacon frame</strong> several times a second. The
+beacon carries the <strong>SSID</strong>, which is just the network's name, plus what security
+the AP expects. Your phone hears beacons from every AP in range and shows you the list.</p>
+
+<p>When you pick one, the client goes through three steps: it <strong>discovers</strong> the
+AP, it <strong>authenticates</strong> (proves it is allowed on), and it
+<strong>associates</strong> (registers with that AP so frames can be delivered to it). Only
+after association does the client usually ask for an IP address by DHCP.</p>
+
+<p>Note the order, because it explains a symptom you will see in labs and in real life. A
+client can be associated to Wi-Fi and still have no internet, because association is a Layer 2
+event and addressing is Layer 3. "Connected, no internet" almost always means DHCP failed or
+the gateway is wrong, not that the Wi-Fi is broken.</p>
+
+<h3>Channels and interference</h3>
+
+<p>2.4 GHz travels farther and goes through walls better. It is also crowded, and it only has
+three channels that do not overlap: 1, 6, and 11. 5 GHz has far more non-overlapping channels
+and much more bandwidth, but the range is shorter and walls hurt it more.</p>
+
+<p>Two APs near each other on the same channel will interfere. So will a microwave, a
+cordless phone, and a poorly shielded monitor, all of which sit in the 2.4 GHz band.</p>
+
+<h3>The security ladder</h3>
+
+<p>Memorize this order. It is the single most predictable question in Module 3.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Standard</th><th>Status</th><th>What to know</th></tr></thead>
+<tbody>
+<tr><td><b>WEP</b></td><td>Broken</td><td>Cracked in minutes with free tools. Treat it as no
+  security at all. If you see it on a quiz, it is the wrong answer.</td></tr>
+<tr><td><b>WPA</b></td><td>Obsolete</td><td>A patch on top of WEP's hardware. Better, still
+  not acceptable.</td></tr>
+<tr><td><b>WPA2</b></td><td>Acceptable</td><td>AES encryption. The realistic baseline, and
+  what most Packet Tracer labs will ask for.</td></tr>
+<tr><td><b>WPA3</b></td><td>Current best</td><td>Stronger key exchange, protects against
+  offline password guessing. The right answer when it is offered.</td></tr>
+</tbody></table></div>
+
+<p>So the ordering is <strong>WEP &lt; WPA &lt; WPA2 &lt; WPA3</strong>. When a question asks
+for "the most secure option available," pick the furthest right one in the answer list.</p>
+
+<h3>Two things that are not security</h3>
+
+<p><strong>Hiding the SSID</strong> stops the network name from appearing in the beacon. It
+does not encrypt anything, and any client that connects still announces the name in the clear.
+Anyone with a free packet capture tool sees it in under a minute.</p>
+
+<p><strong>MAC address filtering</strong> lets you list which devices may associate. MAC
+addresses are sent unencrypted in every frame and can be changed in software in about ten
+seconds. It stops a curious neighbor and nobody else.</p>
+
+<p>Both are speed bumps. Neither is a control. Say it that way if a question asks you to
+evaluate them, because the exam wants you to know the difference between inconvenience and
+protection.</p>
+
+<p>The actual controls are: strong encryption (WPA2 or WPA3), a long passphrase, and changing
+the default administrator credentials on the AP itself. That last one matters more than
+students expect. Default admin passwords for every consumer router model are published online.</p>
+
+<h3>Cellular, Bluetooth, and NFC</h3>
+
+<p>Know these by range and purpose rather than by specification:</p>
+
+<ul>
+  <li><strong>Cellular</strong> covers miles, run by a carrier, used when there is no Wi-Fi.
+      A phone acting as a <strong>hotspot</strong> shares that cellular connection over Wi-Fi.</li>
+  <li><strong>Bluetooth</strong> covers roughly ten meters and pairs two devices: headphones,
+      keyboards, a car stereo.</li>
+  <li><strong>NFC</strong> covers a few centimeters and needs near contact. Tap-to-pay and
+      transit cards.</li>
+</ul>
+
+<p>The quiz pattern here is a scenario asking which technology fits. Range is almost always
+the deciding clue.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Recite the security ordering without looking.</li>
+  <li>Explain in one sentence why SSID hiding is not security.</li>
+  <li>Say what "connected but no internet" usually means and which layer the problem is on.</li>
+</ul>

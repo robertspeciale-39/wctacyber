@@ -1,0 +1,30 @@
+{
+  "_comment": "Curated external resources for /packet/resources/. Verify links before each season.",
+  "groups": [
+    {
+      "name": "Official, start here",
+      "links": [
+        { "name": "CyberPatriot Cisco training materials", "url": "https://www.uscyberpatriot.org/competition/training-materials/cisco", "desc": "The official page for the Cisco Networking Challenge. Check it first every season. The module unlock table lives or dies here." },
+        { "name": "CyberPatriot training materials (all)", "url": "https://www.uscyberpatriot.org/competition/training-materials", "desc": "Windows, Linux and Cisco training modules together." },
+        { "name": "Cisco Networking Academy", "url": "https://www.netacad.com/", "desc": "Where the 23-module content course lives. Every competitor is enrolled. This site is scaffolding around that reading, not a replacement for it." },
+        { "name": "Networking Basics scope and sequence (PDF)", "url": "https://edu-cisco.org/wp-content/uploads/2023/07/networking_basics_v1_0_scope_and_sequence_mar_2023.pdf", "desc": "The public curriculum reference our module titles are reconstructed from." }
+      ]
+    },
+    {
+      "name": "Tools",
+      "links": [
+        { "name": "Cisco Packet Tracer download", "url": "https://www.netacad.com/cisco-packet-tracer", "desc": "Get the same version the team runs. Device models and menus move between releases." },
+        { "name": "Cisco IOS command reference", "url": "https://www.cisco.com/c/en/us/support/ios-nx-os-software/index.html", "desc": "When you need to know whether a command is real." }
+      ]
+    },
+    {
+      "name": "Suggested video sources",
+      "note": "Places worth pulling from when filling videos.json. Nothing here is endorsed sight-unseen. Watch it before you assign it.",
+      "links": [
+        { "name": "Jeremy's IT Lab, Free CCNA complete course", "url": "https://www.youtube.com/playlist?list=PLxbwE86jKRgMpuZuLBivzlM8s2Dk5lXBQ", "desc": "The most thorough free video series in this space. Aimed above our scope, so pull individual videos, not the whole playlist." },
+        { "name": "Cisco Networking Academy on YouTube", "url": "https://www.youtube.com/@CiscoNetworkingAcademy", "desc": "First-party, matched to the course vocabulary." },
+        { "name": "Practical Networking", "url": "https://www.youtube.com/@PracticalNetworking", "desc": "Best-in-class explanations of ARP, routing, and the packet-travel sequence, directly on U4/U5." }
+      ]
+    }
+  ]
+}
