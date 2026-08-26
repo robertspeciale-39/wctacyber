@@ -1,0 +1,136 @@
+{
+  "slug": "cli-x1-baseline",
+  "name": "Device Baseline",
+  "unit": "x1",
+  "modules": [],
+  "round": "extension",
+  "priority": "P4",
+  "estMinutes": 18,
+  "difficulty": 2,
+  "startDevice": "R1",
+  "focus": [
+    "hostname",
+    "enable secret",
+    "line console",
+    "banner motd",
+    "copy running-config startup-config"
+  ],
+  "brief": "Not scored in the Cisco Networking Challenge, and worth knowing anyway. Every real device gets the same opening moves: a name, a secret, line passwords, a banner, and a save.\n\nThis is also the fastest way to learn what `copy running-config startup-config` is for, because the last task reloads the router.",
+  "watchFor": "`enable secret` and `enable password` are not the same thing. The secret is hashed in the configuration file; the password is not, unless you turn on password encryption.",
+  "topologyRef": "one-router-two-lans",
+  "tasks": [
+    {
+      "id": "hostname",
+      "text": "Name the router WCTA-EDGE.",
+      "points": 2,
+      "check": {
+        "type": "hostname",
+        "device": "R1",
+        "name": "WCTA-EDGE"
+      }
+    },
+    {
+      "id": "secret",
+      "text": "Set the privileged EXEC secret to class.",
+      "points": 3,
+      "hint": "`enable secret class` — not `enable password`.",
+      "check": {
+        "type": "enableSecret",
+        "device": "R1",
+        "value": "class"
+      }
+    },
+    {
+      "id": "console",
+      "text": "Set a console line password of cisco and require login on it.",
+      "points": 3,
+      "hint": "`line console 0`, then `password cisco`, then `login`.",
+      "check": {
+        "type": "linePassword",
+        "device": "R1",
+        "line": "console",
+        "login": true
+      }
+    },
+    {
+      "id": "vty",
+      "text": "Do the same for the vty lines 0 through 4.",
+      "points": 3,
+      "check": {
+        "type": "linePassword",
+        "device": "R1",
+        "line": "vty",
+        "login": true
+      }
+    },
+    {
+      "id": "encrypt",
+      "text": "Turn on password encryption so the plaintext line passwords stop appearing in the configuration.",
+      "points": 3,
+      "hint": "`service password-encryption`. Run show running-config before and after and compare.",
+      "check": {
+        "type": "passwordEncryption",
+        "device": "R1"
+      }
+    },
+    {
+      "id": "banner",
+      "text": "Set a message-of-the-day banner containing the word Authorized.",
+      "points": 3,
+      "hint": "`banner motd #Authorized access only#` — the # is a delimiter, not part of the message.",
+      "check": {
+        "type": "banner",
+        "device": "R1",
+        "contains": "authorized"
+      }
+    },
+    {
+      "id": "save",
+      "text": "Save the configuration to startup-config.",
+      "points": 4,
+      "check": {
+        "type": "saved",
+        "device": "R1"
+      }
+    },
+    {
+      "id": "reload",
+      "text": "Reload the router and confirm the hostname survived.",
+      "points": 4,
+      "hint": "If you skipped the save, everything you just did is gone. That is the lesson.",
+      "check": {
+        "type": "hostname",
+        "device": "R1",
+        "name": "WCTA-EDGE"
+      }
+    }
+  ],
+  "extension": "Do the whole baseline again from a reset, timed, without looking at the hints. Aim for under three minutes.",
+  "debrief": "Running-config is what the device is doing. Startup-config is what it will do after a power cut. They are different files and nothing keeps them in sync for you.\n\nIn a competition, `copy running-config startup-config` after each device is a habit that costs five seconds and has saved entire rounds.",
+  "solution": [
+    {
+      "device": "R1",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "hostname WCTA-EDGE",
+        "enable secret class",
+        "line console 0",
+        "password cisco",
+        "login",
+        "exit",
+        "line vty 0 4",
+        "password cisco",
+        "login",
+        "exit",
+        "service password-encryption",
+        "banner motd #Authorized access only#",
+        "end",
+        "copy running-config startup-config",
+        "",
+        "reload",
+        ""
+      ]
+    }
+  ]
+}

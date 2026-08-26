@@ -1,0 +1,109 @@
+{
+  "slug": "cli-u6-dns",
+  "name": "Name Resolution vs Connectivity",
+  "unit": "u6",
+  "modules": [
+    16,
+    17
+  ],
+  "round": "state",
+  "priority": "P2",
+  "estMinutes": 12,
+  "difficulty": 3,
+  "startDevice": "PC1",
+  "focus": [
+    "nslookup",
+    "ping by name",
+    "ping by address",
+    "ipconfig /all"
+  ],
+  "brief": "A user reports that the school web server is down. It is not. The address answers perfectly well; the name does not resolve.\n\nThis is the single most common false alarm in networking, and the test that separates the two takes about four seconds.",
+  "watchFor": "If ping by address works and ping by name does not, the network is fine and DNS is not. Do not touch routing.",
+  "topologyRef": "reference-with-server",
+  "faults": [
+    {
+      "type": "wrong-dns",
+      "device": "PC1",
+      "dnsServer": "192.168.20.99"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "byname",
+      "text": "From PC1, ping www.westcta.local and watch it fail to resolve.",
+      "points": 2,
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "re": "ping\\s+www\\.westcta\\.local"
+      }
+    },
+    {
+      "id": "byaddr",
+      "text": "Now ping the server by address, 192.168.20.10, and watch it succeed.",
+      "points": 3,
+      "hint": "That one result rules out cabling, addressing, gateways and routing all at once.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.20.10"
+      }
+    },
+    {
+      "id": "ipconfig",
+      "text": "Run ipconfig /all on PC1 and read the DNS server it is using.",
+      "points": 3,
+      "hint": "It is pointing at 192.168.20.99. Nothing lives there.",
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "re": "ipconfig\\s*/all"
+      }
+    },
+    {
+      "id": "fix",
+      "text": "Point PC1 at the real DNS server, 192.168.20.10.",
+      "points": 5,
+      "check": {
+        "type": "host",
+        "device": "PC1",
+        "dns": "192.168.20.10"
+      }
+    },
+    {
+      "id": "nslookup",
+      "text": "Confirm with nslookup www.westcta.local.",
+      "points": 3,
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "re": "^\\s*nslookup"
+      }
+    },
+    {
+      "id": "final",
+      "text": "Ping www.westcta.local by name and get a reply.",
+      "points": 4,
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "re": "ping\\s+www\\.westcta\\.local"
+      }
+    }
+  ],
+  "extension": "Break it the other way: leave DNS correct and shut the link to SW2. Now name resolution and connectivity both fail. Which command tells you which one broke first?",
+  "debrief": "Ping by address, then ping by name. If the first works and the second does not, you have a name problem, and every minute spent in a routing table after that is a minute lost.\n\nDNS is a trust dependency. When it is wrong, everything downstream is wrong and the user never sees why.",
+  "solution": [
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping www.westcta.local",
+        "ping 192.168.20.10",
+        "ipconfig /all",
+        "__setdns:192.168.20.10__",
+        "nslookup www.westcta.local",
+        "ping www.westcta.local"
+      ]
+    }
+  ]
+}

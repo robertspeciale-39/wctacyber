@@ -1,0 +1,118 @@
+{
+  "slug": "cli-u4-hop-trace",
+  "name": "What Changes at Every Hop",
+  "unit": "u4",
+  "modules": [
+    21,
+    22
+  ],
+  "round": "round2",
+  "priority": "P1",
+  "estMinutes": 20,
+  "difficulty": 3,
+  "startDevice": "PC1",
+  "focus": [
+    "ping",
+    "packet inspector",
+    "show mac address-table",
+    "show arp"
+  ],
+  "brief": "This is the U4 mastery gate, and it is not a typing exercise. Send one packet from PC1 to PC2, then open the packet inspector and read what happened at each hop.\n\nThe question the competition asks in a dozen different wordings is always the same: which addresses change as a packet crosses a router, and which ones do not?",
+  "watchFor": "Layer 2 addresses are rewritten at every hop. Layer 3 addresses are the same at the first hop and the last. If your answers do not show that pattern, look again.",
+  "topologyRef": "reference",
+  "tasks": [
+    {
+      "id": "ping",
+      "text": "From PC1, ping PC2 at 192.168.20.20 so there is a packet to inspect.",
+      "points": 2,
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.20.20"
+      }
+    },
+    {
+      "id": "srcip",
+      "text": "In the inspector, read the SOURCE IP address of the packet as it leaves R1 toward R2.",
+      "points": 3,
+      "hint": "Layer 3 addressing is end to end.",
+      "check": {
+        "type": "answer",
+        "id": "hop2-src-ip",
+        "value": "192.168.10.20"
+      }
+    },
+    {
+      "id": "dstip",
+      "text": "Read the DESTINATION IP address of that same packet.",
+      "points": 3,
+      "check": {
+        "type": "answer",
+        "id": "hop2-dst-ip",
+        "value": "192.168.20.20"
+      }
+    },
+    {
+      "id": "srcmac",
+      "text": "Read the SOURCE MAC address of that frame. Which device does it belong to?",
+      "points": 4,
+      "hint": "The frame leaving R1 on G0/1 carries R1 G0/1 as its source. Not PC1.",
+      "check": {
+        "type": "answer",
+        "id": "hop2-src-mac",
+        "value": "R1:GigabitEthernet0/1"
+      }
+    },
+    {
+      "id": "dstmac",
+      "text": "Read the DESTINATION MAC address of that frame. Which device does it belong to?",
+      "points": 4,
+      "check": {
+        "type": "answer",
+        "id": "hop2-dst-mac",
+        "value": "R2:GigabitEthernet0/0"
+      }
+    },
+    {
+      "id": "arp",
+      "text": "On PC1, run arp -a. Confirm PC1 knows the gateway MAC and does NOT know PC2 MAC.",
+      "points": 3,
+      "hint": "You ARP for the gateway, not for the far host. PC1 has never needed PC2 hardware address and never will.",
+      "check": {
+        "type": "arpEntry",
+        "device": "PC1",
+        "ip": "192.168.10.1"
+      }
+    },
+    {
+      "id": "noarp",
+      "text": "Confirm PC1 has no ARP entry for 192.168.20.20.",
+      "points": 3,
+      "check": {
+        "type": "arpEntry",
+        "device": "PC1",
+        "ip": "192.168.20.20",
+        "absent": true
+      }
+    }
+  ],
+  "extension": "Now answer the same four questions for the LAST hop, from R2 to PC2, without looking at the inspector. Then check yourself.",
+  "debrief": "Say it in one sentence and you own the unit: the IP addresses identify the endpoints and never change; the MAC addresses identify the next device on this wire and are rewritten every hop.\n\nEverything about ARP follows from that. A host ARPs for the gateway because the gateway is the next device on its wire, not because the gateway is the destination.",
+  "solution": [
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.20.20",
+        "arp -a"
+      ]
+    },
+    {
+      "answers": {
+        "hop2-src-ip": "192.168.10.20",
+        "hop2-dst-ip": "192.168.20.20",
+        "hop2-src-mac": "R1:GigabitEthernet0/1",
+        "hop2-dst-mac": "R2:GigabitEthernet0/0"
+      }
+    }
+  ]
+}

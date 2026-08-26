@@ -1,0 +1,181 @@
+{
+  "slug": "cli-u3-dhcp",
+  "name": "Router as DHCP Server",
+  "unit": "u3",
+  "modules": [
+    11
+  ],
+  "round": "round2",
+  "priority": "P1",
+  "estMinutes": 18,
+  "difficulty": 2,
+  "startDevice": "R1",
+  "focus": [
+    "ip dhcp excluded-address",
+    "ip dhcp pool",
+    "default-router",
+    "dns-server",
+    "show ip dhcp binding"
+  ],
+  "brief": "LAN 10 is addressed by hand and LAN 20 is meant to be automatic. Configure R1 as the DHCP server for 192.168.20.0/24, reserve the bottom ten addresses for infrastructure, and hand clients a gateway and a DNS server along with their address.\n\nThen switch PC2 to DHCP and prove it got a working lease.",
+  "watchFor": "Exclude addresses BEFORE you create the pool. The router hands out the lowest available address, and if you have not excluded the gateway it will happily give it away.",
+  "topologyRef": "one-router-two-lans",
+  "config": {
+    "R1": {
+      "ifaces": {
+        "GigabitEthernet0/0": {
+          "ip": "192.168.10.1",
+          "cidr": 24
+        },
+        "GigabitEthernet0/1": {
+          "ip": "192.168.20.1",
+          "cidr": 24
+        }
+      }
+    },
+    "PC1": {
+      "ifaces": {
+        "FastEthernet0": {
+          "ip": "192.168.10.20",
+          "cidr": 24
+        }
+      },
+      "host": {
+        "gateway": "192.168.10.1"
+      }
+    },
+    "PC2": {
+      "host": {
+        "gateway": null
+      }
+    }
+  },
+  "tasks": [
+    {
+      "id": "exclude",
+      "text": "Exclude 192.168.20.1 through 192.168.20.10 from DHCP.",
+      "points": 3,
+      "hint": "`ip dhcp excluded-address 192.168.20.1 192.168.20.10` in global configuration mode.",
+      "check": {
+        "type": "dhcpExcluded",
+        "device": "R1",
+        "start": "192.168.20.1",
+        "end": "192.168.20.10"
+      }
+    },
+    {
+      "id": "pool",
+      "text": "Create a DHCP pool named LAN20 for the 192.168.20.0/24 network.",
+      "points": 3,
+      "hint": "`ip dhcp pool LAN20`, then `network 192.168.20.0 255.255.255.0`. Notice the prompt becomes (dhcp-config)#.",
+      "check": {
+        "type": "dhcpPool",
+        "device": "R1",
+        "name": "LAN20",
+        "network": "192.168.20.0",
+        "mask": "255.255.255.0"
+      }
+    },
+    {
+      "id": "router",
+      "text": "Set the default gateway option to 192.168.20.1.",
+      "points": 2,
+      "hint": "The command is `default-router`, not `gateway`.",
+      "check": {
+        "type": "dhcpPool",
+        "device": "R1",
+        "name": "LAN20",
+        "defaultRouter": "192.168.20.1"
+      }
+    },
+    {
+      "id": "dns",
+      "text": "Set the DNS server option to 192.168.10.50.",
+      "points": 2,
+      "check": {
+        "type": "dhcpPool",
+        "device": "R1",
+        "name": "LAN20",
+        "dnsServer": "192.168.10.50"
+      }
+    },
+    {
+      "id": "client",
+      "text": "Switch PC2 to DHCP and confirm it received an address.",
+      "points": 4,
+      "hint": "Use the IP Configuration panel on PC2, or run `ipconfig /renew` at its command prompt.",
+      "check": {
+        "type": "dhcpLease",
+        "device": "PC2",
+        "inNetwork": "192.168.20.0",
+        "gateway": "192.168.20.1"
+      }
+    },
+    {
+      "id": "ipconfig",
+      "text": "Run ipconfig /all on PC2 and read back the address, gateway and DNS server it was handed.",
+      "points": 2,
+      "check": {
+        "type": "commandUsed",
+        "device": "PC2",
+        "re": "ipconfig\\s*/all"
+      }
+    },
+    {
+      "id": "binding",
+      "text": "On R1, confirm the lease with show ip dhcp binding.",
+      "points": 2,
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "re": "sh(o(w)?)?\\s+ip\\s+dh"
+      }
+    },
+    {
+      "id": "reach",
+      "text": "From PC2, ping PC1 at 192.168.10.20 to prove the lease is usable.",
+      "points": 2,
+      "check": {
+        "type": "reachability",
+        "from": "PC2",
+        "to": "192.168.10.20"
+      }
+    }
+  ],
+  "extension": "Predict which address PC2 will receive before you renew it, and say why. Then release and renew twice and see whether the router hands back the same one.",
+  "debrief": "DHCP hands out four things, not one: address, mask, default gateway, DNS server. A client with an address but no gateway looks configured and reaches nothing beyond its own subnet — a failure mode worth recognising instantly, because `ipconfig` shows it in one line.",
+  "solution": [
+    {
+      "device": "R1",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "ip dhcp excluded-address 192.168.20.1 192.168.20.10",
+        "ip dhcp pool LAN20",
+        "network 192.168.20.0 255.255.255.0",
+        "default-router 192.168.20.1",
+        "dns-server 192.168.10.50",
+        "end"
+      ]
+    },
+    {
+      "device": "PC2",
+      "cmds": [
+        "__dhcp__",
+        "ipconfig /all"
+      ]
+    },
+    {
+      "device": "R1",
+      "cmds": [
+        "show ip dhcp binding"
+      ]
+    },
+    {
+      "device": "PC2",
+      "cmds": [
+        "ping 192.168.10.20"
+      ]
+    }
+  ]
+}

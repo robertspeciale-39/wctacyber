@@ -1,0 +1,121 @@
+{
+  "slug": "cli-u1-tour",
+  "name": "Finding the Command Line",
+  "unit": "u1",
+  "modules": [
+    1,
+    2
+  ],
+  "round": "practice",
+  "priority": "P0",
+  "estMinutes": 12,
+  "difficulty": 1,
+  "startDevice": "R1",
+  "focus": [
+    "enable",
+    "configure terminal",
+    "?",
+    "Tab",
+    "exit",
+    "end"
+  ],
+  "brief": "Before you configure anything you have to be able to move around. A Cisco device has modes, and the command you need only works in one of them. Typing a global command at the user prompt does not produce a helpful error, it produces a caret and a shrug.\n\nThis lab is pure navigation. Nothing you do here changes how the network behaves.",
+  "watchFor": "The prompt tells you where you are. `>` is user EXEC, `#` is privileged EXEC, and anything with parentheses is a configuration mode. Read it before you type.",
+  "topologyRef": "one-router-two-lans",
+  "tasks": [
+    {
+      "id": "enable",
+      "text": "Get from user EXEC into privileged EXEC on R1.",
+      "points": 1,
+      "hint": "The command is `enable`. Watch the prompt change from > to #.",
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "re": "^\\s*en(a(b(l(e)?)?)?)?\\s*$"
+      }
+    },
+    {
+      "id": "help",
+      "text": "Use context-sensitive help: type `show ?` and read what comes back.",
+      "points": 1,
+      "hint": "A question mark at any point lists what is legal next. This is the single most useful key on the device.",
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "re": "\\?"
+      }
+    },
+    {
+      "id": "version",
+      "text": "Run `show version` and find the IOS version.",
+      "points": 1,
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "re": "sh(o(w)?)?\\s+ver"
+      }
+    },
+    {
+      "id": "brief",
+      "text": "Run `show ip interface brief` to see every interface at once.",
+      "points": 2,
+      "hint": "Abbreviate it: `sh ip int br`. Everything on this device is administratively down right now.",
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "re": "sh(o(w)?)?\\s+ip\\s+int"
+      }
+    },
+    {
+      "id": "confmode",
+      "text": "Enter global configuration mode.",
+      "points": 1,
+      "hint": "`configure terminal`, or just `conf t`.",
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "re": "conf(i(g(u(r(e)?)?)?)?)?\\s+t"
+      }
+    },
+    {
+      "id": "hostname",
+      "text": "Rename the router to WCTA-R1.",
+      "points": 3,
+      "hint": "`hostname WCTA-R1` in global configuration mode. The prompt changes immediately.",
+      "check": {
+        "type": "hostname",
+        "device": "R1",
+        "name": "WCTA-R1"
+      }
+    },
+    {
+      "id": "ifmode",
+      "text": "Enter interface configuration mode for GigabitEthernet0/0, then come back out with `end`.",
+      "points": 2,
+      "hint": "`interface g0/0` gets you in. `exit` steps back one level; `end` goes all the way to privileged EXEC.",
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "re": "^\\s*int(e(r(f(a(c(e)?)?)?)?)?)?\\s"
+      }
+    }
+  ],
+  "extension": "Find three more commands that work in privileged EXEC but not in user EXEC. Use `?` at each prompt and compare the two lists.",
+  "debrief": "Two habits pay for themselves all season: abbreviate everything, and press `?` the moment you are unsure. Under a round clock, `sh ip int br` and a question mark are worth more than memorising syntax you half remember.",
+  "solution": [
+    {
+      "device": "R1",
+      "cmds": [
+        "enable",
+        "show ?",
+        "show version",
+        "show ip interface brief",
+        "configure terminal",
+        "hostname WCTA-R1",
+        "interface g0/0",
+        "end"
+      ]
+    }
+  ],
+  "helpUsedCounts": true
+}

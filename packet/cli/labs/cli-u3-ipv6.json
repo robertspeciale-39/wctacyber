@@ -1,0 +1,116 @@
+{
+  "slug": "cli-u3-ipv6",
+  "name": "IPv6 on a Router",
+  "unit": "u3",
+  "modules": [
+    10
+  ],
+  "round": "round2",
+  "priority": "P1",
+  "estMinutes": 12,
+  "difficulty": 2,
+  "startDevice": "R1",
+  "focus": [
+    "ipv6 unicast-routing",
+    "ipv6 address",
+    "link-local",
+    "show ipv6 interface brief"
+  ],
+  "brief": "IPv6 addressing on Cisco gear is three commands and one gotcha. The gotcha is that a router will not forward IPv6 at all until `ipv6 unicast-routing` is on, no matter how many addresses you configure.\n\nGive R1 a global unicast address and a readable link-local address on each LAN interface.",
+  "watchFor": "Link-local addresses start FE80::/10 and every IPv6 interface has one whether you set it or not. Setting it manually just makes it readable in output instead of a 64-bit EUI-64 string.",
+  "topologyRef": "one-router-two-lans",
+  "tasks": [
+    {
+      "id": "routing",
+      "text": "Turn on IPv6 routing globally.",
+      "points": 2,
+      "hint": "`ipv6 unicast-routing` in global configuration mode.",
+      "check": {
+        "type": "ipv6Routing",
+        "device": "R1"
+      }
+    },
+    {
+      "id": "g00gua",
+      "text": "Give GigabitEthernet0/0 the global unicast address 2001:db8:acad:1::1/64.",
+      "points": 3,
+      "hint": "`ipv6 address 2001:DB8:ACAD:1::1/64` inside interface configuration mode.",
+      "check": {
+        "type": "ipv6Address",
+        "device": "R1",
+        "if": "GigabitEthernet0/0",
+        "addr": "2001:db8:acad:1::1",
+        "prefixLen": 64
+      }
+    },
+    {
+      "id": "g00ll",
+      "text": "Give the same interface the link-local address FE80::1.",
+      "points": 2,
+      "hint": "`ipv6 address fe80::1 link-local` — note the keyword at the end and no prefix length.",
+      "check": {
+        "type": "ipv6Address",
+        "device": "R1",
+        "if": "GigabitEthernet0/0",
+        "addr": "fe80::1",
+        "linkLocal": true
+      }
+    },
+    {
+      "id": "g01gua",
+      "text": "Give GigabitEthernet0/1 the address 2001:db8:acad:2::1/64 and the link-local FE80::1.",
+      "points": 3,
+      "check": {
+        "type": "ipv6Address",
+        "device": "R1",
+        "if": "GigabitEthernet0/1",
+        "addr": "2001:db8:acad:2::1",
+        "prefixLen": 64
+      }
+    },
+    {
+      "id": "up",
+      "text": "Bring both interfaces up.",
+      "points": 2,
+      "check": {
+        "type": "interface",
+        "device": "R1",
+        "if": "GigabitEthernet0/1",
+        "notShutdown": true
+      }
+    },
+    {
+      "id": "verify",
+      "text": "Run show ipv6 interface brief and read both addresses back.",
+      "points": 2,
+      "hint": "The link-local is listed first on each interface, which is a useful habit to notice.",
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "re": "sh(o(w)?)?\\s+ipv6\\s+int"
+      }
+    }
+  ],
+  "extension": "Write out 2001:0db8:0000:0000:0000:0000:0000:0010 in its shortest legal form, then expand FE80::1 back to all eight hextets. Check yourself with the IPv6 tool on the drills page.",
+  "debrief": "The same interface holds an IPv4 address, an IPv6 global unicast address and an IPv6 link-local address at the same time. That is dual stack, and it is normal. When a competition topology hands you IPv6, the first thing to check is whether `ipv6 unicast-routing` is on — without it the addresses look right and nothing routes.",
+  "solution": [
+    {
+      "device": "R1",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "ipv6 unicast-routing",
+        "interface g0/0",
+        "ipv6 address 2001:db8:acad:1::1/64",
+        "ipv6 address fe80::1 link-local",
+        "no shutdown",
+        "interface g0/1",
+        "ipv6 address 2001:db8:acad:2::1/64",
+        "ipv6 address fe80::1 link-local",
+        "no shutdown",
+        "end",
+        "show ipv6 interface brief"
+      ]
+    }
+  ]
+}

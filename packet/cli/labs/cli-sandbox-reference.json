@@ -1,0 +1,19 @@
+{
+  "slug": "cli-sandbox-reference",
+  "name": "Sandbox: Reference Topology",
+  "unit": "sandbox",
+  "modules": [],
+  "round": "any",
+  "priority": "P1",
+  "estMinutes": 0,
+  "difficulty": 0,
+  "startDevice": "PC1",
+  "sandbox": true,
+  "focus": [
+    "everything"
+  ],
+  "brief": "The reference topology, fully working, with nothing to score. Break it on purpose, fix it, try a command you have never used, or set a teammate a challenge. Reset puts it back.",
+  "topologyRef": "reference",
+  "tasks": [],
+  "debrief": ""
+}

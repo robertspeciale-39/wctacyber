@@ -1,0 +1,110 @@
+{
+  "slug": "cli-u6-diagnostic-sequence",
+  "name": "The Eight-Step Sequence",
+  "unit": "u6",
+  "modules": [
+    17
+  ],
+  "round": "state",
+  "priority": "P2",
+  "estMinutes": 15,
+  "difficulty": 3,
+  "startDevice": "PC1",
+  "focus": [
+    "ipconfig",
+    "ping",
+    "tracert",
+    "the diagnostic order"
+  ],
+  "brief": "Something is broken between PC1 and PC2. You are not going to hunt for it — you are going to walk the sequence in order and let it tell you where the problem is.\n\nRun every step even when you are sure of the answer. The habit is the point: under a round clock, the students who fix things fastest are the ones who never guess.",
+  "watchFor": "Each step proves one thing. When a step fails, the fault is between that step and the previous one that passed.",
+  "topologyRef": "reference",
+  "faults": [
+    {
+      "type": "wrong-gateway",
+      "device": "PC1",
+      "gateway": "192.168.10.99"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "sequence",
+      "text": "Run the sequence on PC1 in order: ipconfig, ping 127.0.0.1, ping your own address, ping the gateway.",
+      "points": 6,
+      "hint": "ipconfig first, always. It shows address, mask and gateway in one screen and it is where this fault is visible.",
+      "check": {
+        "type": "commandSequence",
+        "device": "PC1",
+        "steps": [
+          "^\\s*ipconfig",
+          "^\\s*ping\\s+127\\.0\\.0\\.1",
+          "^\\s*ping\\s+192\\.168\\.10\\.20",
+          "^\\s*ping\\s+192\\.168\\.10\\."
+        ]
+      }
+    },
+    {
+      "id": "find",
+      "text": "Identify the fault: PC1 has the wrong default gateway.",
+      "points": 4,
+      "hint": "ipconfig showed a gateway of 192.168.10.99. Nothing answers at that address.",
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "re": "^\\s*ipconfig"
+      }
+    },
+    {
+      "id": "fix",
+      "text": "Fix the gateway on PC1 to 192.168.10.1.",
+      "points": 5,
+      "hint": "Use the IP Configuration panel on PC1.",
+      "check": {
+        "type": "host",
+        "device": "PC1",
+        "gateway": "192.168.10.1"
+      }
+    },
+    {
+      "id": "verify",
+      "text": "Prove the fix with a ping to PC2 at 192.168.20.20.",
+      "points": 4,
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.20.20"
+      }
+    },
+    {
+      "id": "trace",
+      "text": "Finish with tracert 192.168.20.20 to confirm the path is what you expect.",
+      "points": 2,
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "re": "^\\s*tracert"
+      }
+    }
+  ],
+  "extension": "Write down, for each of the eight steps, exactly what a failure at that step rules out. Compare your list with a teammate before you look at the cheat sheet.",
+  "debrief": "Notice how little you had to know. You never looked at a router, never opened a routing table, and found the fault in four commands — because the sequence isolates by layer and the failure showed up before you left the host.\n\nDiagnose the network systematically instead of randomly changing settings.",
+  "solution": [
+    {
+      "device": "PC1",
+      "cmds": [
+        "ipconfig",
+        "ping 127.0.0.1",
+        "ping 192.168.10.20",
+        "ping 192.168.10.1"
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "__setgw:192.168.10.1__",
+        "ping 192.168.20.20",
+        "tracert 192.168.20.20"
+      ]
+    }
+  ]
+}

@@ -259,6 +259,7 @@ function decodeProfile(code) {
 // ── chrome ────────────────────────────────────────────────────────────
 const NAV = [
   { href: '', label: 'Hub' },
+  { href: 'cli/', label: 'CLI Lab' },
   { href: 'videos/', label: 'Videos' },
   { href: 'scoreboard/', label: 'Scoreboard' },
   { href: 'resources/', label: 'Resources' },

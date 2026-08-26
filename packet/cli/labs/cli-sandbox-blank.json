@@ -1,0 +1,43 @@
+{
+  "slug": "cli-sandbox-blank",
+  "name": "Sandbox: Build It Yourself",
+  "unit": "sandbox",
+  "modules": [],
+  "round": "any",
+  "priority": "P2",
+  "estMinutes": 0,
+  "difficulty": 0,
+  "startDevice": "R1",
+  "sandbox": true,
+  "focus": [
+    "everything"
+  ],
+  "brief": "Two LANs, one router, nothing configured, nothing scored. Address it, bring it up, prove it works. When you can do this from blank in under five minutes without hints, you are ready for the U3 gate.",
+  "topologyRef": "one-router-two-lans",
+  "config": {
+    "PC1": {
+      "ifaces": {
+        "FastEthernet0": {
+          "ip": "192.168.10.20",
+          "cidr": 24
+        }
+      },
+      "host": {
+        "gateway": "192.168.10.1"
+      }
+    },
+    "PC2": {
+      "ifaces": {
+        "FastEthernet0": {
+          "ip": "192.168.20.20",
+          "cidr": 24
+        }
+      },
+      "host": {
+        "gateway": "192.168.20.1"
+      }
+    }
+  },
+  "tasks": [],
+  "debrief": ""
+}

@@ -1,5 +1,22 @@
 {
-  "_comment": "Every buildable asset on the roadmap. Flip `status` to \"done\" and set `url` when a thing ships. The module pages, unit pages and hub all read this. status: todo | wip | done. Keep slugs identical to roadmap.md.",
+  "_comment": "Every buildable asset on the roadmap. Flip `status` to \"done\" and set `url` when a thing ships. The module pages, unit pages and hub all read this. status: todo | wip | done. Keep slugs identical to roadmap.md. The `cli` array mirrors cli/cli-labs.json, which is what the CLI section reads at runtime — keep the two in sync.",
+  "cli": [
+    {"slug": "cli-u1-tour", "name": "Finding the Command Line", "unit": "u1", "priority": "P0", "status": "done", "url": "../cli/?lab=cli-u1-tour", "desc": "Modes, help, abbreviation, and reading the prompt before you type."},
+    {"slug": "cli-u2-mac-table", "name": "Watching a Switch Learn", "unit": "u2", "priority": "P0", "status": "done", "url": "../cli/?lab=cli-u2-mac-table", "desc": "Ping across a switch and watch the MAC address table fill in."},
+    {"slug": "cli-u3-interfaces", "name": "Addressing Router Interfaces", "unit": "u3", "priority": "P1", "status": "done", "url": "../cli/?lab=cli-u3-interfaces", "desc": "ip address, no shutdown, and the trap between them."},
+    {"slug": "cli-u3-ipv6", "name": "IPv6 on a Router", "unit": "u3", "priority": "P1", "status": "done", "url": "../cli/?lab=cli-u3-ipv6", "desc": "Global unicast, link-local, and the one command that makes it route."},
+    {"slug": "cli-u3-dhcp", "name": "Router as DHCP Server", "unit": "u3", "priority": "P1", "status": "done", "url": "../cli/?lab=cli-u3-dhcp", "desc": "Pools, exclusions, and proving a client lease actually works."},
+    {"slug": "cli-u4-hop-trace", "name": "What Changes at Every Hop", "unit": "u4", "priority": "P1", "status": "done", "url": "../cli/?lab=cli-u4-hop-trace", "desc": "The U4 mastery gate: name every address at every hop."},
+    {"slug": "cli-u5-static-routes", "name": "Static Routes", "unit": "u5", "priority": "P2", "status": "done", "url": "../cli/?lab=cli-u5-static-routes", "desc": "Two routes, two directions, and why one is never enough."},
+    {"slug": "cli-u5-default-route", "name": "Gateway of Last Resort", "unit": "u5", "priority": "P2", "status": "done", "url": "../cli/?lab=cli-u5-default-route", "desc": "One route that matches everything, and loses to everything."},
+    {"slug": "cli-u5-arp", "name": "Local or Remote: the ARP Decision", "unit": "u5", "priority": "P2", "status": "done", "url": "../cli/?lab=cli-u5-arp", "desc": "Why you ARP for the gateway and never for the far host."},
+    {"slug": "cli-u6-diagnostic-sequence", "name": "The Eight-Step Sequence", "unit": "u6", "priority": "P2", "status": "done", "url": "../cli/?lab=cli-u6-diagnostic-sequence", "desc": "Walk the sequence in order and let it find the fault for you."},
+    {"slug": "cli-u6-two-faults", "name": "Two Faults, Twelve Minutes", "unit": "u6", "priority": "P2", "status": "done", "url": "../cli/?lab=cli-u6-two-faults", "desc": "The U6 mastery gate, on a clock."},
+    {"slug": "cli-u6-dns", "name": "Name Resolution vs Connectivity", "unit": "u6", "priority": "P2", "status": "done", "url": "../cli/?lab=cli-u6-dns", "desc": "Ping by address, ping by name, and know instantly which layer broke."},
+    {"slug": "cli-x1-baseline", "name": "Device Baseline", "unit": "u5", "priority": "P4", "status": "done", "url": "../cli/?lab=cli-x1-baseline", "desc": "Hostname, secret, lines, banner, save — then reload and find out if you saved."},
+    {"slug": "cli-sandbox-reference", "name": "Sandbox: Reference Topology", "unit": "u1", "priority": "P1", "status": "done", "url": "../cli/?lab=cli-sandbox-reference", "desc": "The working reference topology. Break it on purpose."},
+    {"slug": "cli-sandbox-blank", "name": "Sandbox: Build It Yourself", "unit": "u1", "priority": "P2", "status": "done", "url": "../cli/?lab=cli-sandbox-blank", "desc": "Two LANs, one router, nothing configured, nothing scored."}
+  ],
   "apps": [
     { "slug": "subnet-vlsm-forge", "name": "Subnet & VLSM Forge", "unit": "u7", "tier": 1, "priority": "P3", "pattern": "Interactive Tool", "status": "todo", "url": null, "desc": "Generates requirement sets, validates your allocation, explains every failure. Timed mode. Basic mode covers same-subnet determination and mask ↔ CIDR for U3." },
     { "slug": "packet-journey-sim", "name": "Packet Journey Simulator", "unit": "u4", "tier": 1, "priority": "P0", "pattern": "Simulation", "status": "todo", "url": null, "desc": "Step a frame and a packet: encapsulation, MAC learning, forward/flood/filter, ARP resolution, routing lookup, watching L2 addresses rewrite at each hop while L3 stays fixed." },

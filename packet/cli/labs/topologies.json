@@ -1,0 +1,102 @@
+{
+  "_comment": "Named base topologies. A lab either declares its own `topology` or points at one of these with `topologyRef`, then layers `config` and `faults` on top. The reference topology is the one from curriculum.md §5 and is used from U5 onward.",
+
+  "reference": {
+    "devices": [
+      { "id": "PC1", "model": "pc", "hostname": "PC1", "x": 0, "y": 1 },
+      { "id": "SW1", "model": "switch-2960", "hostname": "SW1", "x": 1, "y": 1 },
+      { "id": "R1", "model": "router-1941", "hostname": "R1", "x": 2, "y": 1 },
+      { "id": "R2", "model": "router-1941", "hostname": "R2", "x": 3, "y": 1 },
+      { "id": "SW2", "model": "switch-2960", "hostname": "SW2", "x": 4, "y": 1 },
+      { "id": "PC2", "model": "pc", "hostname": "PC2", "x": 5, "y": 1 }
+    ],
+    "links": [
+      { "from": "PC1:FastEthernet0", "to": "SW1:FastEthernet0/1" },
+      { "from": "SW1:GigabitEthernet0/1", "to": "R1:GigabitEthernet0/0" },
+      { "from": "R1:GigabitEthernet0/1", "to": "R2:GigabitEthernet0/0" },
+      { "from": "R2:GigabitEthernet0/1", "to": "SW2:GigabitEthernet0/1" },
+      { "from": "SW2:FastEthernet0/1", "to": "PC2:FastEthernet0" }
+    ],
+    "config": {
+      "R1": {
+        "ifaces": {
+          "GigabitEthernet0/0": { "ip": "192.168.10.1", "cidr": 24, "description": "LAN 10" },
+          "GigabitEthernet0/1": { "ip": "10.0.0.1", "cidr": 24, "description": "Link to R2" }
+        },
+        "routes": ["192.168.20.0/24 via 10.0.0.2"]
+      },
+      "R2": {
+        "ifaces": {
+          "GigabitEthernet0/0": { "ip": "10.0.0.2", "cidr": 24, "description": "Link to R1" },
+          "GigabitEthernet0/1": { "ip": "192.168.20.1", "cidr": 24, "description": "LAN 20" }
+        },
+        "routes": ["192.168.10.0/24 via 10.0.0.1"]
+      },
+      "PC1": {
+        "ifaces": { "FastEthernet0": { "ip": "192.168.10.20", "cidr": 24 } },
+        "host": { "gateway": "192.168.10.1" }
+      },
+      "PC2": {
+        "ifaces": { "FastEthernet0": { "ip": "192.168.20.20", "cidr": 24 } },
+        "host": { "gateway": "192.168.20.1" }
+      }
+    }
+  },
+
+  "reference-with-server": {
+    "extends": "reference",
+    "devices": [{ "id": "SRV", "model": "server", "hostname": "SRV", "x": 4, "y": 0 }],
+    "links": [{ "from": "SRV:FastEthernet0", "to": "SW2:FastEthernet0/2" }],
+    "config": {
+      "SRV": {
+        "ifaces": { "FastEthernet0": { "ip": "192.168.20.10", "cidr": 24 } },
+        "host": { "gateway": "192.168.20.1" },
+        "dns": {
+          "records": [
+            { "name": "www.westcta.local", "ip": "192.168.20.10" },
+            { "name": "files.westcta.local", "ip": "192.168.20.11" }
+          ]
+        },
+        "http": true
+      },
+      "PC1": { "host": { "gateway": "192.168.10.1", "dnsServer": "192.168.20.10" } },
+      "PC2": { "host": { "gateway": "192.168.20.1", "dnsServer": "192.168.20.10" } }
+    }
+  },
+
+  "single-lan": {
+    "devices": [
+      { "id": "PC1", "model": "pc", "hostname": "PC1", "x": 0, "y": 0 },
+      { "id": "PC2", "model": "pc", "hostname": "PC2", "x": 0, "y": 2 },
+      { "id": "PC3", "model": "pc", "hostname": "PC3", "x": 2, "y": 2 },
+      { "id": "SW1", "model": "switch-2960", "hostname": "SW1", "x": 1, "y": 1 }
+    ],
+    "links": [
+      { "from": "PC1:FastEthernet0", "to": "SW1:FastEthernet0/1" },
+      { "from": "PC2:FastEthernet0", "to": "SW1:FastEthernet0/2" },
+      { "from": "PC3:FastEthernet0", "to": "SW1:FastEthernet0/3" }
+    ],
+    "config": {
+      "PC1": { "ifaces": { "FastEthernet0": { "ip": "192.168.1.11", "cidr": 24 } } },
+      "PC2": { "ifaces": { "FastEthernet0": { "ip": "192.168.1.12", "cidr": 24 } } },
+      "PC3": { "ifaces": { "FastEthernet0": { "ip": "192.168.1.13", "cidr": 24 } } }
+    }
+  },
+
+  "one-router-two-lans": {
+    "devices": [
+      { "id": "PC1", "model": "pc", "hostname": "PC1", "x": 0, "y": 0 },
+      { "id": "SW1", "model": "switch-2960", "hostname": "SW1", "x": 1, "y": 0 },
+      { "id": "R1", "model": "router-1941", "hostname": "R1", "x": 2, "y": 1 },
+      { "id": "SW2", "model": "switch-2960", "hostname": "SW2", "x": 1, "y": 2 },
+      { "id": "PC2", "model": "pc", "hostname": "PC2", "x": 0, "y": 2 }
+    ],
+    "links": [
+      { "from": "PC1:FastEthernet0", "to": "SW1:FastEthernet0/1" },
+      { "from": "SW1:GigabitEthernet0/1", "to": "R1:GigabitEthernet0/0" },
+      { "from": "R1:GigabitEthernet0/1", "to": "SW2:GigabitEthernet0/1" },
+      { "from": "SW2:FastEthernet0/1", "to": "PC2:FastEthernet0" }
+    ],
+    "config": {}
+  }
+}

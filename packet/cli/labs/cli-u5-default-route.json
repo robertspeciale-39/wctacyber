@@ -1,0 +1,129 @@
+{
+  "slug": "cli-u5-default-route",
+  "name": "Gateway of Last Resort",
+  "unit": "u5",
+  "modules": [
+    14
+  ],
+  "round": "state",
+  "priority": "P2",
+  "estMinutes": 12,
+  "difficulty": 2,
+  "startDevice": "R1",
+  "focus": [
+    "ip route 0.0.0.0 0.0.0.0",
+    "show ip route",
+    "longest prefix match"
+  ],
+  "brief": "R1 sits at the edge of the school network. Everything it does not have a specific route for should go to R2. Rather than writing a route for every network in the world, write one default route and read what it does to the routing table.\n\nR2 already knows the way back.",
+  "watchFor": "A default route is 0.0.0.0 0.0.0.0 — a prefix that matches everything with a prefix length of zero, so it loses to every other route in the table. That is exactly what you want.",
+  "topologyRef": "reference",
+  "faults": [
+    {
+      "type": "missing-route",
+      "device": "R1",
+      "prefix": "192.168.20.0"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "before",
+      "text": "On R1, run show ip route and confirm the gateway of last resort is not set.",
+      "points": 2,
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "re": "sh(o(w)?)?\\s+ip\\s+ro"
+      }
+    },
+    {
+      "id": "default",
+      "text": "Add a default route on R1 pointing at 10.0.0.2.",
+      "points": 4,
+      "hint": "`ip route 0.0.0.0 0.0.0.0 10.0.0.2`",
+      "check": {
+        "type": "defaultRoute",
+        "device": "R1",
+        "nextHop": "10.0.0.2"
+      }
+    },
+    {
+      "id": "reach",
+      "text": "Prove PC1 can now reach PC2.",
+      "points": 4,
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.20.20"
+      }
+    },
+    {
+      "id": "specific",
+      "text": "Now also add the specific route to 192.168.20.0/24 via 10.0.0.2, so both routes exist at once.",
+      "points": 3,
+      "hint": "Both can live in the table. The router picks the longest prefix match, which is the /24, not the /0.",
+      "check": {
+        "type": "route",
+        "device": "R1",
+        "prefix": "192.168.20.0",
+        "cidr": 24,
+        "nextHop": "10.0.0.2"
+      }
+    },
+    {
+      "id": "still",
+      "text": "Confirm connectivity still works with both routes present.",
+      "points": 2,
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.20.20"
+      }
+    },
+    {
+      "id": "save",
+      "text": "Save the configuration on R1.",
+      "points": 2,
+      "check": {
+        "type": "saved",
+        "device": "R1"
+      }
+    }
+  ],
+  "extension": "Point the default route at 10.0.0.99 instead — an address with nothing on it. Does the ping fail loudly or quietly? Explain to a teammate why a wrong default route is harder to spot than a missing one.",
+  "debrief": "A default route is a promise that somebody else knows the way. That makes it powerful at the edge of a network and dangerous in the middle of one, because a packet sent to the wrong default does not bounce — it simply goes somewhere it should not, quietly.",
+  "solution": [
+    {
+      "device": "R1",
+      "cmds": [
+        "enable",
+        "show ip route",
+        "configure terminal",
+        "ip route 0.0.0.0 0.0.0.0 10.0.0.2",
+        "end"
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.20.20"
+      ]
+    },
+    {
+      "device": "R1",
+      "cmds": [
+        "configure terminal",
+        "ip route 192.168.20.0 255.255.255.0 10.0.0.2",
+        "end",
+        "copy running-config startup-config",
+        ""
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.20.20"
+      ]
+    }
+  ]
+}
