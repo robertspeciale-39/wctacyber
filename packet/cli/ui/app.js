@@ -450,11 +450,13 @@ function lastTrace() {
 function renderRing(grade) {
   const r = 26, c = 2 * Math.PI * r;
   const done = c * (grade.percent / 100);
+  // At 0% a round cap would still paint a dot, which reads as "1%".
+  const cap = grade.percent === 0 ? 'butt' : 'round';
   $('#ring').innerHTML = `
     <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
       <circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--line-2)" stroke-width="6"/>
       <circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--accent)" stroke-width="6"
-              stroke-linecap="round" stroke-dasharray="${done} ${c}"
+              stroke-linecap="${cap}" stroke-dasharray="${done} ${c}"
               transform="rotate(-90 32 32)"/>
     </svg>
     <div>

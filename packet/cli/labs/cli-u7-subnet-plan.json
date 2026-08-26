@@ -1,0 +1,299 @@
+{
+  "slug": "cli-u7-subnet-plan",
+  "name": "Subnet a Block and Build It",
+  "unit": "u7",
+  "modules": [
+    20,
+    23
+  ],
+  "round": "semis",
+  "priority": "P3",
+  "estMinutes": 25,
+  "difficulty": 4,
+  "startDevice": "R1",
+  "focus": [
+    "VLSM",
+    "ip address",
+    "ip route",
+    "show ip interface brief",
+    "ping"
+  ],
+  "brief": "The U7 mastery gate, end to end. You are given one /24 and four host requirements. Work the plan on paper first, then configure the live network from it and prove every LAN can reach every other LAN.\n\nThe block is 192.168.50.0/24. Allocate largest requirement first, starting at the bottom of the block, with no gaps and no overlap:\n\n  LAN-A (PC-A, off R1 G0/0/0) — 60 hosts\n  LAN-B (PC-B, off R1 G0/0/1) — 28 hosts\n  LAN-C (PC-C, off R2 G0/1)  — 12 hosts\n  WAN link R1 to R2          —  2 hosts\n\nGive every LAN its first usable address as the router interface. Put PC-A at .10, PC-B at .70, PC-C at .100. On the WAN link R1 takes the first usable address and R2 the second.",
+  "watchFor": "The WAN link needs two addresses, not two hundred. If you give it a /24 you have just spent the whole block on one cable. R1 is a 4331, so its interfaces are numbered 0/0/0, 0/0/1, 0/0/2 — platforms differ and the competition will not warn you.",
+  "topologyRef": "campus",
+  "clearConfig": [
+    "R1",
+    "R2",
+    "PC-A",
+    "PC-B",
+    "PC-C",
+    "SRV"
+  ],
+  "tasks": [
+    {
+      "id": "a-gw",
+      "text": "LAN-A: address R1 GigabitEthernet0/0/0 as the gateway and bring it up.",
+      "points": 4,
+      "hint": "60 hosts needs 62 usable, so a /26. First subnet, first usable address: 192.168.50.1 255.255.255.192.",
+      "check": {
+        "type": "interface",
+        "device": "R1",
+        "if": "GigabitEthernet0/0/0",
+        "ip": "192.168.50.1",
+        "cidr": 26,
+        "up": true
+      }
+    },
+    {
+      "id": "b-gw",
+      "text": "LAN-B: address R1 GigabitEthernet0/0/1 as the gateway and bring it up.",
+      "points": 4,
+      "hint": "28 hosts needs 30 usable, so a /27. LAN-A ended at .63, so LAN-B starts at .64 and its first usable is .65.",
+      "check": {
+        "type": "interface",
+        "device": "R1",
+        "if": "GigabitEthernet0/0/1",
+        "ip": "192.168.50.65",
+        "cidr": 27,
+        "up": true
+      }
+    },
+    {
+      "id": "c-gw",
+      "text": "LAN-C: address R2 GigabitEthernet0/1 as the gateway and bring it up.",
+      "points": 4,
+      "hint": "12 hosts needs 14 usable, so a /28. LAN-B ended at .95, so LAN-C starts at .96 and its first usable is .97.",
+      "check": {
+        "type": "interface",
+        "device": "R2",
+        "if": "GigabitEthernet0/1",
+        "ip": "192.168.50.97",
+        "cidr": 28,
+        "up": true
+      }
+    },
+    {
+      "id": "wan-r1",
+      "text": "WAN link: address R1 GigabitEthernet0/0/2 with the first usable address of a /30.",
+      "points": 4,
+      "hint": "Two hosts needs a /30 — mask 255.255.255.252. LAN-C ended at .111, so the WAN is .112/30 and the usable pair is .113 and .114.",
+      "check": {
+        "type": "interface",
+        "device": "R1",
+        "if": "GigabitEthernet0/0/2",
+        "ip": "192.168.50.113",
+        "cidr": 30,
+        "up": true
+      }
+    },
+    {
+      "id": "wan-r2",
+      "text": "WAN link: address R2 GigabitEthernet0/0 with the second usable address.",
+      "points": 4,
+      "check": {
+        "type": "interface",
+        "device": "R2",
+        "if": "GigabitEthernet0/0",
+        "ip": "192.168.50.114",
+        "cidr": 30,
+        "up": true
+      }
+    },
+    {
+      "id": "pc-a",
+      "text": "Address PC-A at .10 with LAN-A mask and gateway.",
+      "points": 3,
+      "hint": "Use the IP Configuration panel on PC-A. The mask has to match the subnet, not the class.",
+      "check": {
+        "type": "host",
+        "device": "PC-A",
+        "ip": "192.168.50.10",
+        "cidr": 26,
+        "gateway": "192.168.50.1"
+      }
+    },
+    {
+      "id": "pc-b",
+      "text": "Address PC-B at .70 with LAN-B mask and gateway.",
+      "points": 3,
+      "check": {
+        "type": "host",
+        "device": "PC-B",
+        "ip": "192.168.50.70",
+        "cidr": 27,
+        "gateway": "192.168.50.65"
+      }
+    },
+    {
+      "id": "pc-c",
+      "text": "Address PC-C at .100 with LAN-C mask and gateway.",
+      "points": 3,
+      "check": {
+        "type": "host",
+        "device": "PC-C",
+        "ip": "192.168.50.100",
+        "cidr": 28,
+        "gateway": "192.168.50.97"
+      }
+    },
+    {
+      "id": "r1-route",
+      "text": "On R1, add a route to LAN-C through R2.",
+      "points": 4,
+      "hint": "ip route 192.168.50.96 255.255.255.240 192.168.50.114",
+      "check": {
+        "type": "route",
+        "device": "R1",
+        "prefix": "192.168.50.96",
+        "cidr": 28,
+        "nextHop": "192.168.50.114"
+      }
+    },
+    {
+      "id": "r2-default",
+      "text": "On R2, add a default route back to R1. R2 is a stub, so one default beats two specifics.",
+      "points": 4,
+      "hint": "ip route 0.0.0.0 0.0.0.0 192.168.50.113",
+      "check": {
+        "type": "defaultRoute",
+        "device": "R2",
+        "nextHop": "192.168.50.113"
+      }
+    },
+    {
+      "id": "verify-brief",
+      "text": "Run show ip interface brief on both routers and confirm every used interface is up / up.",
+      "points": 2,
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "re": "sh(o(w)?)?\\s+ip\\s+int"
+      }
+    },
+    {
+      "id": "reach-ac",
+      "text": "Prove PC-A can reach PC-C.",
+      "points": 5,
+      "check": {
+        "type": "reachability",
+        "from": "PC-A",
+        "to": "192.168.50.100"
+      }
+    },
+    {
+      "id": "reach-bc",
+      "text": "Prove PC-B can reach PC-C.",
+      "points": 5,
+      "check": {
+        "type": "reachability",
+        "from": "PC-B",
+        "to": "192.168.50.100"
+      }
+    },
+    {
+      "id": "reach-ab",
+      "text": "Prove PC-A can reach PC-B — two LANs on the same router, no static route required.",
+      "points": 3,
+      "hint": "Both networks are directly connected to R1, so R1 already knows both. That is what a C route means.",
+      "check": {
+        "type": "reachability",
+        "from": "PC-A",
+        "to": "192.168.50.70"
+      }
+    },
+    {
+      "id": "save",
+      "text": "Save the configuration on both routers.",
+      "points": 3,
+      "checks": [
+        {
+          "type": "saved",
+          "device": "R1"
+        },
+        {
+          "type": "saved",
+          "device": "R2"
+        }
+      ]
+    }
+  ],
+  "extension": "Redo the plan for the same four requirements out of 172.16.8.0/22 instead, and say how many addresses you waste in each case. Then work out how many more LAN-C-sized subnets the leftover space in the /24 would hold.",
+  "debrief": "Two things the competition tests here. First, that you size a subnet to the requirement rather than to habit — a /30 on a point-to-point link is not pedantry, it is what leaves room for the rest of the plan. Second, that you can turn a written plan into a working network without a second pass.\n\nNotice PC-A reached PC-B with no static route at all. Two directly connected networks route between each other for free; only LAN-C needed a route, because only LAN-C is on the far side of a router.",
+  "solution": [
+    {
+      "device": "R1",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "interface g0/0/0",
+        "ip address 192.168.50.1 255.255.255.192",
+        "no shutdown",
+        "interface g0/0/1",
+        "ip address 192.168.50.65 255.255.255.224",
+        "no shutdown",
+        "interface g0/0/2",
+        "ip address 192.168.50.113 255.255.255.252",
+        "no shutdown",
+        "exit",
+        "ip route 192.168.50.96 255.255.255.240 192.168.50.114",
+        "end",
+        "show ip interface brief",
+        "copy running-config startup-config",
+        ""
+      ]
+    },
+    {
+      "device": "R2",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "interface g0/0",
+        "ip address 192.168.50.114 255.255.255.252",
+        "no shutdown",
+        "interface g0/1",
+        "ip address 192.168.50.97 255.255.255.240",
+        "no shutdown",
+        "exit",
+        "ip route 0.0.0.0 0.0.0.0 192.168.50.113",
+        "end",
+        "show ip interface brief",
+        "copy running-config startup-config",
+        ""
+      ]
+    },
+    {
+      "device": "PC-A",
+      "cmds": [
+        "__static:192.168.50.10/26/192.168.50.1__",
+        "ping 192.168.50.100",
+        "ping 192.168.50.70"
+      ]
+    },
+    {
+      "device": "PC-B",
+      "cmds": [
+        "__static:192.168.50.70/27/192.168.50.65__",
+        "ping 192.168.50.100"
+      ]
+    },
+    {
+      "device": "PC-C",
+      "cmds": [
+        "__static:192.168.50.100/28/192.168.50.97__"
+      ]
+    },
+    {
+      "device": "PC-A",
+      "cmds": [
+        "ping 192.168.50.100",
+        "ping 192.168.50.70"
+      ]
+    },
+    {
+      "device": "PC-B",
+      "cmds": [
+        "ping 192.168.50.100"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,290 @@
+{
+  "slug": "cli-u8-capstone-a",
+  "name": "Capstone A: Finish and Fix",
+  "unit": "u8",
+  "modules": [],
+  "round": "semis",
+  "priority": "P3",
+  "estMinutes": 45,
+  "difficulty": 4,
+  "timeLimitSeconds": 2700,
+  "startDevice": "PC-A",
+  "focus": [
+    "everything"
+  ],
+  "brief": "A full mock round on a clock. Half of this network was built by somebody else, badly, and the other half was never started.\n\nThe plan is the one you already know:\n\n  LAN-A  192.168.50.0/26    gateway .1     PC-A .10 (static)\n  LAN-B  192.168.50.64/27   gateway .65    PC-B via DHCP\n  LAN-C  192.168.50.96/28   gateway .97    PC-C .100 (static), SRV .110\n  WAN    192.168.50.112/30  R1 .113, R2 .114\n\nR1 is addressed but not entirely working. R2 has nothing on it. LAN-B is meant to be served by DHCP from R1. Every host should be able to resolve names against the server.\n\nRead every task before you touch anything, and work in the fixed order: topology, addressing, gateways, services, verification.",
+  "watchFor": "Points are weighted toward correct addressing and proven end-to-end connectivity, not toward how much you typed. Verify after every device rather than at the end, and save as you go.",
+  "topologyRef": "campus",
+  "clearConfig": [
+    "R2",
+    "PC-B",
+    "PC-C"
+  ],
+  "faults": [
+    {
+      "type": "shutdown",
+      "device": "R1",
+      "iface": "GigabitEthernet0/0/2"
+    },
+    {
+      "type": "wrong-mask",
+      "device": "PC-A",
+      "iface": "FastEthernet0",
+      "mask": "255.255.255.0"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "wan-up",
+      "text": "R1 cannot reach R2 at all. Find out why and fix it.",
+      "points": 6,
+      "hint": "show ip interface brief on R1. One interface is administratively down.",
+      "check": {
+        "type": "interface",
+        "device": "R1",
+        "if": "GigabitEthernet0/0/2",
+        "up": true
+      }
+    },
+    {
+      "id": "pca-mask",
+      "text": "PC-A has the wrong mask. LAN-A is a /26.",
+      "points": 5,
+      "hint": "ipconfig on PC-A shows 255.255.255.0. That makes PC-A think LAN-B and LAN-C are local.",
+      "check": {
+        "type": "host",
+        "device": "PC-A",
+        "ip": "192.168.50.10",
+        "cidr": 26,
+        "gateway": "192.168.50.1"
+      }
+    },
+    {
+      "id": "r2-wan",
+      "text": "Address R2 GigabitEthernet0/0 on the WAN link and bring it up.",
+      "points": 5,
+      "check": {
+        "type": "interface",
+        "device": "R2",
+        "if": "GigabitEthernet0/0",
+        "ip": "192.168.50.114",
+        "cidr": 30,
+        "up": true
+      }
+    },
+    {
+      "id": "r2-lan",
+      "text": "Address R2 GigabitEthernet0/1 as the LAN-C gateway and bring it up.",
+      "points": 5,
+      "check": {
+        "type": "interface",
+        "device": "R2",
+        "if": "GigabitEthernet0/1",
+        "ip": "192.168.50.97",
+        "cidr": 28,
+        "up": true
+      }
+    },
+    {
+      "id": "r2-route",
+      "text": "Give R2 a default route back toward R1.",
+      "points": 5,
+      "check": {
+        "type": "defaultRoute",
+        "device": "R2",
+        "nextHop": "192.168.50.113"
+      }
+    },
+    {
+      "id": "dhcp-exclude",
+      "text": "On R1, reserve 192.168.50.65 through 192.168.50.69 before you build the pool.",
+      "points": 4,
+      "hint": "ip dhcp excluded-address 192.168.50.65 192.168.50.69",
+      "check": {
+        "type": "dhcpExcluded",
+        "device": "R1",
+        "start": "192.168.50.65",
+        "end": "192.168.50.69"
+      }
+    },
+    {
+      "id": "dhcp-pool",
+      "text": "Build a DHCP pool named LANB for LAN-B, handing out the gateway and the DNS server at 192.168.50.110.",
+      "points": 7,
+      "hint": "ip dhcp pool LANB, then network 192.168.50.64 255.255.255.224, default-router 192.168.50.65, dns-server 192.168.50.110.",
+      "checks": [
+        {
+          "type": "dhcpPool",
+          "device": "R1",
+          "name": "LANB",
+          "network": "192.168.50.64",
+          "mask": "255.255.255.224"
+        },
+        {
+          "type": "dhcpPool",
+          "device": "R1",
+          "name": "LANB",
+          "defaultRouter": "192.168.50.65",
+          "dnsServer": "192.168.50.110"
+        }
+      ]
+    },
+    {
+      "id": "pcb-lease",
+      "text": "Put PC-B on DHCP and confirm it gets a working lease on LAN-B.",
+      "points": 6,
+      "check": {
+        "type": "dhcpLease",
+        "device": "PC-B",
+        "inNetwork": "192.168.50.64",
+        "gateway": "192.168.50.65"
+      }
+    },
+    {
+      "id": "pcc-static",
+      "text": "Address PC-C statically at .100 with the LAN-C mask, gateway, and the DNS server.",
+      "points": 5,
+      "check": {
+        "type": "host",
+        "device": "PC-C",
+        "ip": "192.168.50.100",
+        "cidr": 28,
+        "gateway": "192.168.50.97",
+        "dns": "192.168.50.110"
+      }
+    },
+    {
+      "id": "reach-ac",
+      "text": "Prove PC-A can reach PC-C.",
+      "points": 8,
+      "check": {
+        "type": "reachability",
+        "from": "PC-A",
+        "to": "192.168.50.100"
+      }
+    },
+    {
+      "id": "reach-bs",
+      "text": "Prove PC-B can reach the server.",
+      "points": 8,
+      "check": {
+        "type": "reachability",
+        "from": "PC-B",
+        "to": "192.168.50.110"
+      }
+    },
+    {
+      "id": "reach-ca",
+      "text": "Prove PC-C can reach PC-A — the return path matters as much as the forward one.",
+      "points": 6,
+      "check": {
+        "type": "reachability",
+        "from": "PC-C",
+        "to": "192.168.50.10"
+      }
+    },
+    {
+      "id": "dns",
+      "text": "From PC-A, resolve www.westcta.local by name.",
+      "points": 5,
+      "hint": "nslookup www.westcta.local. If it times out, check which DNS server PC-A was given.",
+      "check": {
+        "type": "commandUsed",
+        "device": "PC-A",
+        "re": "^\\s*(nslookup|ping)\\s+www\\.westcta\\.local"
+      }
+    },
+    {
+      "id": "save",
+      "text": "Save the configuration on both routers before the clock runs out.",
+      "points": 5,
+      "checks": [
+        {
+          "type": "saved",
+          "device": "R1"
+        },
+        {
+          "type": "saved",
+          "device": "R2"
+        }
+      ]
+    }
+  ],
+  "extension": "Run it again from a reset and beat your time. Then have a teammate plant two different faults for you in the sandbox and see whether your diagnostic order still finds them.",
+  "debrief": "After-action review, in three buckets. Points lost to **knowledge** — something you did not know how to configure. Points lost to **speed** — you knew it but ran out of clock. Points lost to **process** — you skipped a task, forgot to save, or misread the plan.\n\nEach bucket routes somewhere different. Knowledge sends you back to a unit. Speed sends you to the drills. Process is the cheapest to fix and the most commonly ignored: read every task first, work in a fixed order, verify per device, save per device.",
+  "solution": [
+    {
+      "device": "R1",
+      "cmds": [
+        "enable",
+        "show ip interface brief",
+        "configure terminal",
+        "interface g0/0/2",
+        "no shutdown",
+        "exit",
+        "ip dhcp excluded-address 192.168.50.65 192.168.50.69",
+        "ip dhcp pool LANB",
+        "network 192.168.50.64 255.255.255.224",
+        "default-router 192.168.50.65",
+        "dns-server 192.168.50.110",
+        "end",
+        "copy running-config startup-config",
+        ""
+      ]
+    },
+    {
+      "device": "PC-A",
+      "cmds": [
+        "ipconfig",
+        "__static:192.168.50.10/26/192.168.50.1__",
+        "__setdns:192.168.50.110__"
+      ]
+    },
+    {
+      "device": "R2",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "interface g0/0",
+        "ip address 192.168.50.114 255.255.255.252",
+        "no shutdown",
+        "interface g0/1",
+        "ip address 192.168.50.97 255.255.255.240",
+        "no shutdown",
+        "exit",
+        "ip route 0.0.0.0 0.0.0.0 192.168.50.113",
+        "end",
+        "copy running-config startup-config",
+        ""
+      ]
+    },
+    {
+      "device": "PC-B",
+      "cmds": [
+        "__dhcp__",
+        "ipconfig /all"
+      ]
+    },
+    {
+      "device": "PC-C",
+      "cmds": [
+        "__static:192.168.50.100/28/192.168.50.97__",
+        "__setdns:192.168.50.110__",
+        "ping 192.168.50.10"
+      ]
+    },
+    {
+      "device": "PC-A",
+      "cmds": [
+        "ping 192.168.50.100",
+        "nslookup www.westcta.local"
+      ]
+    },
+    {
+      "device": "PC-B",
+      "cmds": [
+        "ping 192.168.50.110"
+      ]
+    }
+  ]
+}

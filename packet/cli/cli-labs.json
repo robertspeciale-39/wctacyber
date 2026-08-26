@@ -2,71 +2,344 @@
   "_comment": "Manifest for the CLI lab library. One line per lab; the picker, the module pages and the unit pages all read this. `status` mirrors roadmap.md — flip it when a lab ships. Keep slugs identical to the filenames in labs/.",
   "version": "1.0",
   "labs": [
-    { "slug": "cli-u1-tour", "name": "Finding the Command Line", "unit": "u1", "round": "practice", "priority": "P0", "modules": [1, 2], "estMinutes": 12, "difficulty": 1, "status": "done",
-      "tagline": "Modes, help, abbreviation, and reading the prompt before you type." },
-
-    { "slug": "cli-u2-mac-table", "name": "Watching a Switch Learn", "unit": "u2", "round": "round1", "priority": "P0", "modules": [7, 21], "estMinutes": 15, "difficulty": 1, "status": "done",
-      "tagline": "Ping across a switch and watch the MAC address table fill in." },
-
-    { "slug": "cli-u3-interfaces", "name": "Addressing Router Interfaces", "unit": "u3", "round": "round2", "priority": "P1", "modules": [8, 9], "estMinutes": 15, "difficulty": 2, "status": "done",
-      "tagline": "ip address, no shutdown, and the trap between them." },
-
-    { "slug": "cli-u3-ipv6", "name": "IPv6 on a Router", "unit": "u3", "round": "round2", "priority": "P1", "modules": [10], "estMinutes": 12, "difficulty": 2, "status": "done",
-      "tagline": "Global unicast, link-local, and the one command that makes it route." },
-
-    { "slug": "cli-u3-dhcp", "name": "Router as DHCP Server", "unit": "u3", "round": "round2", "priority": "P1", "modules": [11], "estMinutes": 18, "difficulty": 2, "status": "done",
-      "tagline": "Pools, exclusions, and proving a client lease actually works." },
-
-    { "slug": "cli-u4-hop-trace", "name": "What Changes at Every Hop", "unit": "u4", "round": "round2", "priority": "P1", "modules": [21, 22], "estMinutes": 20, "difficulty": 3, "status": "done",
-      "tagline": "The U4 mastery gate: name every address at every hop.", "usesInspector": true },
-
-    { "slug": "cli-u5-static-routes", "name": "Static Routes", "unit": "u5", "round": "state", "priority": "P2", "modules": [12, 14], "estMinutes": 15, "difficulty": 2, "status": "done",
-      "tagline": "Two routes, two directions, and why one is never enough." },
-
-    { "slug": "cli-u5-default-route", "name": "Gateway of Last Resort", "unit": "u5", "round": "state", "priority": "P2", "modules": [14], "estMinutes": 12, "difficulty": 2, "status": "done",
-      "tagline": "One route that matches everything, and loses to everything." },
-
-    { "slug": "cli-u5-arp", "name": "Local or Remote: the ARP Decision", "unit": "u5", "round": "state", "priority": "P2", "modules": [13], "estMinutes": 15, "difficulty": 2, "status": "done",
-      "tagline": "Why you ARP for the gateway and never for the far host." },
-
-    { "slug": "cli-u6-diagnostic-sequence", "name": "The Eight-Step Sequence", "unit": "u6", "round": "state", "priority": "P2", "modules": [17], "estMinutes": 15, "difficulty": 3, "status": "done",
-      "tagline": "Walk the sequence in order and let it find the fault for you." },
-
-    { "slug": "cli-u6-two-faults", "name": "Two Faults, Twelve Minutes", "unit": "u6", "round": "state", "priority": "P2", "modules": [15, 16, 17], "estMinutes": 12, "difficulty": 4, "status": "done",
-      "tagline": "The U6 mastery gate, on a clock.", "timed": true },
-
-    { "slug": "cli-u6-dns", "name": "Name Resolution vs Connectivity", "unit": "u6", "round": "state", "priority": "P2", "modules": [16, 17], "estMinutes": 12, "difficulty": 3, "status": "done",
-      "tagline": "Ping by address, ping by name, and know instantly which layer broke." },
-
-    { "slug": "cli-x1-baseline", "name": "Device Baseline", "unit": "x1", "round": "extension", "priority": "P4", "modules": [], "estMinutes": 18, "difficulty": 2, "status": "done",
-      "tagline": "Hostname, secret, lines, banner, save — then reload and find out if you saved." },
-
-    { "slug": "cli-sandbox-reference", "name": "Sandbox: Reference Topology", "unit": "sandbox", "round": "any", "priority": "P1", "modules": [], "estMinutes": 0, "difficulty": 0, "status": "done", "sandbox": true,
-      "tagline": "The working reference topology. Break it on purpose." },
-
-    { "slug": "cli-sandbox-blank", "name": "Sandbox: Build It Yourself", "unit": "sandbox", "round": "any", "priority": "P2", "modules": [], "estMinutes": 0, "difficulty": 0, "status": "done", "sandbox": true,
-      "tagline": "Two LANs, one router, nothing configured, nothing scored." }
+    {
+      "slug": "cli-u1-tour",
+      "name": "Finding the Command Line",
+      "unit": "u1",
+      "round": "practice",
+      "priority": "P0",
+      "modules": [
+        1,
+        2
+      ],
+      "estMinutes": 12,
+      "difficulty": 1,
+      "status": "done",
+      "tagline": "Modes, help, abbreviation, and reading the prompt before you type."
+    },
+    {
+      "slug": "cli-u2-mac-table",
+      "name": "Watching a Switch Learn",
+      "unit": "u2",
+      "round": "round1",
+      "priority": "P0",
+      "modules": [
+        7,
+        21
+      ],
+      "estMinutes": 15,
+      "difficulty": 1,
+      "status": "done",
+      "tagline": "Ping across a switch and watch the MAC address table fill in."
+    },
+    {
+      "slug": "cli-u3-interfaces",
+      "name": "Addressing Router Interfaces",
+      "unit": "u3",
+      "round": "round2",
+      "priority": "P1",
+      "modules": [
+        8,
+        9
+      ],
+      "estMinutes": 15,
+      "difficulty": 2,
+      "status": "done",
+      "tagline": "ip address, no shutdown, and the trap between them."
+    },
+    {
+      "slug": "cli-u3-ipv6",
+      "name": "IPv6 on a Router",
+      "unit": "u3",
+      "round": "round2",
+      "priority": "P1",
+      "modules": [
+        10
+      ],
+      "estMinutes": 12,
+      "difficulty": 2,
+      "status": "done",
+      "tagline": "Global unicast, link-local, and the one command that makes it route."
+    },
+    {
+      "slug": "cli-u3-dhcp",
+      "name": "Router as DHCP Server",
+      "unit": "u3",
+      "round": "round2",
+      "priority": "P1",
+      "modules": [
+        11
+      ],
+      "estMinutes": 18,
+      "difficulty": 2,
+      "status": "done",
+      "tagline": "Pools, exclusions, and proving a client lease actually works."
+    },
+    {
+      "slug": "cli-u4-hop-trace",
+      "name": "What Changes at Every Hop",
+      "unit": "u4",
+      "round": "round2",
+      "priority": "P1",
+      "modules": [
+        21,
+        22
+      ],
+      "estMinutes": 20,
+      "difficulty": 3,
+      "status": "done",
+      "tagline": "The U4 mastery gate: name every address at every hop.",
+      "usesInspector": true
+    },
+    {
+      "slug": "cli-u5-static-routes",
+      "name": "Static Routes",
+      "unit": "u5",
+      "round": "state",
+      "priority": "P2",
+      "modules": [
+        12,
+        14
+      ],
+      "estMinutes": 15,
+      "difficulty": 2,
+      "status": "done",
+      "tagline": "Two routes, two directions, and why one is never enough."
+    },
+    {
+      "slug": "cli-u5-default-route",
+      "name": "Gateway of Last Resort",
+      "unit": "u5",
+      "round": "state",
+      "priority": "P2",
+      "modules": [
+        14
+      ],
+      "estMinutes": 12,
+      "difficulty": 2,
+      "status": "done",
+      "tagline": "One route that matches everything, and loses to everything."
+    },
+    {
+      "slug": "cli-u5-arp",
+      "name": "Local or Remote: the ARP Decision",
+      "unit": "u5",
+      "round": "state",
+      "priority": "P2",
+      "modules": [
+        13
+      ],
+      "estMinutes": 15,
+      "difficulty": 2,
+      "status": "done",
+      "tagline": "Why you ARP for the gateway and never for the far host."
+    },
+    {
+      "slug": "cli-u6-diagnostic-sequence",
+      "name": "The Eight-Step Sequence",
+      "unit": "u6",
+      "round": "state",
+      "priority": "P2",
+      "modules": [
+        17
+      ],
+      "estMinutes": 15,
+      "difficulty": 3,
+      "status": "done",
+      "tagline": "Walk the sequence in order and let it find the fault for you."
+    },
+    {
+      "slug": "cli-u6-two-faults",
+      "name": "Two Faults, Twelve Minutes",
+      "unit": "u6",
+      "round": "state",
+      "priority": "P2",
+      "modules": [
+        15,
+        16,
+        17
+      ],
+      "estMinutes": 12,
+      "difficulty": 4,
+      "status": "done",
+      "tagline": "The U6 mastery gate, on a clock.",
+      "timed": true
+    },
+    {
+      "slug": "cli-u6-dns",
+      "name": "Name Resolution vs Connectivity",
+      "unit": "u6",
+      "round": "state",
+      "priority": "P2",
+      "modules": [
+        16,
+        17
+      ],
+      "estMinutes": 12,
+      "difficulty": 3,
+      "status": "done",
+      "tagline": "Ping by address, ping by name, and know instantly which layer broke."
+    },
+    {
+      "slug": "cli-x1-baseline",
+      "name": "Device Baseline",
+      "unit": "x1",
+      "round": "extension",
+      "priority": "P4",
+      "modules": [],
+      "estMinutes": 18,
+      "difficulty": 2,
+      "status": "done",
+      "tagline": "Hostname, secret, lines, banner, save — then reload and find out if you saved."
+    },
+    {
+      "slug": "cli-u7-subnet-plan",
+      "name": "Subnet a Block and Build It",
+      "unit": "u7",
+      "round": "semis",
+      "priority": "P3",
+      "modules": [
+        20,
+        23
+      ],
+      "estMinutes": 25,
+      "difficulty": 4,
+      "status": "done",
+      "tagline": "The U7 gate: VLSM a /24, then build the network from your own plan."
+    },
+    {
+      "slug": "cli-u7-plan-audit",
+      "name": "Audit the Plan",
+      "unit": "u7",
+      "round": "semis",
+      "priority": "P3",
+      "modules": [
+        23
+      ],
+      "estMinutes": 15,
+      "difficulty": 4,
+      "status": "done",
+      "tagline": "Three addressing faults against a written plan. Find all three."
+    },
+    {
+      "slug": "cli-u8-capstone-a",
+      "name": "Capstone A: Finish and Fix",
+      "unit": "u8",
+      "round": "semis",
+      "priority": "P3",
+      "modules": [],
+      "estMinutes": 45,
+      "difficulty": 4,
+      "status": "done",
+      "timed": true,
+      "tagline": "Full mock round on a clock: finish a half-built network and fix what is wrong."
+    },
+    {
+      "slug": "cli-u8-capstone-b",
+      "name": "Capstone B: Build the Chain",
+      "unit": "u8",
+      "round": "semis",
+      "priority": "P3",
+      "modules": [],
+      "estMinutes": 45,
+      "difficulty": 4,
+      "status": "done",
+      "timed": true,
+      "tagline": "The second mock round, different topology: three routers, two defaults, two specifics."
+    },
+    {
+      "slug": "cli-sandbox-reference",
+      "name": "Sandbox: Reference Topology",
+      "unit": "sandbox",
+      "round": "any",
+      "priority": "P1",
+      "modules": [],
+      "estMinutes": 0,
+      "difficulty": 0,
+      "status": "done",
+      "sandbox": true,
+      "tagline": "The working reference topology. Break it on purpose."
+    },
+    {
+      "slug": "cli-sandbox-blank",
+      "name": "Sandbox: Build It Yourself",
+      "unit": "sandbox",
+      "round": "any",
+      "priority": "P2",
+      "modules": [],
+      "estMinutes": 0,
+      "difficulty": 0,
+      "status": "done",
+      "sandbox": true,
+      "tagline": "Two LANs, one router, nothing configured, nothing scored."
+    }
   ],
-
   "units": {
-    "u1": { "name": "Packet Tracer Boot Camp", "round": "practice" },
-    "u2": { "name": "Ethernet & Switching", "round": "round1" },
-    "u3": { "name": "IP Addressing", "round": "round2" },
-    "u4": { "name": "Switching & Layer 3", "round": "round2" },
-    "u5": { "name": "Routing", "round": "state" },
-    "u6": { "name": "Services & Troubleshooting", "round": "state" },
-    "u7": { "name": "Advanced Networking", "round": "semis" },
-    "u8": { "name": "Capstone", "round": "semis" },
-    "x1": { "name": "Extension: Device Baseline", "round": "extension" },
-    "sandbox": { "name": "Sandbox", "round": "any" }
+    "u1": {
+      "name": "Packet Tracer Boot Camp",
+      "round": "practice"
+    },
+    "u2": {
+      "name": "Ethernet & Switching",
+      "round": "round1"
+    },
+    "u3": {
+      "name": "IP Addressing",
+      "round": "round2"
+    },
+    "u4": {
+      "name": "Switching & Layer 3",
+      "round": "round2"
+    },
+    "u5": {
+      "name": "Routing",
+      "round": "state"
+    },
+    "u6": {
+      "name": "Services & Troubleshooting",
+      "round": "state"
+    },
+    "u7": {
+      "name": "Advanced Networking",
+      "round": "semis"
+    },
+    "u8": {
+      "name": "Capstone",
+      "round": "semis"
+    },
+    "x1": {
+      "name": "Extension: Device Baseline",
+      "round": "extension"
+    },
+    "sandbox": {
+      "name": "Sandbox",
+      "round": "any"
+    }
   },
-
   "rounds": [
-    { "id": "practice", "name": "Practice Round" },
-    { "id": "round1", "name": "Round 1" },
-    { "id": "round2", "name": "Round 2" },
-    { "id": "state", "name": "State Round" },
-    { "id": "semis", "name": "Semifinals" },
-    { "id": "extension", "name": "Extension" }
+    {
+      "id": "practice",
+      "name": "Practice Round"
+    },
+    {
+      "id": "round1",
+      "name": "Round 1"
+    },
+    {
+      "id": "round2",
+      "name": "Round 2"
+    },
+    {
+      "id": "state",
+      "name": "State Round"
+    },
+    {
+      "id": "semis",
+      "name": "Semifinals"
+    },
+    {
+      "id": "extension",
+      "name": "Extension"
+    }
   ]
 }

@@ -57,7 +57,7 @@ function unitChip(d, u, scope) {
 }
 
 // ── resource card (app / lab / quiz / sheet) ──────────────────────────
-const ICON = { apps: '▶', labs: '⌗', quizzes: '✓', sheets: '▤' };
+const ICON = { cli: '❯', apps: '▶', labs: '⌗', quizzes: '✓', sheets: '▤' };
 function resourceCard(d, slug, hue) {
   const r = d.resBySlug[slug];
   if (!r) return '';

@@ -14,6 +14,10 @@
     {"slug": "cli-u6-two-faults", "name": "Two Faults, Twelve Minutes", "unit": "u6", "priority": "P2", "status": "done", "url": "../cli/?lab=cli-u6-two-faults", "desc": "The U6 mastery gate, on a clock."},
     {"slug": "cli-u6-dns", "name": "Name Resolution vs Connectivity", "unit": "u6", "priority": "P2", "status": "done", "url": "../cli/?lab=cli-u6-dns", "desc": "Ping by address, ping by name, and know instantly which layer broke."},
     {"slug": "cli-x1-baseline", "name": "Device Baseline", "unit": "u5", "priority": "P4", "status": "done", "url": "../cli/?lab=cli-x1-baseline", "desc": "Hostname, secret, lines, banner, save — then reload and find out if you saved."},
+    {"slug": "cli-u7-subnet-plan", "name": "Subnet a Block and Build It", "unit": "u7", "priority": "P3", "status": "done", "url": "../cli/?lab=cli-u7-subnet-plan", "desc": "The U7 gate: VLSM a /24, then build the network from your own plan."},
+    {"slug": "cli-u7-plan-audit", "name": "Audit the Plan", "unit": "u7", "priority": "P3", "status": "done", "url": "../cli/?lab=cli-u7-plan-audit", "desc": "Three addressing faults against a written plan. Find all three."},
+    {"slug": "cli-u8-capstone-a", "name": "Capstone A: Finish and Fix", "unit": "u8", "priority": "P3", "status": "done", "url": "../cli/?lab=cli-u8-capstone-a", "desc": "Full mock round on a clock: finish a half-built network and fix what is wrong."},
+    {"slug": "cli-u8-capstone-b", "name": "Capstone B: Build the Chain", "unit": "u8", "priority": "P3", "status": "done", "url": "../cli/?lab=cli-u8-capstone-b", "desc": "The second mock round, different topology: three routers, two defaults, two specifics."},
     {"slug": "cli-sandbox-reference", "name": "Sandbox: Reference Topology", "unit": "u1", "priority": "P1", "status": "done", "url": "../cli/?lab=cli-sandbox-reference", "desc": "The working reference topology. Break it on purpose."},
     {"slug": "cli-sandbox-blank", "name": "Sandbox: Build It Yourself", "unit": "u1", "priority": "P2", "status": "done", "url": "../cli/?lab=cli-sandbox-blank", "desc": "Two LANs, one router, nothing configured, nothing scored."}
   ],

@@ -54,6 +54,13 @@ function panelAction(run, deviceId, token) {
     });
     return true;
   }
+  if ((m = token.match(/^__static:([\d.]+)\/(\d+)\/([\d.]+)__$/))) {
+    // Full static addressing, standing in for the IP Configuration dialog.
+    const bits = +m[2];
+    const mask = [24, 16, 8, 0].map(sh => ((bits === 0 ? 0 : (0xFFFFFFFF << (32 - bits)) >>> 0) >>> sh) & 255).join('.');
+    setStatic(run.net, dev, { ip: m[1], mask, gateway: m[3], dns: dev.host.dnsServer });
+    return true;
+  }
   if ((m = token.match(/^__setdns:(.+)__$/))) {
     setStatic(run.net, dev, {
       ip: dev.ifaces[0].ip, mask: dev.ifaces[0].mask, gateway: dev.host.gateway, dns: m[1]

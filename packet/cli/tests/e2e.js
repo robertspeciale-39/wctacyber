@@ -86,6 +86,31 @@ const filtered = await page.locator('.card').count();
 ok('the round filter narrows the list', filtered < cards && filtered > 0, `${filtered} of ${cards}`);
 await page.click('.filters .cli-chip:has-text("All")');
 
+/* ------------------------------------------------- every card opens --- */
+// The check that catches a lab whose file is missing, whose topology throws,
+// or whose card renders but does nothing. Cheap, and it covers all of them.
+section('every lab card opens');
+
+{
+  const manifest = JSON.parse(await readFile(join(CLI, 'cli-labs.json'), 'utf8'));
+  for (const lab of manifest.labs) {
+    const errs = [];
+    const onErr = e => errs.push(String(e));
+    page.on('pageerror', onErr);
+    await page.goto(BASE, { waitUntil: 'load' });
+    await page.waitForTimeout(150);
+    const card = page.locator(`.card:has-text("${lab.name}")`).first();
+    if (!(await card.count())) { ok(`${lab.slug}: has a card`, false); page.off('pageerror', onErr); continue; }
+    await card.click();
+    let opened = false;
+    try { await page.waitForSelector('.term-input input', { timeout: 3000 }); opened = true; } catch {}
+    const tasks = opened ? await page.locator('.task').count() : 0;
+    ok(`${lab.slug}: opens`, opened, errs[0] || 'workbench never appeared');
+    ok(`${lab.slug}: renders its tasks`, lab.sandbox ? tasks === 0 : tasks > 0, `${tasks} tasks`);
+    page.off('pageerror', onErr);
+  }
+}
+
 /* ------------------------------------------------------------ the lab --- */
 section('workbench');
 
