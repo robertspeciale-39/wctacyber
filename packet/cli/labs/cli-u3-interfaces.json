@@ -48,7 +48,6 @@
     {
       "id": "g00",
       "text": "Address GigabitEthernet0/0 as 192.168.10.1 /24 and bring it up.",
-      "points": 3,
       "hint": "`interface g0/0`, then `ip address 192.168.10.1 255.255.255.0`, then `no shutdown`.",
       "check": {
         "type": "interface",
@@ -62,7 +61,6 @@
     {
       "id": "g00desc",
       "text": "Give GigabitEthernet0/0 the description LAN-10.",
-      "points": 1,
       "hint": "`description LAN-10` inside interface configuration mode.",
       "check": {
         "type": "interface",
@@ -74,7 +72,6 @@
     {
       "id": "g01",
       "text": "Address GigabitEthernet0/1 as 192.168.20.1 /24 and bring it up.",
-      "points": 3,
       "check": {
         "type": "interface",
         "device": "R1",
@@ -87,18 +84,16 @@
     {
       "id": "verify",
       "text": "Run show ip interface brief and confirm both interfaces read up / up.",
-      "points": 2,
       "hint": "Status and Protocol are two different columns. Both have to say up.",
       "check": {
         "type": "commandUsed",
         "device": "R1",
-        "re": "sh(o(w)?)?\\s+ip\\s+int"
+        "cmd": "show ip interface brief"
       }
     },
     {
       "id": "reach1",
       "text": "From PC1, ping its gateway 192.168.10.1.",
-      "points": 2,
       "check": {
         "type": "reachability",
         "from": "PC1",
@@ -108,7 +103,6 @@
     {
       "id": "crosslan",
       "text": "From PC1, ping PC2 at 192.168.20.20. Because both networks are directly connected to R1, no static routes are needed.",
-      "points": 4,
       "hint": "A router always knows about the networks on its own interfaces. That is what the C code means in show ip route.",
       "check": {
         "type": "reachability",
@@ -119,7 +113,6 @@
     {
       "id": "save",
       "text": "Save the configuration so a reload does not lose it.",
-      "points": 2,
       "hint": "`copy running-config startup-config` from privileged EXEC, then press Enter at the filename prompt.",
       "check": {
         "type": "saved",

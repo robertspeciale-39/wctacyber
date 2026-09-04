@@ -30,34 +30,35 @@
     {
       "id": "sequence",
       "text": "Run the sequence on PC1 in order: ipconfig, ping 127.0.0.1, ping your own address, ping the gateway.",
-      "points": 6,
       "hint": "ipconfig first, always. It shows address, mask and gateway in one screen and it is where this fault is visible.",
       "check": {
         "type": "commandSequence",
         "device": "PC1",
         "steps": [
-          "^\\s*ipconfig",
-          "^\\s*ping\\s+127\\.0\\.0\\.1",
-          "^\\s*ping\\s+192\\.168\\.10\\.20",
-          "^\\s*ping\\s+192\\.168\\.10\\."
+          {
+            "re": "^ipconfig( /all)?$"
+          },
+          "ping 127.0.0.1",
+          "ping 192.168.10.20",
+          {
+            "re": "^ping 192\\.168\\.10\\.\\d+$"
+          }
         ]
       }
     },
     {
       "id": "find",
       "text": "Identify the fault: PC1 has the wrong default gateway.",
-      "points": 4,
       "hint": "ipconfig showed a gateway of 192.168.10.99. Nothing answers at that address.",
       "check": {
         "type": "commandUsed",
         "device": "PC1",
-        "re": "^\\s*ipconfig"
+        "re": "^ipconfig( /all| /renew| /release)?$"
       }
     },
     {
       "id": "fix",
       "text": "Fix the gateway on PC1 to 192.168.10.1.",
-      "points": 5,
       "hint": "Use the IP Configuration panel on PC1.",
       "check": {
         "type": "host",
@@ -68,7 +69,6 @@
     {
       "id": "verify",
       "text": "Prove the fix with a ping to PC2 at 192.168.20.20.",
-      "points": 4,
       "check": {
         "type": "reachability",
         "from": "PC1",
@@ -78,11 +78,10 @@
     {
       "id": "trace",
       "text": "Finish with tracert 192.168.20.20 to confirm the path is what you expect.",
-      "points": 2,
       "check": {
         "type": "commandUsed",
         "device": "PC1",
-        "re": "^\\s*tracert"
+        "re": "^tracert \\S+$"
       }
     }
   ],

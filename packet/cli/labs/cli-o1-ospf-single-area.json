@@ -1,0 +1,288 @@
+{
+  "slug": "cli-o1-ospf-single-area",
+  "name": "Turning Up Single-Area OSPF",
+  "unit": "o1",
+  "topic": "ospf",
+  "modules": [
+    14
+  ],
+  "round": "semis",
+  "priority": "P0",
+  "estMinutes": 25,
+  "difficulty": 4,
+  "startDevice": "R1",
+  "focus": [
+    "router ospf",
+    "router-id",
+    "network",
+    "area 0",
+    "show ip ospf neighbor",
+    "show ip route ospf"
+  ],
+  "brief": "Three routers, three LANs, and every interface already addressed and up. Nothing can reach anything more than one hop away, because no router has been told about any network it is not directly attached to.\n\nYou could type nine static routes. Instead you are going to turn on OSPF in a single area and let the routers tell each other. Every network in this topology belongs in area 0, and each router gets a router ID you choose rather than one it picks for itself.",
+  "watchFor": "A network statement uses a wildcard mask, not a subnet mask. For a /24 that is 0.0.0.255, and for the /30 links it is 0.0.0.3. Getting that backwards is the single most common OSPF mistake there is.",
+  "topologyRef": "ospf-three-routers",
+  "tasks": [
+    {
+      "id": "prove-broken",
+      "text": "From PC1, ping PC3 at 192.168.3.13 and watch it fail. No routing protocol, no route.",
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "cmd": "ping 192.168.3.13"
+      }
+    },
+    {
+      "id": "r1-process",
+      "text": "On R1, start OSPF process 1 with router ID 1.1.1.1.",
+      "hint": "router ospf 1 gets you into router configuration mode. router-id 1.1.1.1 is the next line.",
+      "check": {
+        "type": "ospfProcess",
+        "device": "R1",
+        "pid": 1,
+        "routerId": "1.1.1.1"
+      }
+    },
+    {
+      "id": "r1-networks",
+      "text": "On R1, advertise all three of its networks into area 0: the LAN, the link to R2 and the link to R3.",
+      "hint": "192.168.1.0 0.0.0.255, 10.0.12.0 0.0.0.3 and 10.0.13.0 0.0.0.3 — all in area 0.",
+      "checks": [
+        {
+          "type": "ospfInterface",
+          "device": "R1",
+          "if": "GigabitEthernet0/0",
+          "area": 0
+        },
+        {
+          "type": "ospfInterface",
+          "device": "R1",
+          "if": "GigabitEthernet0/1",
+          "area": 0
+        },
+        {
+          "type": "ospfInterface",
+          "device": "R1",
+          "if": "Serial0/0/0",
+          "area": 0
+        }
+      ]
+    },
+    {
+      "id": "r2",
+      "text": "Do the same on R2: process 1, router ID 2.2.2.2, its LAN and both of its links in area 0.",
+      "checks": [
+        {
+          "type": "ospfProcess",
+          "device": "R2",
+          "pid": 1,
+          "routerId": "2.2.2.2"
+        },
+        {
+          "type": "ospfInterface",
+          "device": "R2",
+          "if": "GigabitEthernet0/0",
+          "area": 0
+        },
+        {
+          "type": "ospfInterface",
+          "device": "R2",
+          "if": "GigabitEthernet0/1",
+          "area": 0
+        },
+        {
+          "type": "ospfInterface",
+          "device": "R2",
+          "if": "Serial0/0/0",
+          "area": 0
+        }
+      ]
+    },
+    {
+      "id": "r3",
+      "text": "And R3: process 1, router ID 3.3.3.3, its LAN and both serial links in area 0.",
+      "checks": [
+        {
+          "type": "ospfProcess",
+          "device": "R3",
+          "pid": 1,
+          "routerId": "3.3.3.3"
+        },
+        {
+          "type": "ospfInterface",
+          "device": "R3",
+          "if": "GigabitEthernet0/0",
+          "area": 0
+        },
+        {
+          "type": "ospfInterface",
+          "device": "R3",
+          "if": "Serial0/0/0",
+          "area": 0
+        },
+        {
+          "type": "ospfInterface",
+          "device": "R3",
+          "if": "Serial0/0/1",
+          "area": 0
+        }
+      ]
+    },
+    {
+      "id": "neighbors",
+      "text": "On R1, confirm two adjacencies with show ip ospf neighbor.",
+      "hint": "R1 has a link to R2 and a link to R3, so it should see both router IDs listed.",
+      "checks": [
+        {
+          "type": "ospfNeighbor",
+          "device": "R1",
+          "min": 2
+        },
+        {
+          "type": "commandUsed",
+          "device": "R1",
+          "cmd": "show ip ospf neighbor"
+        }
+      ]
+    },
+    {
+      "id": "learned",
+      "text": "Confirm R1 has learned both far LANs through OSPF rather than by hand.",
+      "hint": "show ip route ospf. Look for the O code and the [110/…] distance and cost.",
+      "checks": [
+        {
+          "type": "ospfRoute",
+          "device": "R1",
+          "prefix": "192.168.2.0",
+          "cidr": 24
+        },
+        {
+          "type": "ospfRoute",
+          "device": "R1",
+          "prefix": "192.168.3.0",
+          "cidr": 24
+        }
+      ]
+    },
+    {
+      "id": "read-table",
+      "text": "Run show ip route ospf on R1 and read the cost of each learned route.",
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "anyOf": [
+          "show ip route ospf",
+          "show ip route"
+        ]
+      }
+    },
+    {
+      "id": "passive",
+      "text": "Harden it: make R1's LAN interface Gi0/0 passive, so OSPF advertises the LAN without sending hellos to the PCs on it.",
+      "hint": "passive-interface GigabitEthernet0/0, inside router configuration mode. It should not cost you an adjacency.",
+      "checks": [
+        {
+          "type": "ospfInterface",
+          "device": "R1",
+          "if": "GigabitEthernet0/0",
+          "passive": true
+        },
+        {
+          "type": "ospfNeighbor",
+          "device": "R1",
+          "min": 2
+        }
+      ]
+    },
+    {
+      "id": "end-to-end",
+      "text": "Prove it end to end: PC1 reaches PC3 at 192.168.3.13.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.3.13"
+      }
+    },
+    {
+      "id": "other-way",
+      "text": "And PC2 reaches PC1 at 192.168.1.11.",
+      "check": {
+        "type": "reachability",
+        "from": "PC2",
+        "to": "192.168.1.11"
+      }
+    }
+  ],
+  "extension": "R1 can reach R3's LAN two ways: straight down the serial link, or through R2 on gigabit. Work out from the interface costs which path OSPF picked and why, then shut the chosen link and watch the route change.",
+  "debrief": "OSPF replaced nine static routes with three short configurations, and it did something static routes cannot: when a link fails it recalculates on its own.\n\nThe part worth practising is the wildcard mask. It is the inverse of the subnet mask, it is what decides which interfaces join the process, and a wrong one fails silently — no error, no neighbour, no route. Which is exactly the next lab.",
+  "solution": [
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.3.13"
+      ]
+    },
+    {
+      "device": "R1",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "router ospf 1",
+        "router-id 1.1.1.1",
+        "network 192.168.1.0 0.0.0.255 area 0",
+        "network 10.0.12.0 0.0.0.3 area 0",
+        "network 10.0.13.0 0.0.0.3 area 0",
+        "end"
+      ]
+    },
+    {
+      "device": "R2",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "router ospf 1",
+        "router-id 2.2.2.2",
+        "network 192.168.2.0 0.0.0.255 area 0",
+        "network 10.0.12.0 0.0.0.3 area 0",
+        "network 10.0.23.0 0.0.0.3 area 0",
+        "end"
+      ]
+    },
+    {
+      "device": "R3",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "router ospf 1",
+        "router-id 3.3.3.3",
+        "network 192.168.3.0 0.0.0.255 area 0",
+        "network 10.0.13.0 0.0.0.3 area 0",
+        "network 10.0.23.0 0.0.0.3 area 0",
+        "end"
+      ]
+    },
+    {
+      "device": "R1",
+      "cmds": [
+        "show ip ospf neighbor",
+        "show ip route ospf",
+        "configure terminal",
+        "router ospf 1",
+        "passive-interface GigabitEthernet0/0",
+        "end"
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.3.13"
+      ]
+    },
+    {
+      "device": "PC2",
+      "cmds": [
+        "ping 192.168.1.11"
+      ]
+    }
+  ]
+}

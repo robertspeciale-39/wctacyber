@@ -15,7 +15,8 @@
       "estMinutes": 12,
       "difficulty": 1,
       "status": "done",
-      "tagline": "Modes, help, abbreviation, and reading the prompt before you type."
+      "tagline": "Modes, help, abbreviation, and reading the prompt before you type.",
+      "topic": "CLI basics"
     },
     {
       "slug": "cli-u2-mac-table",
@@ -30,7 +31,8 @@
       "estMinutes": 15,
       "difficulty": 1,
       "status": "done",
-      "tagline": "Ping across a switch and watch the MAC address table fill in."
+      "tagline": "Ping across a switch and watch the MAC address table fill in.",
+      "topic": "Switching"
     },
     {
       "slug": "cli-u3-interfaces",
@@ -45,7 +47,8 @@
       "estMinutes": 15,
       "difficulty": 2,
       "status": "done",
-      "tagline": "ip address, no shutdown, and the trap between them."
+      "tagline": "ip address, no shutdown, and the trap between them.",
+      "topic": "Addressing"
     },
     {
       "slug": "cli-u3-ipv6",
@@ -59,7 +62,8 @@
       "estMinutes": 12,
       "difficulty": 2,
       "status": "done",
-      "tagline": "Global unicast, link-local, and the one command that makes it route."
+      "tagline": "Global unicast, link-local, and the one command that makes it route.",
+      "topic": "Addressing"
     },
     {
       "slug": "cli-u3-dhcp",
@@ -73,7 +77,8 @@
       "estMinutes": 18,
       "difficulty": 2,
       "status": "done",
-      "tagline": "Pools, exclusions, and proving a client lease actually works."
+      "tagline": "Pools, exclusions, and proving a client lease actually works.",
+      "topic": "Services"
     },
     {
       "slug": "cli-u4-hop-trace",
@@ -89,7 +94,8 @@
       "difficulty": 3,
       "status": "done",
       "tagline": "The U4 mastery gate: name every address at every hop.",
-      "usesInspector": true
+      "usesInspector": true,
+      "topic": "Packet flow"
     },
     {
       "slug": "cli-u5-static-routes",
@@ -104,7 +110,8 @@
       "estMinutes": 15,
       "difficulty": 2,
       "status": "done",
-      "tagline": "Two routes, two directions, and why one is never enough."
+      "tagline": "Two routes, two directions, and why one is never enough.",
+      "topic": "Routing"
     },
     {
       "slug": "cli-u5-default-route",
@@ -118,7 +125,8 @@
       "estMinutes": 12,
       "difficulty": 2,
       "status": "done",
-      "tagline": "One route that matches everything, and loses to everything."
+      "tagline": "One route that matches everything, and loses to everything.",
+      "topic": "Routing"
     },
     {
       "slug": "cli-u5-arp",
@@ -132,7 +140,8 @@
       "estMinutes": 15,
       "difficulty": 2,
       "status": "done",
-      "tagline": "Why you ARP for the gateway and never for the far host."
+      "tagline": "Why you ARP for the gateway and never for the far host.",
+      "topic": "Packet flow"
     },
     {
       "slug": "cli-u6-diagnostic-sequence",
@@ -146,7 +155,8 @@
       "estMinutes": 15,
       "difficulty": 3,
       "status": "done",
-      "tagline": "Walk the sequence in order and let it find the fault for you."
+      "tagline": "Walk the sequence in order and let it find the fault for you.",
+      "topic": "Troubleshooting"
     },
     {
       "slug": "cli-u6-two-faults",
@@ -163,7 +173,8 @@
       "difficulty": 4,
       "status": "done",
       "tagline": "The U6 mastery gate, on a clock.",
-      "timed": true
+      "timed": true,
+      "topic": "Troubleshooting"
     },
     {
       "slug": "cli-u6-dns",
@@ -178,7 +189,8 @@
       "estMinutes": 12,
       "difficulty": 3,
       "status": "done",
-      "tagline": "Ping by address, ping by name, and know instantly which layer broke."
+      "tagline": "Ping by address, ping by name, and know instantly which layer broke.",
+      "topic": "Services"
     },
     {
       "slug": "cli-x1-baseline",
@@ -190,7 +202,8 @@
       "estMinutes": 18,
       "difficulty": 2,
       "status": "done",
-      "tagline": "Hostname, secret, lines, banner, save — then reload and find out if you saved."
+      "tagline": "Hostname, secret, lines, banner, save — then reload and find out if you saved.",
+      "topic": "Hardening"
     },
     {
       "slug": "cli-u7-subnet-plan",
@@ -205,7 +218,8 @@
       "estMinutes": 25,
       "difficulty": 4,
       "status": "done",
-      "tagline": "The U7 gate: VLSM a /24, then build the network from your own plan."
+      "tagline": "The U7 gate: VLSM a /24, then build the network from your own plan.",
+      "topic": "Subnetting"
     },
     {
       "slug": "cli-u7-plan-audit",
@@ -219,7 +233,8 @@
       "estMinutes": 15,
       "difficulty": 4,
       "status": "done",
-      "tagline": "Three addressing faults against a written plan. Find all three."
+      "tagline": "Three addressing faults against a written plan. Find all three.",
+      "topic": "Subnetting"
     },
     {
       "slug": "cli-u8-capstone-a",
@@ -232,7 +247,8 @@
       "difficulty": 4,
       "status": "done",
       "timed": true,
-      "tagline": "Full mock round on a clock: finish a half-built network and fix what is wrong."
+      "tagline": "Full mock round on a clock: finish a half-built network and fix what is wrong.",
+      "topic": "Capstone"
     },
     {
       "slug": "cli-u8-capstone-b",
@@ -245,7 +261,8 @@
       "difficulty": 4,
       "status": "done",
       "timed": true,
-      "tagline": "The second mock round, different topology: three routers, two defaults, two specifics."
+      "tagline": "The second mock round, different topology: three routers, two defaults, two specifics.",
+      "topic": "Capstone"
     },
     {
       "slug": "cli-sandbox-reference",
@@ -258,7 +275,8 @@
       "difficulty": 0,
       "status": "done",
       "sandbox": true,
-      "tagline": "The working reference topology. Break it on purpose."
+      "tagline": "The working reference topology. Break it on purpose.",
+      "topic": "Sandbox"
     },
     {
       "slug": "cli-sandbox-blank",
@@ -271,7 +289,145 @@
       "difficulty": 0,
       "status": "done",
       "sandbox": true,
-      "tagline": "Two LANs, one router, nothing configured, nothing scored."
+      "tagline": "Two LANs, one router, nothing configured, nothing scored.",
+      "topic": "Sandbox"
+    },
+    {
+      "slug": "cli-v1-vlan-basics",
+      "name": "Splitting a Switch with VLANs",
+      "unit": "v1",
+      "round": "round2",
+      "priority": "P0",
+      "modules": [
+        16
+      ],
+      "estMinutes": 18,
+      "difficulty": 2,
+      "status": "done",
+      "topic": "VLANs",
+      "tagline": "Create VLANs, assign access ports, and watch one flat network become two."
+    },
+    {
+      "slug": "cli-v2-trunking",
+      "name": "Carrying VLANs Between Switches",
+      "unit": "v1",
+      "round": "round2",
+      "priority": "P0",
+      "modules": [
+        16
+      ],
+      "estMinutes": 20,
+      "difficulty": 3,
+      "status": "done",
+      "topic": "VLANs",
+      "tagline": "Trunks, native VLANs and the allowed list, on both ends of one uplink."
+    },
+    {
+      "slug": "cli-v3-router-on-a-stick",
+      "name": "Router on a Stick",
+      "unit": "v2",
+      "round": "round2",
+      "priority": "P1",
+      "modules": [
+        16,
+        17
+      ],
+      "estMinutes": 20,
+      "difficulty": 3,
+      "status": "done",
+      "topic": "Inter-VLAN",
+      "tagline": "One cable, two subinterfaces, and VLANs that can finally talk again."
+    },
+    {
+      "slug": "cli-v4-l3-switch",
+      "name": "Routing on the Switch Itself",
+      "unit": "v2",
+      "round": "semis",
+      "priority": "P1",
+      "modules": [
+        16,
+        17
+      ],
+      "estMinutes": 18,
+      "difficulty": 3,
+      "status": "done",
+      "topic": "Inter-VLAN",
+      "tagline": "SVIs, ip routing, and a switch that stops needing a router."
+    },
+    {
+      "slug": "cli-v5-vlan-faults",
+      "name": "Two VLAN Faults",
+      "unit": "v1",
+      "round": "semis",
+      "priority": "P1",
+      "modules": [
+        16
+      ],
+      "estMinutes": 20,
+      "difficulty": 4,
+      "status": "done",
+      "topic": "VLANs",
+      "tagline": "A port in the wrong VLAN and a VLAN missing from a trunk. Find both."
+    },
+    {
+      "slug": "cli-s1-stp-read",
+      "name": "Reading the Spanning Tree",
+      "unit": "s1",
+      "round": "semis",
+      "priority": "P1",
+      "modules": [
+        16
+      ],
+      "estMinutes": 18,
+      "difficulty": 3,
+      "status": "done",
+      "topic": "STP",
+      "tagline": "Who is root, why, and which port paid for the redundant link."
+    },
+    {
+      "slug": "cli-s2-stp-root",
+      "name": "Choosing the Root Bridge",
+      "unit": "s1",
+      "round": "semis",
+      "priority": "P1",
+      "modules": [
+        16
+      ],
+      "estMinutes": 18,
+      "difficulty": 3,
+      "status": "done",
+      "topic": "STP",
+      "tagline": "Bridge priority, root primary and secondary, portfast and BPDU guard."
+    },
+    {
+      "slug": "cli-o1-ospf-single-area",
+      "name": "Turning Up Single-Area OSPF",
+      "unit": "o1",
+      "round": "semis",
+      "priority": "P0",
+      "modules": [
+        14
+      ],
+      "estMinutes": 25,
+      "difficulty": 4,
+      "status": "done",
+      "topic": "OSPF",
+      "tagline": "Three routers, one area, and routes nobody had to type."
+    },
+    {
+      "slug": "cli-o2-ospf-faults",
+      "name": "OSPF That Almost Works",
+      "unit": "o1",
+      "round": "semis",
+      "priority": "P1",
+      "modules": [
+        14
+      ],
+      "estMinutes": 22,
+      "difficulty": 4,
+      "status": "done",
+      "topic": "OSPF",
+      "tagline": "A wrong wildcard mask and a wrong area, neither of which says a word."
     }
   ],
   "units": {
@@ -290,6 +446,22 @@
     "u4": {
       "name": "Switching & Layer 3",
       "round": "round2"
+    },
+    "v1": {
+      "name": "VLANs & Trunking",
+      "round": "round2"
+    },
+    "v2": {
+      "name": "Inter-VLAN Routing",
+      "round": "round2"
+    },
+    "s1": {
+      "name": "Spanning Tree",
+      "round": "semis"
+    },
+    "o1": {
+      "name": "OSPF",
+      "round": "semis"
     },
     "u5": {
       "name": "Routing",
@@ -341,5 +513,22 @@
       "id": "extension",
       "name": "Extension"
     }
+  ],
+  "topics": [
+    "CLI basics",
+    "Addressing",
+    "Subnetting",
+    "Switching",
+    "VLANs",
+    "Inter-VLAN",
+    "STP",
+    "Routing",
+    "OSPF",
+    "Packet flow",
+    "Services",
+    "Troubleshooting",
+    "Hardening",
+    "Capstone",
+    "Sandbox"
   ]
 }

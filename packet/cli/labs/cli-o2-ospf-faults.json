@@ -1,0 +1,211 @@
+{
+  "slug": "cli-o2-ospf-faults",
+  "name": "OSPF That Almost Works",
+  "unit": "o1",
+  "topic": "ospf",
+  "modules": [
+    14
+  ],
+  "round": "semis",
+  "priority": "P1",
+  "estMinutes": 22,
+  "difficulty": 4,
+  "startDevice": "PC1",
+  "focus": [
+    "show ip ospf neighbor",
+    "show ip protocols",
+    "show ip route ospf",
+    "network",
+    "area"
+  ],
+  "brief": "OSPF is configured on all three routers and most of the network works. R1 can reach R2's LAN. Nobody can reach R3's LAN, and R3 has fewer neighbours than it should.\n\nThere are two faults, both in the OSPF configuration, both of the kind that produce no error message at all. Use show ip protocols and show ip ospf neighbor to find them before you type anything into a router configuration mode.",
+  "watchFor": "Neither fault will announce itself. A wrong wildcard mask and a wrong area both look like a router that simply decided not to participate.",
+  "topologyRef": "ospf-three-routers",
+  "config": {
+    "R1": {
+      "ospf": {
+        "pid": 1,
+        "routerId": "1.1.1.1",
+        "networks": [
+          "192.168.1.0 0.0.0.255 area 0",
+          "10.0.12.0 0.0.0.3 area 0",
+          "10.0.13.0 0.0.0.3 area 0"
+        ]
+      }
+    },
+    "R2": {
+      "ospf": {
+        "pid": 1,
+        "routerId": "2.2.2.2",
+        "networks": [
+          "192.168.2.0 0.0.0.255 area 0",
+          "10.0.12.0 0.0.0.3 area 0",
+          "10.0.23.0 0.0.0.3 area 0"
+        ]
+      }
+    },
+    "R3": {
+      "ospf": {
+        "pid": 1,
+        "routerId": "3.3.3.3",
+        "networks": [
+          "192.168.3.0 0.0.0.255 area 0",
+          "10.0.13.0 0.0.0.3 area 0",
+          "10.0.23.0 0.0.0.3 area 0"
+        ]
+      }
+    }
+  },
+  "faults": [
+    {
+      "type": "ospf-wrong-wildcard",
+      "device": "R3",
+      "network": "192.168.3.0",
+      "wildcard": "0.0.0.0"
+    },
+    {
+      "type": "ospf-wrong-area",
+      "device": "R3",
+      "network": "10.0.23.0",
+      "area": 1
+    }
+  ],
+  "tasks": [
+    {
+      "id": "symptom",
+      "text": "From PC1, confirm the symptom: the ping to PC3 at 192.168.3.13 fails.",
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "cmd": "ping 192.168.3.13"
+      }
+    },
+    {
+      "id": "neighbors-r3",
+      "text": "On R3, run show ip ospf neighbor and count how many adjacencies it has.",
+      "hint": "R3 has two links to other routers. If only one neighbour is listed, something about the other link does not match.",
+      "check": {
+        "type": "commandUsed",
+        "device": "R3",
+        "cmd": "show ip ospf neighbor"
+      }
+    },
+    {
+      "id": "protocols",
+      "text": "On R3, run show ip protocols and read the network statements it is actually using.",
+      "hint": "This is where a wrong wildcard mask and a wrong area both become visible at once.",
+      "check": {
+        "type": "commandUsed",
+        "device": "R3",
+        "cmd": "show ip protocols"
+      }
+    },
+    {
+      "id": "fix-wildcard",
+      "text": "Fix the network statement that is not advertising R3's LAN.",
+      "hint": "A /24 needs the wildcard 0.0.0.255. Remove the wrong statement with `no network …` and add the right one.",
+      "check": {
+        "type": "ospfInterface",
+        "device": "R3",
+        "if": "GigabitEthernet0/0",
+        "area": 0
+      }
+    },
+    {
+      "id": "fix-area",
+      "text": "Fix the link that is in the wrong area. Everything here belongs in area 0.",
+      "hint": "Two routers only become neighbours if the interfaces facing each other are in the same area.",
+      "check": {
+        "type": "ospfInterface",
+        "device": "R3",
+        "if": "Serial0/0/1",
+        "area": 0
+      }
+    },
+    {
+      "id": "two-neighbors",
+      "text": "Confirm R3 now has both adjacencies.",
+      "check": {
+        "type": "ospfNeighbor",
+        "device": "R3",
+        "min": 2
+      }
+    },
+    {
+      "id": "r1-learns",
+      "text": "Confirm R1 has learned R3's LAN through OSPF.",
+      "check": {
+        "type": "ospfRoute",
+        "device": "R1",
+        "prefix": "192.168.3.0",
+        "cidr": 24
+      }
+    },
+    {
+      "id": "r2-learns",
+      "text": "And that R2 has learned it too.",
+      "check": {
+        "type": "ospfRoute",
+        "device": "R2",
+        "prefix": "192.168.3.0",
+        "cidr": 24
+      }
+    },
+    {
+      "id": "end-to-end",
+      "text": "Prove it: PC1 reaches PC3.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.3.13"
+      }
+    },
+    {
+      "id": "reverse",
+      "text": "And PC3 reaches PC2 at 192.168.2.12.",
+      "check": {
+        "type": "reachability",
+        "from": "PC3",
+        "to": "192.168.2.12"
+      }
+    }
+  ],
+  "extension": "Put the area mismatch back on purpose and time yourself finding it from a cold start using only show commands. Under two minutes is a competition-grade time.",
+  "debrief": "Both faults were configuration that looked reasonable. The wildcard 0.0.0.0 matches exactly one address, so R3's LAN interface never joined the process and the network was never advertised — no error, just a route nobody ever sees. The area mismatch left the link up and the interface in OSPF, and simply stopped the adjacency from forming.\n\nThe habit worth building: when OSPF misbehaves, read show ip ospf neighbor first to find out whether the routers are even talking, then show ip protocols to see what each one thinks it was told to advertise.",
+  "solution": [
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.3.13"
+      ]
+    },
+    {
+      "device": "R3",
+      "cmds": [
+        "enable",
+        "show ip ospf neighbor",
+        "show ip protocols",
+        "configure terminal",
+        "router ospf 1",
+        "no network 192.168.3.0 0.0.0.0 area 0",
+        "network 192.168.3.0 0.0.0.255 area 0",
+        "no network 10.0.23.0 0.0.0.3 area 1",
+        "network 10.0.23.0 0.0.0.3 area 0",
+        "end",
+        "show ip ospf neighbor"
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.3.13"
+      ]
+    },
+    {
+      "device": "PC3",
+      "cmds": [
+        "ping 192.168.2.12"
+      ]
+    }
+  ]
+}

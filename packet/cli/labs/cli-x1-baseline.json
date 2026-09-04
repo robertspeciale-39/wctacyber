@@ -22,7 +22,6 @@
     {
       "id": "hostname",
       "text": "Name the router WCTA-EDGE.",
-      "points": 2,
       "check": {
         "type": "hostname",
         "device": "R1",
@@ -32,7 +31,6 @@
     {
       "id": "secret",
       "text": "Set the privileged EXEC secret to class.",
-      "points": 3,
       "hint": "`enable secret class` — not `enable password`.",
       "check": {
         "type": "enableSecret",
@@ -43,7 +41,6 @@
     {
       "id": "console",
       "text": "Set a console line password of cisco and require login on it.",
-      "points": 3,
       "hint": "`line console 0`, then `password cisco`, then `login`.",
       "check": {
         "type": "linePassword",
@@ -55,7 +52,6 @@
     {
       "id": "vty",
       "text": "Do the same for the vty lines 0 through 4.",
-      "points": 3,
       "check": {
         "type": "linePassword",
         "device": "R1",
@@ -66,7 +62,6 @@
     {
       "id": "encrypt",
       "text": "Turn on password encryption so the plaintext line passwords stop appearing in the configuration.",
-      "points": 3,
       "hint": "`service password-encryption`. Run show running-config before and after and compare.",
       "check": {
         "type": "passwordEncryption",
@@ -76,7 +71,6 @@
     {
       "id": "banner",
       "text": "Set a message-of-the-day banner containing the word Authorized.",
-      "points": 3,
       "hint": "`banner motd #Authorized access only#` — the # is a delimiter, not part of the message.",
       "check": {
         "type": "banner",
@@ -87,7 +81,6 @@
     {
       "id": "save",
       "text": "Save the configuration to startup-config.",
-      "points": 4,
       "check": {
         "type": "saved",
         "device": "R1"
@@ -96,7 +89,6 @@
     {
       "id": "reload",
       "text": "Reload the router and confirm the hostname survived.",
-      "points": 4,
       "hint": "If you skipped the save, everything you just did is gone. That is the lesson.",
       "check": {
         "type": "hostname",

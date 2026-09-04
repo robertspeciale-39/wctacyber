@@ -10,6 +10,8 @@ import {
   sameNetwork, inPrefix, isLoopback, makeMac, formatMac, BROADCAST_MAC,
   expandIpv6, compressIpv6, sameIpv6Prefix, ipv6Type
 } from './addr.js';
+import { ospfRoutes } from './ospf.js';
+import { stpState } from './stp.js';
 
 /* ------------------------------------------------------------ profiles --- */
 // Interface sets per device model. Labs pick a model; the CLI accepts the
@@ -35,6 +37,17 @@ export const MODELS = {
   },
   'switch-2960': {
     kind: 'switch', label: 'Cisco 2960',
+    ifaces: [
+      ...Array.from({ length: 24 }, (_, i) => ({ name: `FastEthernet0/${i + 1}`, speed: 100, switchport: true })),
+      { name: 'GigabitEthernet0/1', speed: 1000, switchport: true },
+      { name: 'GigabitEthernet0/2', speed: 1000, switchport: true }
+    ],
+    svi: 'Vlan1'
+  },
+  // Layer 3 switch. Same 24+2 port layout as the 2960, but it can turn on
+  // `ip routing`, carry an SVI per VLAN and take `no switchport` on a port.
+  'switch-3560': {
+    kind: 'switch', label: 'Cisco 3560', layer3: true,
     ifaces: [
       ...Array.from({ length: 24 }, (_, i) => ({ name: `FastEthernet0/${i + 1}`, speed: 100, switchport: true })),
       { name: 'GigabitEthernet0/1', speed: 1000, switchport: true },
@@ -71,7 +84,23 @@ function makeIface(spec, devIndex, ifIndex) {
     // trap. Switch access ports and host NICs do not.
     shutdown: !spec.host && !spec.switchport,
     description: null,
-    vlan: spec.switchport ? 1 : null,
+    // --- switching ---
+    // `swMode` is what the student configured; whether the port actually
+    // trunks also depends on the far end, the way DTP works.
+    swMode: spec.switchport ? 'dynamic-auto' : null,
+    vlan: spec.switchport ? 1 : null,      // access VLAN
+    trunkNative: spec.switchport ? 1 : null,
+    trunkAllowed: null,                    // null = all VLANs
+    portSecurity: null,                    // {max, violation, sticky, learned[]}
+    // --- spanning tree ---
+    portfast: false,
+    bpduguard: false,
+    stpCost: null,                         // explicit `spanning-tree cost`
+    stpPortPriority: 128,
+    // --- subinterface (router-on-a-stick) ---
+    parent: null,
+    encapVlan: null,
+    encapNative: false,
     duplex: 'auto'
   };
 }
@@ -87,9 +116,17 @@ export function createDevice({ id, model, hostname, x = 0, y = 0 }) {
     label: profile.label,
     hostname: hostname || id,
     x, y,
+    layer3Capable: profile.kind === 'router' || !!profile.layer3,
     ifaces: profile.ifaces.map((s, i) => makeIface(s, devIndex, i)),
+    // L2
+    vlans: profile.kind === 'switch' ? [{ id: 1, name: 'default' }] : [],
+    stp: { mode: 'pvst', priority: {}, cost: {} },   // priority/cost keyed by VLAN
     // L3
     staticRoutes: [],       // {prefix, mask, nextHop|null, exitIf|null, ipv6:false}
+    // A router routes because it is a router. A layer 3 switch routes only
+    // once somebody types `ip routing`, which is the whole lesson.
+    ipRouting: profile.kind === 'router',
+    ospf: null,             // {pid, routerId, networks[], passive[], passiveDefault}
     ipv6Routing: false,
     arp: [],                // {ip, mac, iface, age, type}
     macTable: [],           // {vlan, mac, port, type, age}
@@ -120,14 +157,30 @@ export function createDevice({ id, model, hostname, x = 0, y = 0 }) {
     clock: 0,
     log: []                 // console messages waiting to be printed
   };
-  if (profile.svi) {
-    dev.ifaces.push({
-      name: profile.svi, speed: 1000, serial: false, switchport: false, host: false,
-      mac: makeMac(devIndex, 90), ip: null, mask: null, ipv6: [],
-      shutdown: true, description: null, vlan: 1, duplex: 'auto', svi: true
-    });
-  }
+  if (profile.svi) dev.ifaces.push(makeSvi(dev, 1, devIndex));
   return dev;
+}
+
+let sviSeq = 90;
+
+/** `interface vlan <n>` on a switch. Created on demand, like the real thing. */
+export function makeSvi(dev, vlanId, devIndex = 0) {
+  const iface = makeIface({ name: `Vlan${vlanId}`, speed: 1000 }, devIndex, sviSeq++);
+  iface.svi = true;
+  iface.vlan = vlanId;
+  iface.swMode = null;
+  iface.trunkNative = null;
+  iface.shutdown = true;    // an SVI comes up shut, same as a router port
+  return iface;
+}
+
+/** The SVI for a VLAN on this switch, creating it if it does not exist yet. */
+export function ensureSvi(dev, vlanId) {
+  const existing = dev.ifaces.find(i => i.svi && i.vlan === vlanId);
+  if (existing) return existing;
+  const iface = makeSvi(dev, vlanId);
+  dev.ifaces.push(iface);
+  return iface;
 }
 
 /* ----------------------------------------------------------------- net --- */
@@ -200,6 +253,55 @@ export function peerOf(net, devId, ifaceName) {
   return { dev: getDevice(net, other.dev), iface: getIface(getDevice(net, other.dev), other.iface), link: l };
 }
 
+/* ------------------------------------------------------ VLAN / trunking --- */
+
+/** The physical port a frame for this interface actually leaves by.
+ *  A subinterface has no cable of its own — its parent carries it. */
+export function physicalOf(dev, iface) {
+  return iface.parent ? (getIface(dev, iface.parent) || iface) : iface;
+}
+
+/** Subinterfaces configured under a physical router port. */
+export function subInterfaces(dev, iface) {
+  return dev.ifaces.filter(i => i.parent && i.parent.toLowerCase() === iface.name.toLowerCase());
+}
+
+/** Does this port carry 802.1Q tags?
+ *  A switchport trunks if it was told to and the far end does not refuse;
+ *  a router port trunks the moment it has a dot1Q subinterface on it. */
+export function portIsTrunk(net, dev, iface) {
+  if (iface.svi) return false;
+  if (!iface.switchport) {
+    return subInterfaces(dev, iface).some(s => s.encapVlan != null);
+  }
+  if (iface.swMode === 'access') return false;
+  if (iface.swMode === 'trunk') return true;
+  // Dynamic: desirable forms a trunk with any willing neighbour; auto only
+  // ever answers, it never asks.
+  const p = peerOf(net, dev.id, iface.name);
+  if (!p) return false;
+  const far = p.iface;
+  const farMode = far.switchport
+    ? far.swMode
+    : (subInterfaces(p.dev, far).some(s => s.encapVlan != null) ? 'trunk' : 'access');
+  if (iface.swMode === 'dynamic-desirable') return farMode === 'trunk' || farMode === 'dynamic-desirable' || farMode === 'dynamic-auto';
+  return farMode === 'trunk' || farMode === 'dynamic-desirable';
+}
+
+/** Is `vlanId` allowed across this trunk? */
+export function trunkAllows(iface, vlanId) {
+  return iface.trunkAllowed == null || iface.trunkAllowed.includes(vlanId);
+}
+
+/** Every VLAN this port can carry, for `show interfaces trunk` and STP. */
+export function vlansOnPort(net, dev, iface) {
+  if (portIsTrunk(net, dev, iface)) {
+    const known = dev.vlans.length ? dev.vlans.map(v => v.id) : [1];
+    return (iface.trunkAllowed == null ? known : iface.trunkAllowed.filter(v => known.includes(v)));
+  }
+  return iface.vlan == null ? [] : [iface.vlan];
+}
+
 /* --------------------------------------------------------- link status --- */
 
 /** Administrative status: what `shutdown` controls. */
@@ -210,9 +312,22 @@ export function adminStatus(iface) {
 /** Line protocol: needs a good cable and a peer that is also up. */
 export function lineStatus(net, dev, iface) {
   if (iface.svi) {
-    // An SVI is up when at least one access port in its VLAN is up.
-    const anyUp = dev.ifaces.some(i => i.switchport && i.vlan === iface.vlan && !i.shutdown && lineStatus(net, dev, i) === 'up');
-    return (!iface.shutdown && anyUp) ? 'up' : 'down';
+    // An SVI is up when its VLAN exists and at least one port carrying that
+    // VLAN — access or trunk — is up.
+    if (iface.shutdown) return 'down';
+    const vlanKnown = !dev.vlans.length || dev.vlans.some(v => v.id === iface.vlan);
+    if (!vlanKnown) return 'down';
+    const anyUp = dev.ifaces.some(i =>
+      !i.svi && i.switchport && !i.shutdown &&
+      lineStatus(net, dev, i) === 'up' &&
+      vlansOnPort(net, dev, i).includes(iface.vlan));
+    return anyUp ? 'up' : 'down';
+  }
+  if (iface.parent) {
+    // A subinterface follows its physical parent, and needs an encapsulation.
+    const parent = getIface(dev, iface.parent);
+    if (!parent || iface.shutdown || iface.encapVlan == null) return 'down';
+    return lineStatus(net, dev, parent);
   }
   if (iface.shutdown) return 'down';
   const p = peerOf(net, dev.id, iface.name);
@@ -223,6 +338,11 @@ export function lineStatus(net, dev, iface) {
 
 export function ifaceUp(net, dev, iface) {
   return !iface.shutdown && lineStatus(net, dev, iface) === 'up';
+}
+
+/** A device forwards other people's packets only if it is doing IP routing. */
+export function canRoute(dev) {
+  return !!dev.ipRouting && dev.kind !== 'pc' && dev.kind !== 'server';
 }
 
 /* ------------------------------------------------------- routing table --- */
@@ -250,6 +370,13 @@ export function routingTable(net, dev) {
       cidr: maskToCidr(r.mask), nextHop: r.nextHop, exitIf: r.exitIf,
       ad: r.nextHop ? 1 : 0, metric: 0
     });
+  }
+
+  // Learned routes. OSPF only installs a prefix nothing better already covers,
+  // which is what administrative distance is for.
+  for (const r of ospfRoutes(net, dev)) {
+    const better = rows.some(x => x.prefix === r.prefix && x.mask === r.mask && x.ad <= r.ad);
+    if (!better) rows.push(r);
   }
   return rows;
 }
@@ -279,52 +406,98 @@ function connectedIfaceFor(net, dev, ip) {
 /* -------------------------------------------------- layer 2 reachability --- */
 
 /**
- * Everything reachable from (dev, iface) without crossing a router.
- * Switches forward out every other port, which is exactly how a broadcast
- * travels — so this doubles as the ARP flood.
- * Returns [{dev, iface, viaSwitches: [{dev, ingress, egress}]}]
+ * Everything reachable from (dev, iface) without crossing a router — the
+ * broadcast domain, which is exactly the path an ARP request takes.
+ *
+ * VLAN-aware. A frame carries a tag (or none). An access port hands it the
+ * port's VLAN; a trunk keeps the tag, or applies the native VLAN when the
+ * frame arrives untagged. A port in the wrong VLAN, a trunk that does not
+ * allow the VLAN, and a port spanning tree has put in blocking all drop it —
+ * which is how a VLAN really isolates traffic and how STP really stops a loop.
+ *
+ * Returns [{dev, iface, vlan, viaSwitches: [{dev, ingress, egress, vlan}]}]
  */
 export function segmentEndpoints(net, dev, ifaceName) {
-  const start = peerOf(net, dev.id, ifaceName);
-  if (!start || !start.link.ok || start.iface.shutdown) return [];
+  const src = getIface(dev, ifaceName);
+  if (!src) return [];
+  const phys = physicalOf(dev, src);
+
+  // What the frame looks like on the wire leaving this device.
+  let tag = null;
+  if (src.svi) {
+    // Originated by the switch itself, inside its own VLAN.
+    return floodFromSwitch(net, dev, null, src.vlan, []);
+  }
+  if (src.parent) tag = src.encapNative ? null : src.encapVlan;
+  else if (src.switchport && !portIsTrunk(net, dev, src)) tag = null;
+
+  const start = peerOf(net, dev.id, phys.name);
+  if (!start || !start.link.ok || start.iface.shutdown || phys.shutdown) return [];
+  return deliver(net, start.dev, start.iface, tag, []);
+}
+
+/** Hand a frame to whatever is on the far end of a wire. */
+function deliver(net, dev, iface, tag, path) {
+  if (dev.kind !== 'switch') {
+    const landing = endpointIface(dev, iface, tag);
+    return landing ? [{ dev, iface: landing, vlan: tag, viaSwitches: path }] : [];
+  }
+  // Ingress rules on a switch port.
+  if (portIsTrunk(net, dev, iface)) {
+    const vlan = tag == null ? iface.trunkNative : tag;
+    if (!trunkAllows(iface, vlan)) return [];
+    return floodFromSwitch(net, dev, iface, vlan, path);
+  }
+  if (tag != null && tag !== iface.vlan) return [];   // tagged frame onto an access port
+  return floodFromSwitch(net, dev, iface, iface.vlan, path);
+}
+
+/** Flood a frame already inside `sw`, in `vlan`, arriving on `ingress`
+ *  (null when the switch itself originated it). */
+function floodFromSwitch(net, sw, ingress, vlan, path) {
   const out = [];
-  const seen = new Set();
-  const queue = [{ dev: start.dev, iface: start.iface, path: [] }];
-  while (queue.length) {
-    const cur = queue.shift();
-    const key = `${cur.dev.id}:${cur.iface.name}`;
-    if (seen.has(key)) continue;
-    seen.add(key);
-    if (cur.dev.kind === 'switch') {
-      const hop = { dev: cur.dev, ingress: cur.iface.name, egress: null };
-      // The switch itself is an endpoint if its SVI is addressed.
-      const svi = cur.dev.ifaces.find(i => i.svi && i.ip);
-      if (svi && ifaceUp(net, cur.dev, svi)) {
-        out.push({ dev: cur.dev, iface: svi, viaSwitches: [...cur.path, hop] });
-      }
-      for (const port of cur.dev.ifaces) {
-        if (port.svi || port.name === cur.iface.name) continue;
-        if (port.shutdown || port.vlan !== cur.iface.vlan) continue;
-        const nxt = peerOf(net, cur.dev.id, port.name);
-        if (!nxt || !nxt.link.ok || nxt.iface.shutdown) continue;
-        queue.push({
-          dev: nxt.dev, iface: nxt.iface,
-          path: [...cur.path, { dev: cur.dev, ingress: cur.iface.name, egress: port.name }]
-        });
-      }
-    } else {
-      out.push({ dev: cur.dev, iface: cur.iface, viaSwitches: cur.path });
-    }
+  const hop = { dev: sw, ingress: ingress ? ingress.name : null, egress: null, vlan };
+  const here = [...path, hop];
+
+  // The switch itself is an endpoint when it has an SVI in this VLAN.
+  const svi = sw.ifaces.find(i => i.svi && i.vlan === vlan && i.ip);
+  if (svi && ifaceUp(net, sw, svi)) out.push({ dev: sw, iface: svi, vlan, viaSwitches: here });
+
+  const states = stpState(net, vlan);
+  for (const port of sw.ifaces) {
+    if (port.svi || port.parent) continue;
+    if (ingress && port.name === ingress.name) continue;
+    if (port.shutdown) continue;
+    const trunk = portIsTrunk(net, sw, port);
+    if (trunk ? !trunkAllows(port, vlan) : port.vlan !== vlan) continue;
+    if (states.get(`${sw.id}:${port.name}`)?.state === 'blocking') continue;
+    const nxt = peerOf(net, sw.id, port.name);
+    if (!nxt || !nxt.link.ok || nxt.iface.shutdown) continue;
+    // Loop guard: never re-enter a switch this copy of the frame already left.
+    if (path.some(h => h.dev.id === nxt.dev.id)) continue;
+    const outTag = trunk && vlan !== port.trunkNative ? vlan : null;
+    const egressPath = [...path, { dev: sw, ingress: ingress ? ingress.name : null, egress: port.name, vlan }];
+    out.push(...deliver(net, nxt.dev, nxt.iface, outTag, egressPath));
   }
   return out;
 }
 
+/** Which interface on a router or host actually receives this frame. */
+function endpointIface(dev, iface, tag) {
+  if (tag == null) {
+    const nativeSub = subInterfaces(dev, iface).find(s => s.encapNative);
+    return nativeSub || iface;
+  }
+  return subInterfaces(dev, iface).find(s => s.encapVlan === tag) || null;
+}
+
 /* ----------------------------------------------------------------- ARP --- */
 
-function learnMac(net, switches, mac, ingressPort, dev) {
-  const existing = dev.macTable.find(e => e.mac === mac && e.vlan === 1);
+function learnMac(net, dev, mac, ingressPort, vlan = 1) {
+  if (!ingressPort) return;   // the switch's own SVI traffic teaches it nothing
+  const existing = dev.macTable.find(e => e.mac === mac && e.vlan === vlan);
   if (existing) { existing.port = ingressPort; existing.age = net.tick; return; }
-  dev.macTable.push({ vlan: 1, mac, port: ingressPort, type: 'DYNAMIC', age: net.tick });
+  dev.macTable.push({ vlan, mac, port: ingressPort, type: 'DYNAMIC', age: net.tick });
 }
 
 function recordArp(net, dev, ip, mac, ifaceName) {
@@ -345,20 +518,24 @@ export function arpResolve(net, dev, iface, nextHopIp, probe = false) {
     if (!p || !p.link.ok || p.iface.shutdown) return null;
     return { mac: p.iface.mac, dev: p.dev, iface: p.iface, flooded: false };
   }
+  const srcMac = physicalOf(dev, iface).mac;
   const endpoints = segmentEndpoints(net, dev, iface.name);
-  // The broadcast reaches everyone: every switch on the way learns our MAC.
+  // The broadcast reaches everyone: every switch on the way learns our MAC,
+  // in the VLAN the frame was travelling in.
   if (!probe) for (const ep of endpoints) {
-    for (const s of ep.viaSwitches) learnMac(net, null, iface.mac, s.ingress, s.dev);
+    for (const s of ep.viaSwitches) learnMac(net, s.dev, srcMac, s.ingress, s.vlan);
   }
-  const match = endpoints.find(ep => ep.iface.ip === nextHopIp || (ep.dev.host && ep.iface.ip === nextHopIp));
+  const match = endpoints.find(ep => ep.iface.ip === nextHopIp);
   if (!match) return null;
   if (!probe) {
     // The unicast reply comes back, teaching each switch where the target lives.
-    for (const s of match.viaSwitches) learnMac(net, null, match.iface.mac, s.egress || s.ingress, s.dev);
-    recordArp(net, dev, nextHopIp, match.iface.mac, iface.name);
-    if (iface.ip) recordArp(net, match.dev, iface.ip, iface.mac, match.iface.name);
+    const dstMac = physicalOf(match.dev, match.iface).mac;
+    for (const s of match.viaSwitches) learnMac(net, s.dev, dstMac, s.egress || s.ingress, s.vlan);
+    recordArp(net, dev, nextHopIp, dstMac, iface.name);
+    if (iface.ip) recordArp(net, match.dev, iface.ip, srcMac, match.iface.name);
   }
-  return { mac: match.iface.mac, dev: match.dev, iface: match.iface, flooded: true, viaSwitches: match.viaSwitches };
+  return { mac: physicalOf(match.dev, match.iface).mac, dev: match.dev, iface: match.iface,
+           flooded: true, viaSwitches: match.viaSwitches };
 }
 
 /* ---------------------------------------------------------- forwarding --- */
@@ -451,7 +628,7 @@ export function forward(net, src, dstIp, opts = {}) {
       device: cur.id, hostname: cur.hostname,
       outIface: egress.name, inIface: arp.iface.name,
       nextDevice: arp.dev.id, nextHostname: arp.dev.hostname,
-      srcMac: formatMac(egress.mac), dstMac: formatMac(arp.mac),
+      srcMac: formatMac(physicalOf(cur, egress).mac), dstMac: formatMac(arp.mac),
       srcIp, dstIp, ttl,
       viaSwitches: (arp.viaSwitches || []).map(s => ({ id: s.dev.id, ingress: s.ingress, egress: s.egress }))
     });
@@ -461,8 +638,9 @@ export function forward(net, src, dstIp, opts = {}) {
 
     if (ownsIp(cur, dstIp)) return { ok: true, hops, srcIp, dstIp, ttlUsed: ttlStart - ttl };
 
-    // Only a router forwards a packet that isn't addressed to it.
-    if (cur.kind !== 'router') return { ok: false, failure: FAIL.NO_ROUTE, failedAt: cur.id, hops };
+    // Only something doing IP routing forwards a packet not addressed to it.
+    // A layer 3 switch without `ip routing` is a switch, and drops it here.
+    if (!canRoute(cur)) return { ok: false, failure: FAIL.NO_ROUTE, failedAt: cur.id, hops };
 
     ttl--;
     if (ttl <= 0) return { ok: false, failure: FAIL.TTL_EXPIRED, failedAt: cur.id, hops };
@@ -627,26 +805,39 @@ export function restore(net, snap) {
 const PERSISTED = [
   'hostname', 'staticRoutes', 'dhcpPools', 'dhcpExcluded', 'ipv6Routing',
   'enableSecret', 'enablePassword', 'passwordEncryption', 'bannerMotd',
-  'lines', 'domainLookup', 'defaultGateway'
+  'lines', 'domainLookup', 'defaultGateway',
+  'vlans', 'stp', 'ipRouting', 'ospf'
+];
+
+const IFACE_PERSISTED = [
+  'ip', 'mask', 'description', 'shutdown', 'switchport', 'swMode', 'vlan',
+  'trunkNative', 'trunkAllowed', 'portfast', 'bpduguard', 'stpCost',
+  'stpPortPriority', 'parent', 'encapVlan', 'encapNative', 'svi', 'speed', 'serial'
 ];
 
 export function captureConfigState(dev) {
   const snap = {};
   for (const k of PERSISTED) snap[k] = JSON.parse(JSON.stringify(dev[k] ?? null));
-  snap.ifaces = dev.ifaces.map(i => ({
-    name: i.name, ip: i.ip, mask: i.mask, ipv6: JSON.parse(JSON.stringify(i.ipv6)),
-    description: i.description, shutdown: i.shutdown, vlan: i.vlan
-  }));
+  snap.ifaces = dev.ifaces.map(i => {
+    const o = { name: i.name, ipv6: JSON.parse(JSON.stringify(i.ipv6)) };
+    for (const k of IFACE_PERSISTED) o[k] = i[k] === undefined ? null : JSON.parse(JSON.stringify(i[k]));
+    return o;
+  });
   return snap;
 }
 
 export function restoreConfigState(dev, snap) {
   for (const k of PERSISTED) if (snap[k] !== undefined) dev[k] = JSON.parse(JSON.stringify(snap[k]));
   for (const saved of snap.ifaces || []) {
-    const i = dev.ifaces.find(x => x.name === saved.name);
-    if (!i) continue;
-    i.ip = saved.ip; i.mask = saved.mask;
+    let i = dev.ifaces.find(x => x.name === saved.name);
+    if (!i) {
+      // Subinterfaces and extra SVIs are created by configuration, so a
+      // reload has to build them back before it can fill them in.
+      if (!saved.parent && !saved.svi) continue;
+      i = makeIface({ name: saved.name, speed: saved.speed || 1000 }, 0, sviSeq++);
+      dev.ifaces.push(i);
+    }
     i.ipv6 = JSON.parse(JSON.stringify(saved.ipv6 || []));
-    i.description = saved.description; i.shutdown = saved.shutdown; i.vlan = saved.vlan;
+    for (const k of IFACE_PERSISTED) if (saved[k] !== undefined) i[k] = JSON.parse(JSON.stringify(saved[k]));
   }
 }

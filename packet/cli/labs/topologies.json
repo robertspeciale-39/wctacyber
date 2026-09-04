@@ -747,5 +747,691 @@
         "http": true
       }
     }
+  },
+  "vlan-one-switch": {
+    "devices": [
+      {
+        "id": "PC1",
+        "model": "pc",
+        "hostname": "PC1",
+        "x": 0,
+        "y": 0
+      },
+      {
+        "id": "PC2",
+        "model": "pc",
+        "hostname": "PC2",
+        "x": 0,
+        "y": 2
+      },
+      {
+        "id": "PC3",
+        "model": "pc",
+        "hostname": "PC3",
+        "x": 2,
+        "y": 0
+      },
+      {
+        "id": "PC4",
+        "model": "pc",
+        "hostname": "PC4",
+        "x": 2,
+        "y": 2
+      },
+      {
+        "id": "SW1",
+        "model": "switch-2960",
+        "hostname": "SW1",
+        "x": 1,
+        "y": 1
+      }
+    ],
+    "links": [
+      {
+        "from": "PC1:FastEthernet0",
+        "to": "SW1:FastEthernet0/1"
+      },
+      {
+        "from": "PC2:FastEthernet0",
+        "to": "SW1:FastEthernet0/2"
+      },
+      {
+        "from": "PC3:FastEthernet0",
+        "to": "SW1:FastEthernet0/3"
+      },
+      {
+        "from": "PC4:FastEthernet0",
+        "to": "SW1:FastEthernet0/4"
+      }
+    ],
+    "config": {
+      "PC1": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.1.11",
+            "cidr": 24
+          }
+        }
+      },
+      "PC2": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.1.12",
+            "cidr": 24
+          }
+        }
+      },
+      "PC3": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.1.13",
+            "cidr": 24
+          }
+        }
+      },
+      "PC4": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.1.14",
+            "cidr": 24
+          }
+        }
+      }
+    }
+  },
+  "vlan-two-switches": {
+    "devices": [
+      {
+        "id": "PC1",
+        "model": "pc",
+        "hostname": "PC1",
+        "x": 0,
+        "y": 0
+      },
+      {
+        "id": "PC2",
+        "model": "pc",
+        "hostname": "PC2",
+        "x": 0,
+        "y": 2
+      },
+      {
+        "id": "PC3",
+        "model": "pc",
+        "hostname": "PC3",
+        "x": 4,
+        "y": 0
+      },
+      {
+        "id": "PC4",
+        "model": "pc",
+        "hostname": "PC4",
+        "x": 4,
+        "y": 2
+      },
+      {
+        "id": "SW1",
+        "model": "switch-2960",
+        "hostname": "SW1",
+        "x": 1,
+        "y": 1
+      },
+      {
+        "id": "SW2",
+        "model": "switch-2960",
+        "hostname": "SW2",
+        "x": 3,
+        "y": 1
+      }
+    ],
+    "links": [
+      {
+        "from": "PC1:FastEthernet0",
+        "to": "SW1:FastEthernet0/1"
+      },
+      {
+        "from": "PC2:FastEthernet0",
+        "to": "SW1:FastEthernet0/2"
+      },
+      {
+        "from": "SW1:GigabitEthernet0/1",
+        "to": "SW2:GigabitEthernet0/1"
+      },
+      {
+        "from": "PC3:FastEthernet0",
+        "to": "SW2:FastEthernet0/1"
+      },
+      {
+        "from": "PC4:FastEthernet0",
+        "to": "SW2:FastEthernet0/2"
+      }
+    ],
+    "config": {
+      "PC1": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.10.11",
+            "cidr": 24
+          }
+        }
+      },
+      "PC2": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.20.12",
+            "cidr": 24
+          }
+        }
+      },
+      "PC3": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.10.13",
+            "cidr": 24
+          }
+        }
+      },
+      "PC4": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.20.14",
+            "cidr": 24
+          }
+        }
+      },
+      "SW1": {
+        "vlans": [
+          {
+            "id": 10,
+            "name": "STAFF"
+          },
+          {
+            "id": 20,
+            "name": "STUDENT"
+          }
+        ],
+        "ifaces": {
+          "FastEthernet0/1": {
+            "mode": "access",
+            "accessVlan": 10
+          },
+          "FastEthernet0/2": {
+            "mode": "access",
+            "accessVlan": 20
+          }
+        }
+      },
+      "SW2": {
+        "vlans": [
+          {
+            "id": 10,
+            "name": "STAFF"
+          },
+          {
+            "id": 20,
+            "name": "STUDENT"
+          }
+        ],
+        "ifaces": {
+          "FastEthernet0/1": {
+            "mode": "access",
+            "accessVlan": 10
+          },
+          "FastEthernet0/2": {
+            "mode": "access",
+            "accessVlan": 20
+          }
+        }
+      }
+    }
+  },
+  "vlan-router-on-a-stick": {
+    "devices": [
+      {
+        "id": "PC1",
+        "model": "pc",
+        "hostname": "PC1",
+        "x": 0,
+        "y": 0
+      },
+      {
+        "id": "PC2",
+        "model": "pc",
+        "hostname": "PC2",
+        "x": 0,
+        "y": 2
+      },
+      {
+        "id": "SW1",
+        "model": "switch-2960",
+        "hostname": "SW1",
+        "x": 1,
+        "y": 1
+      },
+      {
+        "id": "R1",
+        "model": "router-1941",
+        "hostname": "R1",
+        "x": 3,
+        "y": 1
+      }
+    ],
+    "links": [
+      {
+        "from": "PC1:FastEthernet0",
+        "to": "SW1:FastEthernet0/1"
+      },
+      {
+        "from": "PC2:FastEthernet0",
+        "to": "SW1:FastEthernet0/2"
+      },
+      {
+        "from": "SW1:GigabitEthernet0/1",
+        "to": "R1:GigabitEthernet0/0"
+      }
+    ],
+    "config": {
+      "PC1": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.10.11",
+            "cidr": 24
+          }
+        },
+        "host": {
+          "gateway": "192.168.10.1"
+        }
+      },
+      "PC2": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.20.12",
+            "cidr": 24
+          }
+        },
+        "host": {
+          "gateway": "192.168.20.1"
+        }
+      },
+      "SW1": {
+        "vlans": [
+          {
+            "id": 10,
+            "name": "STAFF"
+          },
+          {
+            "id": 20,
+            "name": "STUDENT"
+          }
+        ],
+        "ifaces": {
+          "FastEthernet0/1": {
+            "mode": "access",
+            "accessVlan": 10
+          },
+          "FastEthernet0/2": {
+            "mode": "access",
+            "accessVlan": 20
+          },
+          "GigabitEthernet0/1": {
+            "mode": "trunk"
+          }
+        }
+      }
+    }
+  },
+  "l3-switch-campus": {
+    "devices": [
+      {
+        "id": "PC1",
+        "model": "pc",
+        "hostname": "PC1",
+        "x": 0,
+        "y": 0
+      },
+      {
+        "id": "PC2",
+        "model": "pc",
+        "hostname": "PC2",
+        "x": 0,
+        "y": 2
+      },
+      {
+        "id": "PC3",
+        "model": "pc",
+        "hostname": "PC3",
+        "x": 2,
+        "y": 2
+      },
+      {
+        "id": "MLS1",
+        "model": "switch-3560",
+        "hostname": "MLS1",
+        "x": 1,
+        "y": 1
+      }
+    ],
+    "links": [
+      {
+        "from": "PC1:FastEthernet0",
+        "to": "MLS1:FastEthernet0/1"
+      },
+      {
+        "from": "PC2:FastEthernet0",
+        "to": "MLS1:FastEthernet0/2"
+      },
+      {
+        "from": "PC3:FastEthernet0",
+        "to": "MLS1:FastEthernet0/3"
+      }
+    ],
+    "config": {
+      "PC1": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.10.11",
+            "cidr": 24
+          }
+        },
+        "host": {
+          "gateway": "192.168.10.1"
+        }
+      },
+      "PC2": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.20.12",
+            "cidr": 24
+          }
+        },
+        "host": {
+          "gateway": "192.168.20.1"
+        }
+      },
+      "PC3": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.30.13",
+            "cidr": 24
+          }
+        },
+        "host": {
+          "gateway": "192.168.30.1"
+        }
+      },
+      "MLS1": {
+        "vlans": [
+          {
+            "id": 10,
+            "name": "STAFF"
+          },
+          {
+            "id": 20,
+            "name": "STUDENT"
+          },
+          {
+            "id": 30,
+            "name": "LAB"
+          }
+        ],
+        "ifaces": {
+          "FastEthernet0/1": {
+            "mode": "access",
+            "accessVlan": 10
+          },
+          "FastEthernet0/2": {
+            "mode": "access",
+            "accessVlan": 20
+          },
+          "FastEthernet0/3": {
+            "mode": "access",
+            "accessVlan": 30
+          }
+        }
+      }
+    }
+  },
+  "stp-ring": {
+    "devices": [
+      {
+        "id": "SW1",
+        "model": "switch-2960",
+        "hostname": "SW1",
+        "x": 1,
+        "y": 0
+      },
+      {
+        "id": "SW2",
+        "model": "switch-2960",
+        "hostname": "SW2",
+        "x": 0,
+        "y": 2
+      },
+      {
+        "id": "SW3",
+        "model": "switch-2960",
+        "hostname": "SW3",
+        "x": 2,
+        "y": 2
+      },
+      {
+        "id": "PC1",
+        "model": "pc",
+        "hostname": "PC1",
+        "x": 0,
+        "y": 0
+      },
+      {
+        "id": "PC2",
+        "model": "pc",
+        "hostname": "PC2",
+        "x": 3,
+        "y": 1
+      }
+    ],
+    "links": [
+      {
+        "from": "SW1:GigabitEthernet0/1",
+        "to": "SW2:GigabitEthernet0/1"
+      },
+      {
+        "from": "SW1:GigabitEthernet0/2",
+        "to": "SW3:GigabitEthernet0/1"
+      },
+      {
+        "from": "SW2:GigabitEthernet0/2",
+        "to": "SW3:GigabitEthernet0/2"
+      },
+      {
+        "from": "PC1:FastEthernet0",
+        "to": "SW2:FastEthernet0/1"
+      },
+      {
+        "from": "PC2:FastEthernet0",
+        "to": "SW3:FastEthernet0/1"
+      }
+    ],
+    "config": {
+      "PC1": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.1.11",
+            "cidr": 24
+          }
+        }
+      },
+      "PC2": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.1.12",
+            "cidr": 24
+          }
+        }
+      }
+    }
+  },
+  "ospf-three-routers": {
+    "devices": [
+      {
+        "id": "R1",
+        "model": "router-1941",
+        "hostname": "R1",
+        "x": 1,
+        "y": 0
+      },
+      {
+        "id": "R2",
+        "model": "router-1941",
+        "hostname": "R2",
+        "x": 0,
+        "y": 2
+      },
+      {
+        "id": "R3",
+        "model": "router-1941",
+        "hostname": "R3",
+        "x": 2,
+        "y": 2
+      },
+      {
+        "id": "PC1",
+        "model": "pc",
+        "hostname": "PC1",
+        "x": 3,
+        "y": 0
+      },
+      {
+        "id": "PC2",
+        "model": "pc",
+        "hostname": "PC2",
+        "x": 0,
+        "y": 3
+      },
+      {
+        "id": "PC3",
+        "model": "pc",
+        "hostname": "PC3",
+        "x": 3,
+        "y": 2
+      }
+    ],
+    "links": [
+      {
+        "from": "R1:GigabitEthernet0/1",
+        "to": "R2:GigabitEthernet0/1"
+      },
+      {
+        "from": "R1:Serial0/0/0",
+        "to": "R3:Serial0/0/0"
+      },
+      {
+        "from": "R2:Serial0/0/0",
+        "to": "R3:Serial0/0/1"
+      },
+      {
+        "from": "PC1:FastEthernet0",
+        "to": "R1:GigabitEthernet0/0"
+      },
+      {
+        "from": "PC2:FastEthernet0",
+        "to": "R2:GigabitEthernet0/0"
+      },
+      {
+        "from": "PC3:FastEthernet0",
+        "to": "R3:GigabitEthernet0/0"
+      }
+    ],
+    "config": {
+      "R1": {
+        "ifaces": {
+          "GigabitEthernet0/0": {
+            "ip": "192.168.1.1",
+            "cidr": 24,
+            "description": "LAN 1"
+          },
+          "GigabitEthernet0/1": {
+            "ip": "10.0.12.1",
+            "cidr": 30,
+            "description": "Link to R2"
+          },
+          "Serial0/0/0": {
+            "ip": "10.0.13.1",
+            "cidr": 30,
+            "description": "Link to R3"
+          }
+        }
+      },
+      "R2": {
+        "ifaces": {
+          "GigabitEthernet0/0": {
+            "ip": "192.168.2.1",
+            "cidr": 24,
+            "description": "LAN 2"
+          },
+          "GigabitEthernet0/1": {
+            "ip": "10.0.12.2",
+            "cidr": 30,
+            "description": "Link to R1"
+          },
+          "Serial0/0/0": {
+            "ip": "10.0.23.2",
+            "cidr": 30,
+            "description": "Link to R3"
+          }
+        }
+      },
+      "R3": {
+        "ifaces": {
+          "GigabitEthernet0/0": {
+            "ip": "192.168.3.1",
+            "cidr": 24,
+            "description": "LAN 3"
+          },
+          "Serial0/0/0": {
+            "ip": "10.0.13.3",
+            "cidr": 30,
+            "description": "Link to R1"
+          },
+          "Serial0/0/1": {
+            "ip": "10.0.23.3",
+            "cidr": 30,
+            "description": "Link to R2"
+          }
+        }
+      },
+      "PC1": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.1.11",
+            "cidr": 24
+          }
+        },
+        "host": {
+          "gateway": "192.168.1.1"
+        }
+      },
+      "PC2": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.2.12",
+            "cidr": 24
+          }
+        },
+        "host": {
+          "gateway": "192.168.2.1"
+        }
+      },
+      "PC3": {
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.3.13",
+            "cidr": 24
+          }
+        },
+        "host": {
+          "gateway": "192.168.3.1"
+        }
+      }
+    }
   }
 }

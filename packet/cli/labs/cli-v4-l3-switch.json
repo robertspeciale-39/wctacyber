@@ -1,0 +1,174 @@
+{
+  "slug": "cli-v4-l3-switch",
+  "name": "Routing on the Switch Itself",
+  "unit": "v2",
+  "topic": "inter-vlan",
+  "modules": [
+    16,
+    17
+  ],
+  "round": "semis",
+  "priority": "P1",
+  "estMinutes": 18,
+  "difficulty": 3,
+  "startDevice": "PC1",
+  "focus": [
+    "interface vlan",
+    "ip address",
+    "no shutdown",
+    "ip routing",
+    "show ip route"
+  ],
+  "brief": "Same problem as router-on-a-stick, better hardware. MLS1 is a layer 3 switch: it can hold an IP address per VLAN and route between them on its own, with no router and no trunk cable at all.\n\nThree VLANs are already built and the access ports are assigned. You need a switched virtual interface for each VLAN to act as its gateway, and then the one command that turns a switch into a router.",
+  "watchFor": "An SVI comes up shut. And a switch that has SVIs but no `ip routing` will answer pings on each VLAN while refusing to pass a single packet between them — which looks exactly like a broken gateway.",
+  "topologyRef": "l3-switch-campus",
+  "tasks": [
+    {
+      "id": "prove-broken",
+      "text": "From PC1, ping PC2 at 192.168.20.12 and watch it fail.",
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "cmd": "ping 192.168.20.12"
+      }
+    },
+    {
+      "id": "svi10",
+      "text": "On MLS1, create the VLAN 10 SVI with 192.168.10.1/24 and bring it up.",
+      "hint": "interface vlan 10 creates it. It needs an address and a no shutdown.",
+      "check": {
+        "type": "svi",
+        "device": "MLS1",
+        "vlan": 10,
+        "ip": "192.168.10.1",
+        "cidr": 24,
+        "up": true
+      }
+    },
+    {
+      "id": "svi20",
+      "text": "Do the same for VLAN 20 with 192.168.20.1/24.",
+      "check": {
+        "type": "svi",
+        "device": "MLS1",
+        "vlan": 20,
+        "ip": "192.168.20.1",
+        "cidr": 24,
+        "up": true
+      }
+    },
+    {
+      "id": "svi30",
+      "text": "And VLAN 30 with 192.168.30.1/24.",
+      "check": {
+        "type": "svi",
+        "device": "MLS1",
+        "vlan": 30,
+        "ip": "192.168.30.1",
+        "cidr": 24,
+        "up": true
+      }
+    },
+    {
+      "id": "gateway",
+      "text": "Prove PC1 can reach its gateway at 192.168.10.1 — then try PC2 again and see that it still fails. The gateway answers; nothing is being routed yet.",
+      "hint": "An SVI answers for its own VLAN whether or not the switch is routing. That is worth noticing.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.10.1"
+      }
+    },
+    {
+      "id": "ip-routing",
+      "text": "Turn on routing: ip routing, in global configuration mode.",
+      "hint": "One command, no arguments. This is the difference between a layer 2 switch and a layer 3 switch in practice.",
+      "check": {
+        "type": "ipRouting",
+        "device": "MLS1"
+      }
+    },
+    {
+      "id": "across",
+      "text": "Prove it: PC1 reaches PC2.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.20.12"
+      }
+    },
+    {
+      "id": "third",
+      "text": "And the third VLAN as well: PC1 reaches PC3 at 192.168.30.13.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.30.13"
+      }
+    },
+    {
+      "id": "table",
+      "text": "Run show ip route on MLS1 and confirm three connected networks, one per SVI.",
+      "check": {
+        "type": "commandUsed",
+        "device": "MLS1",
+        "anyOf": [
+          "show ip route",
+          "show ip route connected"
+        ]
+      }
+    }
+  ],
+  "extension": "Turn `ip routing` back off without removing anything else, and write down exactly which of your successful pings survive. That list is the difference between layer 2 and layer 3 in one experiment.",
+  "debrief": "An SVI is a virtual interface that lives in a VLAN. Give it an address and it becomes that VLAN's gateway; the switch will answer for it either way. What it will not do, until told, is forward a packet from one VLAN to another.\n\nThat gap is why `ip routing` is on every layer 3 switch checklist. The symptom of forgetting it — gateways that ping, networks that do not reach each other — sends people hunting for addressing faults that are not there.",
+  "solution": [
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.20.12"
+      ]
+    },
+    {
+      "device": "MLS1",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "interface vlan 10",
+        "ip address 192.168.10.1 255.255.255.0",
+        "no shutdown",
+        "exit",
+        "interface vlan 20",
+        "ip address 192.168.20.1 255.255.255.0",
+        "no shutdown",
+        "exit",
+        "interface vlan 30",
+        "ip address 192.168.30.1 255.255.255.0",
+        "no shutdown",
+        "end"
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.10.1",
+        "ping 192.168.20.12"
+      ]
+    },
+    {
+      "device": "MLS1",
+      "cmds": [
+        "configure terminal",
+        "ip routing",
+        "end",
+        "show ip route"
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.20.12",
+        "ping 192.168.30.13"
+      ]
+    }
+  ]
+}

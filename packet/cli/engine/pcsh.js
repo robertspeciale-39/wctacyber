@@ -242,7 +242,12 @@ export function executePc(session, rawLine) {
   if (!fn) return { lines: ['Invalid Command.', ''] };
   const out = fn(session, args) || [];
   session.onChange(session);
-  return { lines: out };
+  // Canonical form, for objectives that grade on having run a diagnostic.
+  // Only a command that actually ran gets one; flags are lowercased so
+  // `ipconfig /ALL` and `ipconfig /all` are one command.
+  const name = cmd === 'traceroute' ? 'tracert' : cmd;
+  const canonical = [name, ...args.map(a => /^[-/]/.test(a) ? a.toLowerCase() : a)].join(' ').trim();
+  return { lines: out, canonical };
 }
 
 export function pcHelp() {

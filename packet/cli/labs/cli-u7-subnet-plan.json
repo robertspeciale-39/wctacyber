@@ -33,7 +33,6 @@
     {
       "id": "a-gw",
       "text": "LAN-A: address R1 GigabitEthernet0/0/0 as the gateway and bring it up.",
-      "points": 4,
       "hint": "60 hosts needs 62 usable, so a /26. First subnet, first usable address: 192.168.50.1 255.255.255.192.",
       "check": {
         "type": "interface",
@@ -47,7 +46,6 @@
     {
       "id": "b-gw",
       "text": "LAN-B: address R1 GigabitEthernet0/0/1 as the gateway and bring it up.",
-      "points": 4,
       "hint": "28 hosts needs 30 usable, so a /27. LAN-A ended at .63, so LAN-B starts at .64 and its first usable is .65.",
       "check": {
         "type": "interface",
@@ -61,7 +59,6 @@
     {
       "id": "c-gw",
       "text": "LAN-C: address R2 GigabitEthernet0/1 as the gateway and bring it up.",
-      "points": 4,
       "hint": "12 hosts needs 14 usable, so a /28. LAN-B ended at .95, so LAN-C starts at .96 and its first usable is .97.",
       "check": {
         "type": "interface",
@@ -75,7 +72,6 @@
     {
       "id": "wan-r1",
       "text": "WAN link: address R1 GigabitEthernet0/0/2 with the first usable address of a /30.",
-      "points": 4,
       "hint": "Two hosts needs a /30 — mask 255.255.255.252. LAN-C ended at .111, so the WAN is .112/30 and the usable pair is .113 and .114.",
       "check": {
         "type": "interface",
@@ -89,7 +85,6 @@
     {
       "id": "wan-r2",
       "text": "WAN link: address R2 GigabitEthernet0/0 with the second usable address.",
-      "points": 4,
       "check": {
         "type": "interface",
         "device": "R2",
@@ -102,7 +97,6 @@
     {
       "id": "pc-a",
       "text": "Address PC-A at .10 with LAN-A mask and gateway.",
-      "points": 3,
       "hint": "Use the IP Configuration panel on PC-A. The mask has to match the subnet, not the class.",
       "check": {
         "type": "host",
@@ -115,7 +109,6 @@
     {
       "id": "pc-b",
       "text": "Address PC-B at .70 with LAN-B mask and gateway.",
-      "points": 3,
       "check": {
         "type": "host",
         "device": "PC-B",
@@ -127,7 +120,6 @@
     {
       "id": "pc-c",
       "text": "Address PC-C at .100 with LAN-C mask and gateway.",
-      "points": 3,
       "check": {
         "type": "host",
         "device": "PC-C",
@@ -139,7 +131,6 @@
     {
       "id": "r1-route",
       "text": "On R1, add a route to LAN-C through R2.",
-      "points": 4,
       "hint": "ip route 192.168.50.96 255.255.255.240 192.168.50.114",
       "check": {
         "type": "route",
@@ -152,7 +143,6 @@
     {
       "id": "r2-default",
       "text": "On R2, add a default route back to R1. R2 is a stub, so one default beats two specifics.",
-      "points": 4,
       "hint": "ip route 0.0.0.0 0.0.0.0 192.168.50.113",
       "check": {
         "type": "defaultRoute",
@@ -163,17 +153,15 @@
     {
       "id": "verify-brief",
       "text": "Run show ip interface brief on both routers and confirm every used interface is up / up.",
-      "points": 2,
       "check": {
         "type": "commandUsed",
         "device": "R1",
-        "re": "sh(o(w)?)?\\s+ip\\s+int"
+        "cmd": "show ip interface brief"
       }
     },
     {
       "id": "reach-ac",
       "text": "Prove PC-A can reach PC-C.",
-      "points": 5,
       "check": {
         "type": "reachability",
         "from": "PC-A",
@@ -183,7 +171,6 @@
     {
       "id": "reach-bc",
       "text": "Prove PC-B can reach PC-C.",
-      "points": 5,
       "check": {
         "type": "reachability",
         "from": "PC-B",
@@ -193,7 +180,6 @@
     {
       "id": "reach-ab",
       "text": "Prove PC-A can reach PC-B — two LANs on the same router, no static route required.",
-      "points": 3,
       "hint": "Both networks are directly connected to R1, so R1 already knows both. That is what a C route means.",
       "check": {
         "type": "reachability",
@@ -204,7 +190,6 @@
     {
       "id": "save",
       "text": "Save the configuration on both routers.",
-      "points": 3,
       "checks": [
         {
           "type": "saved",

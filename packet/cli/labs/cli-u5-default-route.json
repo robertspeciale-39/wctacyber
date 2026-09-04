@@ -29,17 +29,20 @@
     {
       "id": "before",
       "text": "On R1, run show ip route and confirm the gateway of last resort is not set.",
-      "points": 2,
       "check": {
         "type": "commandUsed",
         "device": "R1",
-        "re": "sh(o(w)?)?\\s+ip\\s+ro"
+        "anyOf": [
+          "show ip route",
+          "show ip route static",
+          "show ip route connected",
+          "show ip route ospf"
+        ]
       }
     },
     {
       "id": "default",
       "text": "Add a default route on R1 pointing at 10.0.0.2.",
-      "points": 4,
       "hint": "`ip route 0.0.0.0 0.0.0.0 10.0.0.2`",
       "check": {
         "type": "defaultRoute",
@@ -50,7 +53,6 @@
     {
       "id": "reach",
       "text": "Prove PC1 can now reach PC2.",
-      "points": 4,
       "check": {
         "type": "reachability",
         "from": "PC1",
@@ -60,7 +62,6 @@
     {
       "id": "specific",
       "text": "Now also add the specific route to 192.168.20.0/24 via 10.0.0.2, so both routes exist at once.",
-      "points": 3,
       "hint": "Both can live in the table. The router picks the longest prefix match, which is the /24, not the /0.",
       "check": {
         "type": "route",
@@ -73,7 +74,6 @@
     {
       "id": "still",
       "text": "Confirm connectivity still works with both routes present.",
-      "points": 2,
       "check": {
         "type": "reachability",
         "from": "PC1",
@@ -83,7 +83,6 @@
     {
       "id": "save",
       "text": "Save the configuration on R1.",
-      "points": 2,
       "check": {
         "type": "saved",
         "device": "R1"

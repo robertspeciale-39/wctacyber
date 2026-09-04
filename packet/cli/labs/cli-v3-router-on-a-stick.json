@@ -1,0 +1,156 @@
+{
+  "slug": "cli-v3-router-on-a-stick",
+  "name": "Router on a Stick",
+  "unit": "v2",
+  "topic": "inter-vlan",
+  "modules": [
+    16,
+    17
+  ],
+  "round": "round2",
+  "priority": "P1",
+  "estMinutes": 20,
+  "difficulty": 3,
+  "startDevice": "PC1",
+  "focus": [
+    "interface g0/0.10",
+    "encapsulation dot1Q",
+    "ip address",
+    "no shutdown",
+    "show ip route"
+  ],
+  "brief": "STAFF and STUDENT are properly separated — so separated that neither can reach the other, and both need to reach the same file server later. Separating VLANs is a layer 2 job. Joining them again is a layer 3 job, and it needs a router.\n\nThere is one cable to the router and two VLANs to serve. The answer is one physical interface carrying tagged traffic for both, split into two subinterfaces, each one acting as the default gateway for its own VLAN. The switch side of that link is already a trunk.",
+  "watchFor": "The physical interface starts administratively down and the subinterfaces cannot come up without it. `no shutdown` belongs on the physical port, not on the subinterfaces.",
+  "topologyRef": "vlan-router-on-a-stick",
+  "tasks": [
+    {
+      "id": "prove-broken",
+      "text": "From PC1, ping PC2 at 192.168.20.12 and watch it fail. Two VLANs, no router between them.",
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "cmd": "ping 192.168.20.12"
+      }
+    },
+    {
+      "id": "phys-up",
+      "text": "On R1, bring the physical interface Gi0/0 up. Do not give it an address.",
+      "hint": "The physical port carries the tagged traffic; the addresses live on the subinterfaces.",
+      "check": {
+        "type": "interface",
+        "device": "R1",
+        "if": "GigabitEthernet0/0",
+        "notShutdown": true
+      }
+    },
+    {
+      "id": "sub10",
+      "text": "Create Gi0/0.10, tag it for VLAN 10, and give it 192.168.10.1/24 — the gateway PC1 is already pointing at.",
+      "hint": "interface g0/0.10, then encapsulation dot1Q 10, then ip address. The encapsulation must come before the address.",
+      "check": {
+        "type": "subInterface",
+        "device": "R1",
+        "if": "GigabitEthernet0/0.10",
+        "vlan": 10,
+        "ip": "192.168.10.1",
+        "cidr": 24,
+        "up": true
+      }
+    },
+    {
+      "id": "sub20",
+      "text": "Create Gi0/0.20 for VLAN 20 with 192.168.20.1/24.",
+      "check": {
+        "type": "subInterface",
+        "device": "R1",
+        "if": "GigabitEthernet0/0.20",
+        "vlan": 20,
+        "ip": "192.168.20.1",
+        "cidr": 24,
+        "up": true
+      }
+    },
+    {
+      "id": "gw10",
+      "text": "Prove PC1 can reach its own gateway.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.10.1"
+      }
+    },
+    {
+      "id": "routing-table",
+      "text": "On R1, run show ip route and confirm both VLAN networks are now directly connected.",
+      "hint": "Two C entries, each out of a subinterface. If one is missing, that subinterface is not up.",
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "anyOf": [
+          "show ip route",
+          "show ip route connected"
+        ]
+      }
+    },
+    {
+      "id": "across",
+      "text": "Prove inter-VLAN routing works: PC1 reaches PC2.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.20.12"
+      }
+    },
+    {
+      "id": "reverse",
+      "text": "And back the other way: PC2 reaches PC1.",
+      "check": {
+        "type": "reachability",
+        "from": "PC2",
+        "to": "192.168.10.11"
+      }
+    }
+  ],
+  "extension": "Type `no encapsulation dot1Q 20` on the second subinterface and watch exactly which pings break and which survive. That is the fault signature to remember.",
+  "debrief": "One cable, two networks. The switch tags every frame with its VLAN, the router reads the tag and hands the frame to the matching subinterface, and each subinterface is a normal routed interface from there on — which is why show ip route shows two ordinary connected networks.\n\nThe trap in this build is order and place. Encapsulation before addressing, `no shutdown` on the physical interface, and a trunk rather than an access port on the switch side. Miss any one of those and every symptom looks the same.",
+  "solution": [
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.20.12"
+      ]
+    },
+    {
+      "device": "R1",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "interface GigabitEthernet0/0",
+        "no shutdown",
+        "exit",
+        "interface GigabitEthernet0/0.10",
+        "encapsulation dot1Q 10",
+        "ip address 192.168.10.1 255.255.255.0",
+        "exit",
+        "interface GigabitEthernet0/0.20",
+        "encapsulation dot1Q 20",
+        "ip address 192.168.20.1 255.255.255.0",
+        "end",
+        "show ip route"
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.10.1",
+        "ping 192.168.20.12"
+      ]
+    },
+    {
+      "device": "PC2",
+      "cmds": [
+        "ping 192.168.10.11"
+      ]
+    }
+  ]
+}

@@ -24,18 +24,19 @@
     {
       "id": "empty",
       "text": "On SW1, confirm the MAC address table is empty before any traffic.",
-      "points": 2,
       "hint": "`show mac address-table` from privileged EXEC.",
       "check": {
         "type": "commandUsed",
         "device": "SW1",
-        "re": "sh(o(w)?)?\\s+mac"
+        "anyOf": [
+          "show mac address-table",
+          "show mac-address-table"
+        ]
       }
     },
     {
       "id": "ping12",
       "text": "From PC1, ping PC2 at 192.168.1.12.",
-      "points": 2,
       "check": {
         "type": "reachability",
         "from": "PC1",
@@ -45,7 +46,6 @@
     {
       "id": "learned",
       "text": "Back on SW1, confirm the switch has now learned at least two MAC addresses.",
-      "points": 3,
       "hint": "One entry for the sender on Fa0/1, one for the responder on Fa0/2.",
       "check": {
         "type": "macTable",
@@ -57,7 +57,6 @@
     {
       "id": "arp",
       "text": "On PC1, run `arp -a` and confirm PC1 learned PC2 hardware address.",
-      "points": 2,
       "hint": "Because PC2 is on the same subnet, PC1 ARPs for PC2 directly rather than for a gateway.",
       "check": {
         "type": "arpEntry",
@@ -69,7 +68,6 @@
     {
       "id": "third",
       "text": "From PC1, ping PC3 at 192.168.1.13 and watch a third entry appear.",
-      "points": 2,
       "check": {
         "type": "reachability",
         "from": "PC1",
@@ -79,7 +77,6 @@
     {
       "id": "clear",
       "text": "Clear the dynamic entries on SW1 and confirm the table is empty again.",
-      "points": 2,
       "hint": "`clear mac address-table dynamic`. Everything the switch learned is forgotten, and it relearns on the next frame.",
       "check": {
         "type": "macTable",

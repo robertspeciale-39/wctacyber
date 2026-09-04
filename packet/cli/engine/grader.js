@@ -6,12 +6,43 @@
 
 import { isIpv4, cidrToMask, maskToCidr, networkOf, expandIpv6 } from './addr.js';
 import {
-  getDevice, getIface, ifaceUp, routingTable, pingOnce, ownsIp
+  getDevice, getIface, ifaceUp, routingTable, pingOnce, ownsIp,
+  portIsTrunk, vlansOnPort
 } from './net.js';
+import { rootBridge, bridgePriority, portState, stpState } from './stp.js';
+import { ospfInterfaces, ospfNeighbors, routerId } from './ospf.js';
 import { buildRunningConfig } from './show.js';
 
+/* ------------------------------------------------- command-transcript --- */
+
+/** Canonical commands run on a device (or anywhere, when device is null). */
+function commandsIn(ctx, device) {
+  return (ctx.transcript || [])
+    .filter(e => !e.help && e.canonical && (device == null || e.device === device))
+    .map(e => e.canonical);
+}
+
+const normCmd = s => String(s).trim().replace(/\s+/g, ' ').toLowerCase();
+
 /**
- * ctx = { net, transcript: [{device, line}], answers: {id: value} }
+ * One canonical command against one objective spec. Exact by default: a
+ * command that stops short of the full form does not count, which is the
+ * whole point. `re` is anchored on both ends unless the lab anchors it
+ * itself, so a pattern cannot accidentally match a prefix.
+ */
+function matchesCommand(cmd, spec) {
+  const c = normCmd(cmd);
+  if (spec.cmd != null) return c === normCmd(spec.cmd);
+  if (Array.isArray(spec.anyOf)) return spec.anyOf.some(x => c === normCmd(x));
+  if (spec.re != null) {
+    const body = /^\^|\$$/.test(spec.re) ? spec.re : `^(?:${spec.re})$`;
+    return new RegExp(body, spec.flags || 'i').test(c);
+  }
+  throw new Error('commandUsed needs one of: cmd, anyOf, re');
+}
+
+/**
+ * ctx = { net, transcript: [{device, raw, canonical, help}], answers: {id: value} }
  * Each check returns true/false. Unknown types fail loudly so a typo in a lab
  * file never silently marks an objective complete.
  */
@@ -59,6 +90,174 @@ const CHECKS = {
     if (c.dhcp != null && !!dev.host.dhcp !== c.dhcp) return false;
     if (c.anyAddress && !isIpv4(iface.ip || '')) return false;
     return true;
+  },
+
+  /* --- VLANs and switching --------------------------------------------- */
+
+  /** The VLAN exists in the switch's database, optionally under a name. */
+  vlan(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    if (!dev) return false;
+    const v = dev.vlans.find(x => x.id === c.id);
+    if (c.absent) return !v;
+    if (!v) return false;
+    return c.name == null || v.name.toLowerCase() === String(c.name).toLowerCase();
+  },
+
+  /** An access port, in the VLAN it is supposed to be in. */
+  accessPort(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    const iface = getIface(dev, c.if);
+    if (!dev || !iface || !iface.switchport) return false;
+    if (portIsTrunk(ctx.net, dev, iface)) return false;
+    if (c.vlan != null && iface.vlan !== c.vlan) return false;
+    if (c.mode === 'access' && iface.swMode !== 'access') return false;
+    if (c.portfast === true && !iface.portfast) return false;
+    return true;
+  },
+
+  /** A working trunk, with the native VLAN and allowed list the lab wants. */
+  trunkPort(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    const iface = getIface(dev, c.if);
+    if (!dev || !iface) return false;
+    if (!portIsTrunk(ctx.net, dev, iface)) return false;
+    if (c.mode === 'trunk' && iface.swMode !== 'trunk') return false;
+    if (c.native != null && iface.trunkNative !== c.native) return false;
+    if (c.carries) {
+      const carried = vlansOnPort(ctx.net, dev, iface);
+      if (!c.carries.every(v => carried.includes(v))) return false;
+    }
+    if (c.excludes) {
+      const carried = vlansOnPort(ctx.net, dev, iface);
+      if (c.excludes.some(v => carried.includes(v))) return false;
+    }
+    if (c.up === true && !ifaceUp(ctx.net, dev, iface)) return false;
+    return true;
+  },
+
+  /** A dot1Q subinterface — router-on-a-stick. */
+  subInterface(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    const iface = getIface(dev, c.if);
+    if (!dev || !iface || !iface.parent) return false;
+    if (c.vlan != null && iface.encapVlan !== c.vlan) return false;
+    if (c.native != null && !!iface.encapNative !== c.native) return false;
+    if (c.ip && iface.ip !== c.ip) return false;
+    const wantMask = c.mask || (c.cidr != null ? cidrToMask(c.cidr) : null);
+    if (wantMask && iface.mask !== wantMask) return false;
+    if (c.up === true && !ifaceUp(ctx.net, dev, iface)) return false;
+    return true;
+  },
+
+  /** A switched virtual interface, addressed and up. */
+  svi(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    if (!dev) return false;
+    const iface = dev.ifaces.find(i => i.svi && i.vlan === c.vlan);
+    if (!iface) return false;
+    if (c.ip && iface.ip !== c.ip) return false;
+    const wantMask = c.mask || (c.cidr != null ? cidrToMask(c.cidr) : null);
+    if (wantMask && iface.mask !== wantMask) return false;
+    if (c.up === true && !ifaceUp(ctx.net, dev, iface)) return false;
+    if (c.notShutdown === true && iface.shutdown) return false;
+    return true;
+  },
+
+  /** `ip routing` on a layer 3 switch. */
+  ipRouting(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    return !!dev && !!dev.ipRouting === (c.enabled !== false);
+  },
+
+  /** A routed port — `no switchport` on a layer 3 switch. */
+  routedPort(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    const iface = getIface(dev, c.if);
+    if (!dev || !iface) return false;
+    if (iface.switchport) return false;
+    if (c.ip && iface.ip !== c.ip) return false;
+    return true;
+  },
+
+  /* --- spanning tree ---------------------------------------------------- */
+
+  /** Who is the root bridge for a VLAN. */
+  stpRoot(ctx, c) {
+    const root = rootBridge(ctx.net, c.vlan ?? 1);
+    if (!root) return false;
+    const want = getDevice(ctx.net, c.device);
+    return !!want && root.id === want.id;
+  },
+
+  /** The configured bridge priority for a VLAN. */
+  stpPriority(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    if (!dev) return false;
+    const prio = bridgePriority(dev, c.vlan ?? 1);
+    if (c.value != null) return prio === c.value;
+    if (c.lessThan != null) return prio < c.lessThan;
+    return prio !== 32768;
+  },
+
+  /** The role or state spanning tree has given one port. */
+  stpPort(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    const iface = getIface(dev, c.if);
+    if (!dev || !iface) return false;
+    const st = portState(ctx.net, dev, iface, c.vlan ?? 1);
+    if (c.role && st.role !== c.role) return false;
+    if (c.state && st.state !== c.state) return false;
+    return true;
+  },
+
+  /** Somewhere in this VLAN, exactly one port is blocking — the loop is cut. */
+  stpBlocking(ctx, c) {
+    const states = stpState(ctx.net, c.vlan ?? 1);
+    const blocked = [...states.values()].filter(v => v.state === 'blocking');
+    if (c.count != null) return blocked.length === c.count;
+    return blocked.length > 0;
+  },
+
+  /* --- OSPF ------------------------------------------------------------- */
+
+  /** The process exists, with the process ID and router ID the lab wants. */
+  ospfProcess(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    if (!dev || !dev.ospf) return false;
+    if (c.pid != null && dev.ospf.pid !== c.pid) return false;
+    if (c.routerId && routerId(ctx.net, dev) !== c.routerId) return false;
+    return true;
+  },
+
+  /** An interface really joined the process, in the right area. */
+  ospfInterface(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    if (!dev) return false;
+    const entry = ospfInterfaces(ctx.net, dev).find(x => x.iface.name === c.if);
+    if (!entry) return false;
+    if (c.area != null && entry.area !== c.area) return false;
+    if (c.passive != null && entry.passive !== c.passive) return false;
+    return true;
+  },
+
+  /** An adjacency is up. */
+  ospfNeighbor(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    if (!dev) return false;
+    const nbrs = ospfNeighbors(ctx.net, dev);
+    if (c.with) return nbrs.some(n => n.dev.id === c.with || n.dev.hostname === c.with);
+    return nbrs.length >= (c.min ?? 1);
+  },
+
+  /** A prefix learned by OSPF, not by hand. */
+  ospfRoute(ctx, c) {
+    const dev = getDevice(ctx.net, c.device);
+    if (!dev) return false;
+    const mask = c.mask || cidrToMask(c.cidr ?? 24);
+    return routingTable(ctx.net, dev).some(r =>
+      r.code.startsWith('O') && r.prefix === c.prefix && r.mask === mask &&
+      (c.nextHop == null || r.nextHop === c.nextHop));
   },
 
   /* --- routing --------------------------------------------------------- */
@@ -178,21 +377,41 @@ const CHECKS = {
     return new RegExp(c.re, c.flags || 'm').test(buildRunningConfig(ctx.net, dev).join('\n'));
   },
 
-  /** For labs whose point is that you ran the diagnostic, not that you fixed it. */
+  /**
+   * For labs whose point is that you ran the diagnostic, not that you fixed it.
+   *
+   * Graded against the CANONICAL command — the fully spelled-out form the CLI
+   * resolved after parsing. `sh ip int br` counts as
+   * `show ip interface brief`, because IOS abbreviation is a real skill. A
+   * half-typed or invalid command never parses, so it never reaches the
+   * transcript at all and can never satisfy an objective.
+   *
+   *   { "type": "commandUsed", "device": "R1", "cmd": "show ip interface brief" }
+   *   { "type": "commandUsed", "device": "R1", "anyOf": ["show ip route", "show ip route static"] }
+   *   { "type": "commandUsed", "device": "PC1", "re": "^ping 192\\.168\\.10\\.1$" }
+   */
   commandUsed(ctx, c) {
-    const re = new RegExp(c.re, c.flags || 'i');
-    return (ctx.transcript || []).some(e =>
-      (c.device == null || e.device === c.device) && re.test(e.line));
+    return commandsIn(ctx, c.device).some(cmd => matchesCommand(cmd, c));
   },
 
-  /** Ordered sequence of commands — the U6 eight-step drill. */
+  /** The student pressed `?` — evidence they used context-sensitive help. */
+  helpUsed(ctx, c) {
+    return (ctx.transcript || []).some(e =>
+      e.help && (c.device == null || e.device === c.device) &&
+      (c.contains == null || (e.raw || '').toLowerCase().includes(c.contains.toLowerCase())));
+  },
+
+  /**
+   * Ordered sequence of commands — the U6 eight-step drill. Each step is
+   * either an exact canonical command string, or the same shape
+   * `commandUsed` takes: { cmd } | { anyOf } | { re }.
+   */
   commandSequence(ctx, c) {
-    const lines = (ctx.transcript || [])
-      .filter(e => c.device == null || e.device === c.device)
-      .map(e => e.line);
+    const cmds = commandsIn(ctx, c.device);
     let idx = 0;
-    for (const line of lines) {
-      if (new RegExp(c.steps[idx], 'i').test(line)) idx++;
+    for (const cmd of cmds) {
+      const step = c.steps[idx];
+      if (matchesCommand(cmd, typeof step === 'string' ? { cmd: step } : step)) idx++;
       if (idx === c.steps.length) return true;
     }
     return false;
@@ -232,7 +451,6 @@ export function evaluate(ctx, tasks) {
     results.push({
       id: task.id,
       text: task.text,
-      points: task.points ?? 1,
       hint: task.hint || null,
       device: task.device || null,
       once: !!task.once,
@@ -240,13 +458,13 @@ export function evaluate(ctx, tasks) {
       detail
     });
   }
-  const total = results.reduce((a, r) => a + r.points, 0);
-  const earned = results.reduce((a, r) => a + (r.met ? r.points : 0), 0);
+  // No points, no percentage, no grade. A task is done or it is not, and the
+  // only summary anything downstream needs is how many are done.
+  const done = results.filter(r => r.met).length;
   return {
     tasks: results,
-    earned, total,
-    percent: total ? Math.round(earned / total * 100) : 0,
-    complete: total > 0 && earned === total
+    done,
+    complete: results.length > 0 && done === results.length
   };
 }
 

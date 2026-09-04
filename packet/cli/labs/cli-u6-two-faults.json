@@ -39,28 +39,25 @@
     {
       "id": "diag",
       "text": "Start with ipconfig on both PCs and a ping to each gateway.",
-      "points": 3,
       "check": {
         "type": "commandUsed",
         "device": "PC1",
-        "re": "^\\s*ipconfig"
+        "re": "^ipconfig( /all| /renew| /release)?$"
       }
     },
     {
       "id": "brief",
       "text": "Check interface status on R1 with show ip interface brief.",
-      "points": 3,
       "hint": "One interface is administratively down. That is a one-line fix once you see it.",
       "check": {
         "type": "commandUsed",
         "device": "R1",
-        "re": "sh(o(w)?)?\\s+ip\\s+int"
+        "cmd": "show ip interface brief"
       }
     },
     {
       "id": "fix-iface",
       "text": "Fix fault one: bring R1 GigabitEthernet0/1 back up.",
-      "points": 6,
       "check": {
         "type": "interface",
         "device": "R1",
@@ -71,7 +68,6 @@
     {
       "id": "fix-mask",
       "text": "Fix fault two: correct PC2 subnet mask to 255.255.255.0.",
-      "points": 6,
       "hint": "A /16 mask makes PC2 believe the whole 192.168.0.0 range is local, so its replies never reach its gateway.",
       "check": {
         "type": "host",
@@ -82,7 +78,6 @@
     {
       "id": "verify-fwd",
       "text": "Prove PC1 can reach PC2.",
-      "points": 4,
       "check": {
         "type": "reachability",
         "from": "PC1",
@@ -92,7 +87,6 @@
     {
       "id": "verify-rev",
       "text": "Prove PC2 can reach PC1.",
-      "points": 4,
       "check": {
         "type": "reachability",
         "from": "PC2",

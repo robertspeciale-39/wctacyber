@@ -4,7 +4,7 @@
 //   node cli/tests/e2e.js
 //
 // Serves the folder on a throwaway port and drives it headless. Checks the
-// route, the terminal, a full lab driven to 100%, the themes, and the
+// route, the terminal, a full lab driven to every task done, the themes, and the
 // accessibility floor.
 
 import { createServer } from 'http';
@@ -56,7 +56,11 @@ const page = await browser.newPage({ viewport: { width: 1400, height: 900 } });
 const consoleErrors = [];
 // Google Fonts are a network call the site makes on purpose; a sandboxed or
 // offline test machine cannot reach them and that is not a page defect.
-const EXTERNAL = /fonts\.(googleapis|gstatic)\.com/;
+const EXTERNAL = /^https?:\/\/(?!127\.0\.0\.1|localhost)/;
+// Cut the font requests off at the source. On a machine behind a proxy that
+// swallows them, `networkidle` never arrives and the whole suite hangs
+// waiting for a stylesheet the tests do not care about.
+await page.route(EXTERNAL, route => route.abort());
 page.on('console', m => {
   if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) consoleErrors.push(m.text());
 });
@@ -70,7 +74,12 @@ const type = async (line) => {
   await page.waitForTimeout(30);
 };
 const termText = () => page.textContent('.term');
-const pct = async () => parseInt((await page.textContent('.cli-ring .pct')).replace('%', ''), 10);
+// Tasks done out of tasks total. There is no score and no percentage.
+const tasksDone = async () => {
+  const done = await page.locator('.task.met').count();
+  const total = await page.locator('.task').count();
+  return { done, total };
+};
 
 /* ------------------------------------------------------------- picker --- */
 section('picker');
@@ -119,7 +128,11 @@ await page.waitForSelector('.term-input input');
 
 ok('the terminal is present', await page.isVisible('.term-input input'));
 ok('the task list renders', (await page.locator('.task').count()) === 8);
-eq('a fresh lab starts at 0%', await pct(), 0);
+eq('a fresh lab starts with nothing ticked', (await tasksDone()).done, 0);
+ok('the task counter shows a count, not a score',
+   /\b0\b[\s\S]*of[\s\S]*8/.test(await page.textContent('#count')));
+ok('there is no percentage anywhere in the task panel',
+   !/%/.test(await page.textContent('.pane.right')));
 ok('the topology map draws', (await page.locator('#map svg line').count()) >= 5);
 ok('the device list is populated', (await page.locator('.dev').count()) === 6);
 ok('it opens on the lab start device', (await page.textContent('#termdev')).trim() === 'PC1');
@@ -129,7 +142,7 @@ await type('ping 192.168.10.1');
 ok('a local ping from the PC replies', (await termText()).includes('Reply from 192.168.10.1'));
 await type('ping 192.168.20.20');
 ok('the cross-network ping fails before routing', /Request timed out|unreachable/.test(await termText()));
-ok('two objectives are now met', await pct() > 0);
+ok('two tasks are now ticked', (await tasksDone()).done > 0);
 
 // Switch to R1 and configure
 await page.click('.dev:has-text("R1")');
@@ -156,8 +169,9 @@ ok('the ping works once both routes exist', (await termText()).includes('Reply f
 await type('tracert 192.168.20.20');
 ok('tracert shows the two-router path', (await termText()).includes('Trace complete'));
 
-const finalPct = await pct();
-eq('the lab reaches 100%', finalPct, 100);
+const finished = await tasksDone();
+eq('every task on the lab is ticked', finished.done, finished.total);
+ok('and there were tasks to tick', finished.total > 0);
 ok('a completion toast appears', await page.isVisible('.cli-toast'));
 
 /* --------------------------------------------------- terminal behaviour --- */
@@ -207,7 +221,7 @@ ok('the answer form renders', (await page.locator('.answers input').count()) ===
 
 await page.fill('.answers input >> nth=0', '192.168.10.20');
 await page.waitForTimeout(60);
-ok('a correct answer scores', await pct() > 0);
+ok('a correct answer ticks its task', (await tasksDone()).done > 0);
 
 /* ------------------------------------------------------ IP configuration --- */
 section('IP configuration dialog');
@@ -230,7 +244,7 @@ section('reset');
 
 await page.click('#reset');
 await page.waitForTimeout(200);
-eq('reset puts the lab back to zero', await pct(), 0);
+eq('reset puts every task back to not done', (await tasksDone()).done, 0);
 
 /* --------------------------------------------------------------- themes --- */
 section('site chrome and themes');

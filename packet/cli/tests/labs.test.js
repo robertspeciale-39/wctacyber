@@ -1,6 +1,10 @@
 // labs.test.js — every lab in the manifest is loaded, its own solution is
-// driven through the real CLI, and the grader must reach 100%. A lab that
+// driven through the real CLI, and every task must end up done. A lab that
 // cannot be completed by its own answer key is a broken lab.
+//
+// The solution is also proof that every command in the answer key is a
+// command this CLI actually accepts: anything the parser rejects shows up
+// here as a failure rather than as a student staring at a caret.
 //
 //   node cli/tests/labs.test.js
 
@@ -71,6 +75,7 @@ function panelAction(run, deviceId, token) {
 }
 
 function driveSolution(run) {
+  const rejected = [];
   for (const step of run.lab.solution || []) {
     if (step.answers) { Object.assign(run.ctx.answers, step.answers); continue; }
     const session = run.sessions[step.device];
@@ -80,17 +85,28 @@ function driveSolution(run) {
         if (!panelAction(run, step.device, cmd)) throw new Error(`unknown panel action ${cmd}`);
         continue;
       }
-      recordCommand(run.ctx, step.device, cmd);
       // A line ending in `?` is context help, not a command: the UI records it
-      // in the transcript but never executes it.
-      if (/\?\s*$/.test(cmd)) continue;
-      if (session.kind === 'pc') executePc(session, cmd);
-      else execute(session, cmd);
+      // as help and never executes it.
+      if (/\?\s*$/.test(cmd)) {
+        recordCommand(run.ctx, step.device, { raw: cmd, help: true });
+        continue;
+      }
+      // A blank line, or a line answering a prompt the device is waiting on,
+      // is not a command and is not expected to produce one.
+      const wasPending = !!session.pending || String(cmd).trim() === '';
+      const res = session.kind === 'pc' ? executePc(session, cmd) : execute(session, cmd);
+      // Exactly what the UI does: record the canonical form of a command that
+      // really ran, and nothing at all for one that did not.
+      if (res.canonical) recordCommand(run.ctx, step.device, { raw: cmd, canonical: res.canonical });
+      const bad = (res.lines || []).some(l =>
+        /Invalid input|Incomplete command|Ambiguous command|Unrecognized command/.test(l));
+      if (bad || (!res.canonical && !wasPending)) rejected.push(`${step.device}: ${cmd}`);
       // The UI regrades after every command, and latching objectives depend on
       // that. Drive it the same way.
       run.grade();
     }
   }
+  return rejected;
 }
 
 /* ----------------------------------------------------------- every lab --- */
@@ -128,18 +144,22 @@ for (const entry of manifest.labs) {
   }
 
   const before = run.grade();
-  ok('starts below 100%', before.percent < 100, `started at ${before.percent}%`);
+  ok('starts with tasks left to do', !before.complete,
+     `started with ${before.done}/${before.tasks.length} already done`);
 
+  let rejected;
   try {
-    driveSolution(run);
+    rejected = driveSolution(run);
   } catch (e) {
     ok('solution runs without error', false, e.message);
     continue;
   }
+  ok('every command in the answer key is accepted', rejected.length === 0, rejected.join(' | '));
 
   const after = run.grade();
   const missed = after.tasks.filter(x => !x.met).map(x => x.id);
-  eq('the solution reaches 100%', after.percent, 100);
+  ok('the solution completes every task', after.complete,
+     `${after.done}/${after.tasks.length} done`);
   if (missed.length) ok(`unmet after solution: ${missed.join(', ')}`, false);
 }
 
@@ -151,13 +171,39 @@ section('the grader is not a rubber stamp');
   const run = loadLab(lab, topologies);
   // Only one of the two routes: the classic half-fix.
   const r1 = run.sessions.R1;
-  ['enable', 'configure terminal', 'ip route 192.168.20.0 255.255.255.0 10.0.0.2', 'end']
-    .forEach(c => { recordCommand(run.ctx, 'R1', c); execute(r1, c); });
+  ['enable', 'configure terminal', 'ip route 192.168.20.0 255.255.255.0 10.0.0.2', 'end',
+   'show ip route']
+    .forEach(c => {
+      const res = execute(r1, c);
+      if (res.canonical) recordCommand(run.ctx, 'R1', { raw: c, canonical: res.canonical });
+    });
   const g = run.grade();
   ok('the R1 route objective is met', g.tasks.find(x => x.id === 'r1-route').met);
   ok('the R2 route objective is not', !g.tasks.find(x => x.id === 'r2-route').met);
   ok('end-to-end connectivity is not', !g.tasks.find(x => x.id === 'end-to-end').met);
-  ok('and the score is not 100', g.percent < 100);
+  ok('and the lab is not complete', !g.complete);
+}
+
+/* ------------------------------- half a command is not a finished command --- */
+section('a partial command does not tick a task');
+
+{
+  const lab = readJson(join(ROOT, 'labs', 'cli-u5-static-routes.json'));
+  const run = loadLab(lab, topologies);
+  const r1 = run.sessions.R1;
+  // `show ip rout` is not a command. It has a unique expansion, so IOS runs
+  // it and it counts. `show ipp route` is a typo: it never runs, so it must
+  // never count, however much of the right command it happens to contain.
+  for (const c of ['enable', 'show ipp route']) {
+    const res = execute(r1, c);
+    if (res.canonical) recordCommand(run.ctx, 'R1', { raw: c, canonical: res.canonical });
+  }
+  ok('a rejected command ticks nothing',
+     !run.grade().tasks.find(x => x.id === 'r1-route-check' || x.id === 'r1-route')?.met);
+
+  const res = execute(r1, 'sh ip rou');
+  recordCommand(run.ctx, 'R1', { raw: 'sh ip rou', canonical: res.canonical });
+  eq('a legal abbreviation is recorded in full', res.canonical, 'show ip route');
 }
 
 {

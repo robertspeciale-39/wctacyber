@@ -26,61 +26,54 @@
     {
       "id": "enable",
       "text": "Get from user EXEC into privileged EXEC on R1.",
-      "points": 1,
       "hint": "The command is `enable`. Watch the prompt change from > to #.",
       "check": {
         "type": "commandUsed",
         "device": "R1",
-        "re": "^\\s*en(a(b(l(e)?)?)?)?\\s*$"
+        "cmd": "enable"
       }
     },
     {
       "id": "help",
       "text": "Use context-sensitive help: type `show ?` and read what comes back.",
-      "points": 1,
       "hint": "A question mark at any point lists what is legal next. This is the single most useful key on the device.",
       "check": {
-        "type": "commandUsed",
-        "device": "R1",
-        "re": "\\?"
+        "type": "helpUsed",
+        "device": "R1"
       }
     },
     {
       "id": "version",
       "text": "Run `show version` and find the IOS version.",
-      "points": 1,
       "check": {
         "type": "commandUsed",
         "device": "R1",
-        "re": "sh(o(w)?)?\\s+ver"
+        "cmd": "show version"
       }
     },
     {
       "id": "brief",
       "text": "Run `show ip interface brief` to see every interface at once.",
-      "points": 2,
       "hint": "Abbreviate it: `sh ip int br`. Everything on this device is administratively down right now.",
       "check": {
         "type": "commandUsed",
         "device": "R1",
-        "re": "sh(o(w)?)?\\s+ip\\s+int"
+        "cmd": "show ip interface brief"
       }
     },
     {
       "id": "confmode",
       "text": "Enter global configuration mode.",
-      "points": 1,
       "hint": "`configure terminal`, or just `conf t`.",
       "check": {
         "type": "commandUsed",
         "device": "R1",
-        "re": "conf(i(g(u(r(e)?)?)?)?)?\\s+t"
+        "cmd": "configure terminal"
       }
     },
     {
       "id": "hostname",
       "text": "Rename the router to WCTA-R1.",
-      "points": 3,
       "hint": "`hostname WCTA-R1` in global configuration mode. The prompt changes immediately.",
       "check": {
         "type": "hostname",
@@ -91,12 +84,11 @@
     {
       "id": "ifmode",
       "text": "Enter interface configuration mode for GigabitEthernet0/0, then come back out with `end`.",
-      "points": 2,
       "hint": "`interface g0/0` gets you in. `exit` steps back one level; `end` goes all the way to privileged EXEC.",
       "check": {
         "type": "commandUsed",
         "device": "R1",
-        "re": "^\\s*int(e(r(f(a(c(e)?)?)?)?)?)?\\s"
+        "re": "^interface \\S+$"
       }
     }
   ],

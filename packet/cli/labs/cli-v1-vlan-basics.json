@@ -1,0 +1,175 @@
+{
+  "slug": "cli-v1-vlan-basics",
+  "name": "Splitting a Switch with VLANs",
+  "unit": "v1",
+  "topic": "vlans",
+  "modules": [
+    16
+  ],
+  "round": "round2",
+  "priority": "P0",
+  "estMinutes": 18,
+  "difficulty": 2,
+  "startDevice": "PC1",
+  "focus": [
+    "vlan",
+    "name",
+    "switchport mode access",
+    "switchport access vlan",
+    "show vlan brief"
+  ],
+  "brief": "Four computers, one switch, one flat network. Right now every machine can reach every other machine, because a switch out of the box puts every port in VLAN 1. That is fine until the two front-office PCs and the two lab PCs need to stop seeing each other.\n\nYou are going to split this switch in two without touching a single cable or changing a single IP address. PC1 and PC2 belong to STAFF, PC3 and PC4 belong to STUDENT, and when you are done the two halves will not be able to reach each other at all.",
+  "watchFor": "Prove the flat network works BEFORE you change anything. If you cannot show it working first, you cannot prove afterwards that it was your VLAN that broke it on purpose.",
+  "topologyRef": "vlan-one-switch",
+  "tasks": [
+    {
+      "id": "prove-flat",
+      "text": "From PC1, ping PC3 at 192.168.1.13 and watch it succeed. This is the flat network you are about to divide.",
+      "hint": "Everything is in VLAN 1 right now, and everything is in the same subnet, so this has to work.",
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "cmd": "ping 192.168.1.13"
+      }
+    },
+    {
+      "id": "vlan10",
+      "text": "On SW1, create VLAN 10 and name it STAFF.",
+      "hint": "In global configuration: vlan 10, then name STAFF. Naming a VLAN is a separate command inside VLAN configuration mode.",
+      "check": {
+        "type": "vlan",
+        "device": "SW1",
+        "id": 10,
+        "name": "STAFF"
+      }
+    },
+    {
+      "id": "vlan20",
+      "text": "On SW1, create VLAN 20 and name it STUDENT.",
+      "check": {
+        "type": "vlan",
+        "device": "SW1",
+        "id": 20,
+        "name": "STUDENT"
+      }
+    },
+    {
+      "id": "ports10",
+      "text": "Put Fa0/1 and Fa0/2 into VLAN 10 as access ports.",
+      "hint": "switchport mode access tells the port it is never a trunk. switchport access vlan 10 says which VLAN. You want both.",
+      "checks": [
+        {
+          "type": "accessPort",
+          "device": "SW1",
+          "if": "FastEthernet0/1",
+          "vlan": 10,
+          "mode": "access"
+        },
+        {
+          "type": "accessPort",
+          "device": "SW1",
+          "if": "FastEthernet0/2",
+          "vlan": 10,
+          "mode": "access"
+        }
+      ]
+    },
+    {
+      "id": "ports20",
+      "text": "Put Fa0/3 and Fa0/4 into VLAN 20 as access ports.",
+      "checks": [
+        {
+          "type": "accessPort",
+          "device": "SW1",
+          "if": "FastEthernet0/3",
+          "vlan": 20,
+          "mode": "access"
+        },
+        {
+          "type": "accessPort",
+          "device": "SW1",
+          "if": "FastEthernet0/4",
+          "vlan": 20,
+          "mode": "access"
+        }
+      ]
+    },
+    {
+      "id": "verify-vlan",
+      "text": "Run show vlan brief on SW1 and confirm each port is listed under the VLAN you expect.",
+      "hint": "A port in the wrong VLAN is obvious here and invisible everywhere else. This is the command to reach for first, every time.",
+      "check": {
+        "type": "commandUsed",
+        "device": "SW1",
+        "cmd": "show vlan brief"
+      }
+    },
+    {
+      "id": "within",
+      "text": "Prove PC1 can still reach PC2 — same VLAN, still fine.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.1.12"
+      }
+    },
+    {
+      "id": "across",
+      "text": "Prove PC1 can no longer reach PC3. Same subnet, same switch, different VLAN.",
+      "hint": "If this still works, one of the four ports is not in the VLAN you think it is. Go back to show vlan brief.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.1.13",
+        "expect": false
+      }
+    }
+  ],
+  "extension": "Put PC3 back into VLAN 10 and watch the ping start working again, then explain to somebody else why two machines in the same IP subnet still could not talk to each other.",
+  "debrief": "A VLAN is a broadcast domain drawn in software. PC1 and PC3 are one cable apart and in the same subnet, and they still cannot reach each other, because ARP is a broadcast and the switch will not carry that broadcast out of VLAN 10.\n\nThat is also why the fix for 'these two machines cannot talk' is so often show vlan brief rather than anything to do with addressing. The addresses were never wrong.",
+  "solution": [
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.1.13"
+      ]
+    },
+    {
+      "device": "SW1",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "vlan 10",
+        "name STAFF",
+        "exit",
+        "vlan 20",
+        "name STUDENT",
+        "exit",
+        "interface FastEthernet0/1",
+        "switchport mode access",
+        "switchport access vlan 10",
+        "exit",
+        "interface FastEthernet0/2",
+        "switchport mode access",
+        "switchport access vlan 10",
+        "exit",
+        "interface FastEthernet0/3",
+        "switchport mode access",
+        "switchport access vlan 20",
+        "exit",
+        "interface FastEthernet0/4",
+        "switchport mode access",
+        "switchport access vlan 20",
+        "end",
+        "show vlan brief"
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.1.12",
+        "ping 192.168.1.13"
+      ]
+    }
+  ]
+}

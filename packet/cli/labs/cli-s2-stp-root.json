@@ -1,0 +1,147 @@
+{
+  "slug": "cli-s2-stp-root",
+  "name": "Choosing the Root Bridge",
+  "unit": "s1",
+  "topic": "stp",
+  "modules": [
+    16
+  ],
+  "round": "semis",
+  "priority": "P1",
+  "estMinutes": 18,
+  "difficulty": 3,
+  "startDevice": "SW2",
+  "focus": [
+    "spanning-tree vlan priority",
+    "spanning-tree vlan root primary",
+    "spanning-tree portfast",
+    "spanning-tree bpduguard enable"
+  ],
+  "brief": "Left alone, spanning tree hands the root role to whichever switch has the lowest MAC address, which is a decision nobody made on purpose. Here SW1 won the election that way. SW2 is the switch with the fastest uplinks and it is where the traffic should converge, so SW2 is the one that should be root.\n\nSet it deliberately, then harden the two access ports the way a competition checklist asks: portfast where a PC is plugged in, and BPDU guard so a student plugging in a switch cannot take the root role away from you.",
+  "watchFor": "Bridge priority moves in steps of 4096. Anything else is refused, and the number you type is not the number that shows up — the VLAN ID is added to it.",
+  "topologyRef": "stp-ring",
+  "tasks": [
+    {
+      "id": "before",
+      "text": "On SW2, run show spanning-tree and confirm SW2 is not currently the root.",
+      "check": {
+        "type": "commandUsed",
+        "device": "SW2",
+        "cmd": "show spanning-tree"
+      }
+    },
+    {
+      "id": "priority",
+      "text": "Give SW2 a bridge priority of 24576 for VLAN 1.",
+      "hint": "spanning-tree vlan 1 priority 24576 — or spanning-tree vlan 1 root primary, which sets the same value.",
+      "check": {
+        "type": "stpPriority",
+        "device": "SW2",
+        "vlan": 1,
+        "value": 24576
+      }
+    },
+    {
+      "id": "is-root",
+      "text": "Confirm SW2 is now the root bridge for VLAN 1.",
+      "hint": "Lower priority wins, and it wins before MAC address is even considered.",
+      "check": {
+        "type": "stpRoot",
+        "device": "SW2",
+        "vlan": 1
+      }
+    },
+    {
+      "id": "backup",
+      "text": "Make SW1 the backup: priority 28672 for VLAN 1, so it takes over if SW2 dies.",
+      "hint": "spanning-tree vlan 1 root secondary sets exactly that.",
+      "check": {
+        "type": "stpPriority",
+        "device": "SW1",
+        "vlan": 1,
+        "value": 28672
+      }
+    },
+    {
+      "id": "portfast",
+      "text": "On SW2, turn on portfast for Fa0/1, the port with a PC on it.",
+      "hint": "An access port with a single host on it has no business waiting thirty seconds to forward.",
+      "check": {
+        "type": "accessPort",
+        "device": "SW2",
+        "if": "FastEthernet0/1",
+        "portfast": true
+      }
+    },
+    {
+      "id": "bpduguard",
+      "text": "On the same port, enable BPDU guard.",
+      "hint": "spanning-tree bpduguard enable. Portfast and BPDU guard belong together: one trusts the port, the other checks that the trust was warranted.",
+      "check": {
+        "type": "configMatches",
+        "device": "SW2",
+        "re": "spanning-tree bpduguard enable"
+      }
+    },
+    {
+      "id": "one-block",
+      "text": "Confirm the ring is still cut in exactly one place after the re-election.",
+      "check": {
+        "type": "stpBlocking",
+        "vlan": 1,
+        "count": 1
+      }
+    },
+    {
+      "id": "verify",
+      "text": "Run show spanning-tree on SW2 one more time and confirm the Root ID block now matches its own Bridge ID.",
+      "check": {
+        "type": "commandUsed",
+        "device": "SW2",
+        "cmd": "show spanning-tree"
+      }
+    },
+    {
+      "id": "still-works",
+      "text": "Prove traffic still crosses the ring: PC1 reaches PC2 at 192.168.1.12.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.1.12"
+      }
+    }
+  ],
+  "extension": "Set SW3's priority to 8192 and predict, before you run show spanning-tree, which port on which switch will change state. Then check.",
+  "debrief": "Root bridge placement is a design decision, not an accident. Setting it costs one command and it decides the shape of every path in the layer 2 network.\n\nThe two port commands matter for a different reason. Portfast is about how fast a PC gets a link; BPDU guard is about what happens when something that is not a PC gets plugged into that port. Together they are a standard hardening pair, and a competition scoring engine will look for both.",
+  "solution": [
+    {
+      "device": "SW2",
+      "cmds": [
+        "enable",
+        "show spanning-tree",
+        "configure terminal",
+        "spanning-tree vlan 1 priority 24576",
+        "interface FastEthernet0/1",
+        "spanning-tree portfast",
+        "spanning-tree bpduguard enable",
+        "end",
+        "show spanning-tree"
+      ]
+    },
+    {
+      "device": "SW1",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "spanning-tree vlan 1 root secondary",
+        "end"
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.1.12"
+      ]
+    }
+  ]
+}

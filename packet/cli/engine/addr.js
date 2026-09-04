@@ -163,6 +163,11 @@ export function formatMacWindows(hex) {
   return h.match(/.{2}/g).join('-');
 }
 
+/** A MAC as a comparable number — spanning tree elections turn on this. */
+export function macToInt(hex) {
+  return parseInt(String(hex).replace(/[.:-]/g, ''), 16);
+}
+
 /** Deterministic per-device/per-interface MAC so labs are reproducible. */
 export function makeMac(deviceIndex, ifaceIndex) {
   const oui = '0060';

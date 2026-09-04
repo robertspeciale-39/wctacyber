@@ -1,6 +1,10 @@
-// app.js — wiring. Loads the manifest, runs the picker, builds the workbench,
-// keeps the grade live, and stores progress the same way the rest of the
-// packet site does.
+// app.js — wiring. Loads the manifest, runs the picker, builds the workbench
+// and keeps the task list live.
+//
+// There is deliberately no score, no percentage and no saved progress. A
+// whole class shares these labs on machines with nobody signed in, so a
+// stored "best" would be somebody else's. A task is done or it is not, and
+// that state lives in the running lab only.
 
 import { loadLab, recordCommand } from '../engine/lab.js';
 import { execute, contextHelp, complete, promptFor } from '../engine/ios.js';
@@ -22,13 +26,13 @@ const state = {
   term: null,
   timer: null,
   startedAt: null,
-  filter: { round: 'all', unit: 'all' }
+  filter: { round: 'all', unit: 'all', topic: 'all' }
 };
 
 /* ------------------------------------------------------------ storage --- */
-// Same conventions as the rest of the site: pt_* keys, cs_theme shared with
-// every drill app, everything guarded so a locked-down browser cannot break
-// the page.
+// The only thing this section stores is the theme, which cs-core.js owns.
+// Kept as a guarded helper because the drill still wants a scratch key and a
+// locked-down browser must not be able to break the page.
 
 const store = {
   get(key, fallback) {
@@ -39,40 +43,6 @@ const store = {
     try { localStorage.setItem(key, JSON.stringify(value)); } catch { /* private mode */ }
   }
 };
-
-/** Progress is per student profile, using the site's active profile. */
-function profileKey() {
-  const id = window.PT ? (PT.active()?.id || null) : null;
-  return `pt_cli_progress${id ? '_' + id : ''}`;
-}
-function getProgress() { return store.get(profileKey(), {}); }
-function saveProgress(slug, percent, seconds) {
-  const all = getProgress();
-  const prev = all[slug] || {};
-  all[slug] = {
-    best: Math.max(prev.best || 0, percent),
-    lastPercent: percent,
-    bestSeconds: percent === 100
-      ? Math.min(prev.bestSeconds || Infinity, seconds || Infinity)
-      : prev.bestSeconds,
-    at: Date.now()
-  };
-  if (all[slug].bestSeconds === Infinity) delete all[slug].bestSeconds;
-  store.set(profileKey(), all);
-}
-
-/**
- * Report to the site scoreboard. PT is a global on this page because
- * index.html loads cs-core.js; the parent-frame branch is there for the day
- * someone embeds a lab in a module page.
- */
-function reportBest(slug, seconds, meta) {
-  try {
-    const pt = window.PT || (window.parent !== window ? window.parent.PT : null);
-    if (pt && pt.recordBest) return pt.recordBest(slug, seconds, meta);
-  } catch { /* cross-origin or absent; not important */ }
-  return false;
-}
 
 /* --------------------------------------------------------------- boot --- */
 
@@ -89,10 +59,6 @@ async function boot() {
   state.topologies = topologies;
 
   window.addEventListener('popstate', route);
-  // Switching profile in the site chrome changes whose progress this is.
-  window.addEventListener('pt:progress', () => {
-    if (document.body.dataset.view === 'picker') renderPicker();
-  });
   route();
 }
 
@@ -117,7 +83,6 @@ function renderPicker() {
   document.body.dataset.view = 'picker';
   $('#crumb').innerHTML = '';
   const root = $('#view');
-  const progress = getProgress();
 
   const rounds = state.manifest.rounds;
   const units = state.manifest.units;
@@ -132,8 +97,10 @@ function renderPicker() {
       <p>A working Cisco command line in the browser, on a network that really
          responds. Type <code>ip address</code> with the wrong mask and the ping
          really fails — nothing here is scripted.</p>
-      <p>Pick a lab. Each one has a short brief, a task list that grades itself
-         as you work, and a reset button. Nothing is submitted anywhere.</p>
+      <p>Pick a lab. Each one has a short brief, a task list that ticks itself
+         off as you work, and a reset button. A task only ticks when the whole
+         command is right. Nothing is scored, nothing is saved and nothing is
+         submitted anywhere.</p>
     </div>`));
 
   const filters = el('div', 'filters');
@@ -143,6 +110,27 @@ function renderPicker() {
     filters.append(chip(r.name, state.filter.round === r.id, () => { state.filter.round = r.id; renderPicker(); }));
   }
   wrap.append(filters);
+
+  // Topic, so somebody looking for "the VLAN ones" can find them without
+  // knowing which competition round they belong to.
+  // The manifest lists topics in teaching order; anything not in that list
+  // still shows up, so adding a lab never silently hides it.
+  const used = new Set(state.manifest.labs.map(l => l.topic).filter(Boolean));
+  const topics = [
+    ...(state.manifest.topics || []).filter(tp => used.has(tp)),
+    ...[...used].filter(tp => !(state.manifest.topics || []).includes(tp))
+  ];
+  if (topics.length) {
+    const topicRow = el('div', 'filters');
+    topicRow.append(html('<span class="label">Topic</span>'));
+    topicRow.append(chip('All', state.filter.topic === 'all',
+                         () => { state.filter.topic = 'all'; renderPicker(); }));
+    for (const tp of topics) {
+      topicRow.append(chip(tp, state.filter.topic === tp,
+                           () => { state.filter.topic = tp; renderPicker(); }));
+    }
+    wrap.append(topicRow);
+  }
 
   const drillCard = el('div', 'filters');
   drillCard.append(html('<span class="label">Also</span>'));
@@ -154,14 +142,14 @@ function renderPicker() {
 
   const grid = el('div', 'grid');
   const labs = state.manifest.labs.filter(l =>
-    state.filter.round === 'all' || l.round === state.filter.round || l.round === 'any');
+    (state.filter.round === 'all' || l.round === state.filter.round || l.round === 'any') &&
+    (state.filter.topic === 'all' || l.topic === state.filter.topic));
 
   if (!labs.length) {
-    grid.append(html('<p class="brief">No labs unlock at that round yet.</p>'));
+    grid.append(html('<p class="brief">Nothing matches those two filters.</p>'));
   }
 
   for (const lab of labs) {
-    const p = progress[lab.slug];
     const card = el('button', 'card');
     card.type = 'button';
     card.setAttribute('aria-label', `${lab.name} — ${lab.tagline}`);
@@ -170,8 +158,8 @@ function renderPicker() {
     card.append(html(`
       <div class="row">
         <span class="tag unit">${lab.unit.toUpperCase()}</span>
+        ${lab.topic ? `<span class="tag">${escapeHtml(lab.topic)}</span>` : ''}
         ${lab.timed ? '<span class="tag">timed</span>' : ''}
-        <span class="progress-pill ${p && p.best === 100 ? 'complete' : ''}">${p ? p.best + '%' : 'not started'}</span>
       </div>
       <h3>${escapeHtml(lab.name)}</h3>
       <p>${escapeHtml(lab.tagline)}</p>
@@ -249,7 +237,7 @@ function renderWorkbench() {
       </section>
 
       <aside class="pane right" aria-label="Tasks and briefing">
-        <div class="cli-ring" id="ring"></div>
+        <div class="cli-count" id="count"></div>
         <div class="scroll">
           <ul class="tasks" id="tasks"></ul>
           <details class="cli-fold" id="briefpanel" open>
@@ -374,8 +362,6 @@ function drainLog() {
 
 function onSubmit(line) {
   const s = session();
-  const wasPending = !!s.pending;
-  if (!wasPending) recordCommand(state.run.ctx, s.dev.id, line);
 
   let res;
   if (s.kind === 'pc') {
@@ -383,6 +369,13 @@ function onSubmit(line) {
     if (res.clear) state.term.clear();
   } else {
     res = execute(s, line);
+  }
+
+  // Recorded AFTER the shell has run it, and only with the canonical form the
+  // parser resolved. A command that did not parse has no canonical form, so a
+  // half-typed or wrong command cannot satisfy an objective.
+  if (res.canonical) {
+    recordCommand(state.run.ctx, s.dev.id, { raw: line, canonical: res.canonical });
   }
 
   state.term.output(res.lines || []);
@@ -398,8 +391,9 @@ function onSubmit(line) {
 
 function onHelp(line) {
   const s = session();
-  // A help request is still evidence the student engaged with the CLI.
-  recordCommand(state.run.ctx, s.dev.id, line + '?');
+  // A help request is evidence the student engaged with the CLI, but it is not
+  // a command — it is filed separately and only `helpUsed` can see it.
+  recordCommand(state.run.ctx, s.dev.id, { raw: line + '?', help: true });
   regrade();
   if (s.kind === 'pc') {
     return ['', 'Type a command name for help, or `help` for the list.', ''];
@@ -417,22 +411,16 @@ function onCompleteLine(line) {
 function regrade() {
   const { lab, ctx, net } = state.run;
   const grade = state.run.grade();
-  renderRing(grade);
+  renderCount(grade);
   renderTasks(grade);
   renderInspector($('#inspector'), net, lastTrace());
   renderAnswers($('#answers'), lab, ctx, () => regrade());
 
-  const seconds = Math.round((Date.now() - state.startedAt) / 1000);
-  if (!lab.sandbox) saveProgress(lab.slug, grade.percent, seconds);
-
   if (grade.complete && !state.run.celebrated) {
     state.run.celebrated = true;
     stopTimer();
-    const best = reportBest(lab.slug, seconds, { kind: 'cli-lab', name: lab.name });
-    if (lab.gate && window.PT && PT.recordGate) PT.recordGate(lab.unit, true, seconds);
-    toast(best ? `Lab complete — ${formatTime(seconds)}, personal best`
-               : `Lab complete — ${formatTime(seconds)}`);
-    $('#announce').textContent = `All objectives complete in ${formatTime(seconds)}.`;
+    toast('Every task done.');
+    $('#announce').textContent = 'Every task on this lab is done.';
   }
 }
 
@@ -447,29 +435,26 @@ function lastTrace() {
   return best;
 }
 
-function renderRing(grade) {
-  const r = 26, c = 2 * Math.PI * r;
-  const done = c * (grade.percent / 100);
-  // At 0% a round cap would still paint a dot, which reads as "1%".
-  const cap = grade.percent === 0 ? 'butt' : 'round';
-  $('#ring').innerHTML = `
-    <svg width="64" height="64" viewBox="0 0 64 64" aria-hidden="true">
-      <circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--line-2)" stroke-width="6"/>
-      <circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--accent)" stroke-width="6"
-              stroke-linecap="${cap}" stroke-dasharray="${done} ${c}"
-              transform="rotate(-90 32 32)"/>
-    </svg>
-    <div>
-      <div class="pct">${grade.percent}%</div>
-      <div class="sub">${grade.earned} of ${grade.total} points</div>
-    </div>`;
+/**
+ * A count of tasks done, not a score. No percentage, no points, nothing
+ * kept between visits — the checklist is the whole feedback loop.
+ */
+function renderCount(grade) {
+  const box = $('#count');
+  if (!grade.tasks.length) {
+    box.innerHTML = '<div class="tasklabel">Sandbox</div><div class="sub">Nothing to tick. Try things.</div>';
+    return;
+  }
+  box.innerHTML = `
+    <div class="tasklabel">Tasks</div>
+    <div class="sub"><b>${grade.done}</b> of ${grade.tasks.length} done</div>`;
 }
 
 function renderTasks(grade) {
   const ul = $('#tasks');
   ul.replaceChildren();
   if (!grade.tasks.length) {
-    ul.append(html('<p class="brief">Sandbox — nothing to score. Try things.</p>'));
+    ul.append(html('<p class="brief">Sandbox — no task list. Try things.</p>'));
     return;
   }
   for (const t of grade.tasks) {
@@ -478,7 +463,6 @@ function renderTasks(grade) {
       <div class="t">
         <span class="box" aria-hidden="true"></span>
         <span>${escapeHtml(t.text)}</span>
-        <span class="pts">${t.points}</span>
       </div>`));
     li.setAttribute('aria-label', `${t.met ? 'Complete' : 'Not complete'}: ${t.text}`);
     if (t.hint && !t.met) {
@@ -594,7 +578,7 @@ function openIpConfig() {
   form.addEventListener('submit', () => {
     if (form.mode.value === 'dhcp') {
       const r = setDhcp(state.run.net, dev);
-      recordCommand(state.run.ctx, dev.id, 'ipconfig /renew');
+      recordCommand(state.run.ctx, dev.id, { raw: 'IP Configuration → DHCP', canonical: 'ipconfig /renew' });
       state.term.write(['', r.ok ? `DHCP: address ${r.ip} acquired from ${r.server}`
                                  : 'DHCP: no server responded — check the pool and the link.', '']);
     } else {
@@ -652,10 +636,7 @@ function openDrill() {
   const root = $('#view');
   root.className = 'picker';
   root.replaceChildren();
-  startDrill(root, {
-    onBest: (seconds) => { reportBest('cli-command-drill', seconds); },
-    store
-  });
+  startDrill(root, { store });
 }
 
 /* ------------------------------------------------------------- helpers --- */

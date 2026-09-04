@@ -53,17 +53,15 @@
     {
       "id": "clear",
       "text": "On PC1, clear the ARP cache with arp -d so you start clean.",
-      "points": 2,
       "check": {
         "type": "commandUsed",
         "device": "PC1",
-        "re": "arp\\s+-d"
+        "cmd": "arp -d"
       }
     },
     {
       "id": "local",
       "text": "Ping PC3 at 192.168.10.30 — a destination on the same subnet.",
-      "points": 2,
       "check": {
         "type": "reachability",
         "from": "PC1",
@@ -73,7 +71,6 @@
     {
       "id": "localarp",
       "text": "Run arp -a and confirm PC1 now has an entry for 192.168.10.30 itself.",
-      "points": 3,
       "hint": "Local destination, so PC1 asks for the destination hardware address directly.",
       "check": {
         "type": "arpEntry",
@@ -84,7 +81,6 @@
     {
       "id": "remote",
       "text": "Now ping PC2 at 192.168.20.20 — a destination on a different subnet.",
-      "points": 2,
       "check": {
         "type": "reachability",
         "from": "PC1",
@@ -94,7 +90,6 @@
     {
       "id": "gwarp",
       "text": "Confirm PC1 has an ARP entry for the gateway 192.168.10.1.",
-      "points": 3,
       "check": {
         "type": "arpEntry",
         "device": "PC1",
@@ -104,7 +99,6 @@
     {
       "id": "noremote",
       "text": "Confirm PC1 has NO ARP entry for 192.168.20.20.",
-      "points": 4,
       "hint": "This is the whole lesson. PC1 never needs the far host hardware address, because the far host is not on its wire.",
       "check": {
         "type": "arpEntry",
@@ -116,7 +110,6 @@
     {
       "id": "routerarp",
       "text": "On R1, run show arp and find the entry it built for PC1.",
-      "points": 2,
       "hint": "ARP is a two-way exchange, so both ends end up with an entry.",
       "check": {
         "type": "arpEntry",

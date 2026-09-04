@@ -1,0 +1,196 @@
+{
+  "slug": "cli-v2-trunking",
+  "name": "Carrying VLANs Between Switches",
+  "unit": "v1",
+  "topic": "vlans",
+  "modules": [
+    16
+  ],
+  "round": "round2",
+  "priority": "P0",
+  "estMinutes": 20,
+  "difficulty": 3,
+  "startDevice": "PC1",
+  "focus": [
+    "switchport mode trunk",
+    "switchport trunk native vlan",
+    "switchport trunk allowed vlan",
+    "show interfaces trunk"
+  ],
+  "brief": "The VLANs are already built on both switches: STAFF is VLAN 10, STUDENT is VLAN 20, and the access ports are assigned. PC1 and PC3 are both in STAFF, on the same subnet, and they still cannot reach each other — because the only thing joining the two switches is an ordinary access port sitting in VLAN 1.\n\nOne link has to carry both VLANs. That is a trunk, and a trunk needs configuring on both ends. While you are there you will also move the native VLAN off VLAN 1, which is the hardening step a competition checklist asks for.",
+  "watchFor": "A trunk is a two-ended thing. Configuring one side and testing is how you end up chasing a fault you created.",
+  "topologyRef": "vlan-two-switches",
+  "tasks": [
+    {
+      "id": "prove-broken",
+      "text": "From PC1, ping PC3 at 192.168.10.13 and watch it fail. Same VLAN, same subnet, different switch.",
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "cmd": "ping 192.168.10.13"
+      }
+    },
+    {
+      "id": "mgmt-vlan",
+      "text": "Create VLAN 99 on both switches and name it MGMT. This will be the native VLAN.",
+      "hint": "A native VLAN nobody is a member of is the point: untagged traffic lands somewhere harmless.",
+      "checks": [
+        {
+          "type": "vlan",
+          "device": "SW1",
+          "id": 99,
+          "name": "MGMT"
+        },
+        {
+          "type": "vlan",
+          "device": "SW2",
+          "id": 99,
+          "name": "MGMT"
+        }
+      ]
+    },
+    {
+      "id": "trunk-sw1",
+      "text": "Make SW1's Gi0/1 uplink a trunk, with native VLAN 99.",
+      "hint": "switchport mode trunk, then switchport trunk native vlan 99.",
+      "check": {
+        "type": "trunkPort",
+        "device": "SW1",
+        "if": "GigabitEthernet0/1",
+        "mode": "trunk",
+        "native": 99,
+        "up": true
+      }
+    },
+    {
+      "id": "trunk-sw2",
+      "text": "Do the same on SW2's Gi0/1 uplink.",
+      "check": {
+        "type": "trunkPort",
+        "device": "SW2",
+        "if": "GigabitEthernet0/1",
+        "mode": "trunk",
+        "native": 99,
+        "up": true
+      }
+    },
+    {
+      "id": "allowed",
+      "text": "Restrict both trunks to VLANs 10, 20 and 99 only.",
+      "hint": "switchport trunk allowed vlan 10,20,99 — one command, no spaces in the list.",
+      "checks": [
+        {
+          "type": "trunkPort",
+          "device": "SW1",
+          "if": "GigabitEthernet0/1",
+          "carries": [
+            10,
+            20,
+            99
+          ]
+        },
+        {
+          "type": "trunkPort",
+          "device": "SW2",
+          "if": "GigabitEthernet0/1",
+          "carries": [
+            10,
+            20,
+            99
+          ]
+        }
+      ]
+    },
+    {
+      "id": "verify-trunk",
+      "text": "Run show interfaces trunk on SW1 and read the native VLAN and the allowed list.",
+      "check": {
+        "type": "commandUsed",
+        "device": "SW1",
+        "cmd": "show interfaces trunk"
+      }
+    },
+    {
+      "id": "staff-across",
+      "text": "Prove STAFF now crosses the trunk: PC1 reaches PC3.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.10.13"
+      }
+    },
+    {
+      "id": "student-across",
+      "text": "Prove STUDENT crosses it too: PC2 reaches PC4 at 192.168.20.14.",
+      "check": {
+        "type": "reachability",
+        "from": "PC2",
+        "to": "192.168.20.14"
+      }
+    },
+    {
+      "id": "still-separate",
+      "text": "And prove the trunk did not merge the VLANs: PC1 still cannot reach PC2's VLAN.",
+      "hint": "They are in different subnets as well as different VLANs, and there is no router here. Both reasons hold.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.20.12",
+        "expect": false
+      }
+    }
+  ],
+  "extension": "Remove VLAN 20 from SW1's allowed list and work out, before you test it, which of the two working pings will break. Then test it.",
+  "debrief": "A trunk tags every frame it carries so the switch on the far end knows which VLAN the frame belongs to. Frames in the native VLAN are the exception — they cross untagged, which is exactly why a native VLAN mismatch between two ends is such an ugly fault: the link is up, most traffic works, and one VLAN quietly leaks into another.\n\nshow interfaces trunk is the one command that shows you mode, encapsulation, native VLAN and allowed list together. It is worth memorising.",
+  "solution": [
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.10.13"
+      ]
+    },
+    {
+      "device": "SW1",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "vlan 99",
+        "name MGMT",
+        "exit",
+        "interface GigabitEthernet0/1",
+        "switchport mode trunk",
+        "switchport trunk native vlan 99",
+        "switchport trunk allowed vlan 10,20,99",
+        "end",
+        "show interfaces trunk"
+      ]
+    },
+    {
+      "device": "SW2",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "vlan 99",
+        "name MGMT",
+        "exit",
+        "interface GigabitEthernet0/1",
+        "switchport mode trunk",
+        "switchport trunk native vlan 99",
+        "switchport trunk allowed vlan 10,20,99",
+        "end"
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.10.13"
+      ]
+    },
+    {
+      "device": "PC2",
+      "cmds": [
+        "ping 192.168.20.14"
+      ]
+    }
+  ]
+}

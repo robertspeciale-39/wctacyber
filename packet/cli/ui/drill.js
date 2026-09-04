@@ -37,7 +37,39 @@ const BANK = [
   { unit: 'u1', ask: 'Get from user EXEC to privileged EXEC.', answers: ['enable'] },
   { unit: 'u1', ask: 'Get from privileged EXEC into global configuration mode.', answers: ['configure terminal'] },
   { unit: 'u1', ask: 'Leave any configuration mode and go straight to privileged EXEC.', answers: ['end'] },
-  { unit: 'u4', ask: 'Wipe the dynamically learned entries from a switch MAC address table.', answers: ['clear mac address-table dynamic'] }
+  { unit: 'u4', ask: 'Wipe the dynamically learned entries from a switch MAC address table.', answers: ['clear mac address-table dynamic'] },
+
+  // --- VLANs and trunking --------------------------------------------------
+  { unit: 'v1', ask: 'On a switch: list every VLAN and which ports are in it.', answers: ['show vlan brief', 'show vlan'] },
+  { unit: 'v1', ask: 'Create VLAN 30.', answers: ['vlan 30'] },
+  { unit: 'v1', ask: 'Inside VLAN configuration: name this VLAN STUDENT.', answers: ['name STUDENT'] },
+  { unit: 'v1', ask: 'Put the interface you are in into VLAN 20 as an access port, in one command.', answers: ['switchport access vlan 20'] },
+  { unit: 'v1', ask: 'Force the interface you are in to be an access port, never a trunk.', answers: ['switchport mode access'] },
+  { unit: 'v1', ask: 'Force the interface you are in to be a trunk.', answers: ['switchport mode trunk'] },
+  { unit: 'v1', ask: 'Move the native VLAN on this trunk to 99.', answers: ['switchport trunk native vlan 99'] },
+  { unit: 'v1', ask: 'Allow only VLANs 10, 20 and 99 across this trunk.', answers: ['switchport trunk allowed vlan 10,20,99'] },
+  { unit: 'v1', ask: 'On a switch: show every trunk, its native VLAN and its allowed list.', answers: ['show interfaces trunk'] },
+  { unit: 'v2', ask: 'On a router subinterface: tag it for VLAN 10.', answers: ['encapsulation dot1Q 10'] },
+  { unit: 'v2', ask: 'On a layer 3 switch: create the interface that acts as the gateway for VLAN 20.', answers: ['interface vlan 20'] },
+  { unit: 'v2', ask: 'On a layer 3 switch: turn on routing between its VLANs.', answers: ['ip routing'] },
+  { unit: 'v2', ask: 'On a layer 3 switch: turn this port into a routed port instead of a switchport.', answers: ['no switchport'] },
+
+  // --- spanning tree -------------------------------------------------------
+  { unit: 's1', ask: 'Show the spanning tree topology, root bridge and port roles.', answers: ['show spanning-tree'] },
+  { unit: 's1', ask: 'Make this switch the root bridge for VLAN 1, using the priority value root primary sets.', answers: ['spanning-tree vlan 1 priority 24576'] },
+  { unit: 's1', ask: 'Make this switch the root for VLAN 10 without doing the arithmetic yourself.', answers: ['spanning-tree vlan 10 root primary'] },
+  { unit: 's1', ask: 'On an access port with a PC on it: skip the listening and learning delay.', answers: ['spanning-tree portfast'] },
+  { unit: 's1', ask: 'Shut a port down if a switch is plugged into it and starts sending BPDUs.', answers: ['spanning-tree bpduguard enable'] },
+
+  // --- OSPF ----------------------------------------------------------------
+  { unit: 'o1', ask: 'Start OSPF process 1.', answers: ['router ospf 1'] },
+  { unit: 'o1', ask: 'Inside OSPF: set the router ID to 1.1.1.1.', answers: ['router-id 1.1.1.1'] },
+  { unit: 'o1', ask: 'Inside OSPF: advertise 192.168.10.0/24 into area 0.', answers: ['network 192.168.10.0 0.0.0.255 area 0'] },
+  { unit: 'o1', ask: 'Inside OSPF: advertise the /30 link 10.0.0.0 into area 0.', answers: ['network 10.0.0.0 0.0.0.3 area 0'] },
+  { unit: 'o1', ask: 'Stop OSPF sending hellos out of Gi0/0 while still advertising that network.', answers: ['passive-interface GigabitEthernet0/0', 'passive-interface g0/0'] },
+  { unit: 'o1', ask: 'Show which OSPF neighbours this router has, and their state.', answers: ['show ip ospf neighbor'] },
+  { unit: 'o1', ask: 'Show only the routes this router learned through OSPF.', answers: ['show ip route ospf'] },
+  { unit: 'o1', ask: 'Show which networks this router is advertising and what it has heard from.', answers: ['show ip protocols'] }
 ];
 
 const ROUND_SIZE = 10;
@@ -56,12 +88,11 @@ function matches(given, answer) {
   });
 }
 
-export function startDrill(root, { onBest, store }) {
+export function startDrill(root) {
   const wrap = document.createElement('div');
   wrap.className = 'cli-wrap';
   root.append(wrap);
 
-  const bestKey = 'pt_cli_drill_best';
   let questions = [];
   let index = 0, correct = 0, startedAt = 0, timerId = null;
 
@@ -75,15 +106,14 @@ export function startDrill(root, { onBest, store }) {
   }
 
   function intro() {
-    const best = store.get(bestKey, null);
     wrap.innerHTML = `
       <div class="lede">
         <h1>Command drill</h1>
         <p>Ten prompts. Read the symptom or the goal, type the command. Abbreviations
            count, exactly as they do on a real device — <code>sh ip int br</code> is a
            correct answer.</p>
-        <p>The clock starts on your first question and stops on your last.</p>
-        ${best ? `<p style="font-family:var(--mono);color:var(--accent)">Personal best: ${best.correct}/${ROUND_SIZE} in ${fmt(best.seconds)}</p>` : ''}
+        <p>The clock starts on your first question and stops on your last. Nothing
+           is saved — the round tells you how it went and that is the end of it.</p>
       </div>
       <button class="primary" id="start" type="button">Start</button>`;
     wrap.querySelector('#start').addEventListener('click', begin);
@@ -148,17 +178,10 @@ export function startDrill(root, { onBest, store }) {
   function finish() {
     clearInterval(timerId);
     const seconds = Math.round((Date.now() - startedAt) / 1000);
-    const prev = store.get(bestKey, null);
-    const better = !prev || correct > prev.correct || (correct === prev.correct && seconds < prev.seconds);
-    if (better) {
-      store.set(bestKey, { correct, seconds, at: Date.now() });
-      if (correct === ROUND_SIZE) onBest(seconds);
-    }
     wrap.innerHTML = `
       <div class="lede">
         <h1>${correct} of ${ROUND_SIZE} in ${fmt(seconds)}</h1>
         <p>${correct === ROUND_SIZE ? 'Clean round.' : correct >= 7 ? 'Solid. Run it again and close the gap.' : 'Worth another pass — check the cheat sheets for the ones you missed.'}</p>
-        ${better ? '<p style="color:var(--accent)">New personal best.</p>' : ''}
       </div>
       <button class="primary" id="again" type="button">Run it again</button>`;
     wrap.querySelector('#again').addEventListener('click', begin);

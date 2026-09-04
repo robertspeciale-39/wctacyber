@@ -12,22 +12,34 @@ import {
 } from './addr.js';
 import {
   getDevice, getIface, ifaceUp, lineStatus, pingOnce, traceRoute,
-  captureConfigState, restoreConfigState, FAIL, applyDhcp
+  captureConfigState, restoreConfigState, FAIL, applyDhcp,
+  ensureSvi, physicalOf, subInterfaces, portIsTrunk, MODELS
 } from './net.js';
+import { stpDirty } from './stp.js';
+import { newOspfProcess } from './ospf.js';
 import * as show from './show.js';
 
 /* ------------------------------------------------------------- helpers --- */
 
 const MODES = {
-  user:          { suffix: '>',              name: 'User EXEC' },
-  priv:          { suffix: '#',              name: 'Privileged EXEC' },
-  config:        { suffix: '(config)#',      name: 'Global configuration' },
-  'config-if':   { suffix: '(config-if)#',   name: 'Interface configuration' },
-  'config-line': { suffix: '(config-line)#', name: 'Line configuration' },
-  'config-dhcp': { suffix: '(dhcp-config)#', name: 'DHCP pool configuration' }
+  user:            { suffix: '>',                name: 'User EXEC' },
+  priv:            { suffix: '#',                name: 'Privileged EXEC' },
+  config:          { suffix: '(config)#',        name: 'Global configuration' },
+  'config-if':     { suffix: '(config-if)#',     name: 'Interface configuration' },
+  'config-subif':  { suffix: '(config-subif)#',  name: 'Subinterface configuration' },
+  'config-line':   { suffix: '(config-line)#',   name: 'Line configuration' },
+  'config-dhcp':   { suffix: '(dhcp-config)#',   name: 'DHCP pool configuration' },
+  'config-vlan':   { suffix: '(config-vlan)#',   name: 'VLAN configuration' },
+  'config-router': { suffix: '(config-router)#', name: 'Router configuration' }
 };
 
-export const CONFIG_MODES = ['config', 'config-if', 'config-line', 'config-dhcp'];
+export const CONFIG_MODES = [
+  'config', 'config-if', 'config-subif', 'config-line',
+  'config-dhcp', 'config-vlan', 'config-router'
+];
+
+/** Everything an interface subcommand is allowed in. */
+const IF_MODES = ['config-if', 'config-subif'];
 
 /** Node constructor. Keeps the tree readable. */
 function n(kw, help, opts = {}) {
@@ -52,6 +64,14 @@ const IF_PREFIXES = [
  * `int vlan 1`. Returns {iface, consumed} or null.
  */
 export function resolveInterface(dev, tokens, start = 0) {
+  const parsed = splitInterfaceName(dev, tokens, start);
+  if (!parsed) return null;
+  const iface = dev.ifaces.find(i => i.name.toLowerCase() === parsed.full.toLowerCase());
+  return iface ? { iface, consumed: parsed.consumed } : null;
+}
+
+/** Break `gi 0/0.10` into a full interface name without requiring it to exist. */
+function splitInterfaceName(dev, tokens, start = 0) {
   const t0 = tokens[start];
   if (!t0) return null;
   const split = t0.match(/^([a-zA-Z]+)([\d/.]*)$/);
@@ -66,13 +86,65 @@ export function resolveInterface(dev, tokens, start = 0) {
   }
   for (const p of IF_PREFIXES) {
     if (!p.re.test(word)) continue;
-    const candidates = dev.ifaces.filter(i =>
-      i.name.toLowerCase().startsWith(p.full.toLowerCase()) &&
-      i.name.slice(p.full.length) === number);
-    if (candidates.length === 1) return { iface: candidates[0], consumed };
-    // Vlan1 has no slash — allow the exact match above to fail through.
+    return { full: p.full + number, prefix: p.full, number, consumed };
   }
   return null;
+}
+
+/**
+ * The `interface` command can bring an interface into existence: `interface
+ * vlan 20` on a switch, `interface g0/0.30` on a router. This says whether a
+ * name is one the device would accept, WITHOUT building anything — parsing a
+ * command must never have a side effect, or Tab completion would litter the
+ * device with half-typed interfaces.
+ *
+ * Returns { iface|null, name, consumed }.
+ */
+export function probeInterface(dev, tokens, start = 0) {
+  const found = resolveInterface(dev, tokens, start);
+  if (found) return { iface: found.iface, name: found.iface.name, consumed: found.consumed };
+  const parsed = splitInterfaceName(dev, tokens, start);
+  if (!parsed) return null;
+
+  // interface vlan <n> — an SVI, on a switch only.
+  if (parsed.prefix === 'Vlan' && dev.kind === 'switch' && /^\d+$/.test(parsed.number)) {
+    const id = +parsed.number;
+    if (id < 1 || id > 4094) return null;
+    return { iface: null, name: parsed.full, consumed: parsed.consumed, svi: id };
+  }
+
+  // interface <phys>.<sub> — a dot1Q subinterface under a real routed port.
+  const dot = parsed.number.indexOf('.');
+  if (dot > 0) {
+    const parentName = parsed.prefix + parsed.number.slice(0, dot);
+    const parent = dev.ifaces.find(i => i.name.toLowerCase() === parentName.toLowerCase());
+    if (!parent || parent.switchport || parent.svi) return null;
+    return { iface: null, name: parsed.full, consumed: parsed.consumed, parent };
+  }
+  return null;
+}
+
+/** Build what `probeInterface` said was buildable. */
+export function realizeInterface(dev, tokens) {
+  const p = probeInterface(dev, tokens);
+  if (!p) return null;
+  if (p.iface) return p.iface;
+  if (p.svi != null) return ensureSvi(dev, p.svi);
+  return makeSubInterface(dev, p.parent, p.name);
+}
+
+function makeSubInterface(dev, parent, name) {
+  const iface = {
+    ...JSON.parse(JSON.stringify(parent)),
+    name,
+    parent: parent.name,
+    ip: null, mask: null, ipv6: [], description: null,
+    encapVlan: null, encapNative: false,
+    shutdown: false,          // a subinterface is not shut by default
+    svi: false
+  };
+  dev.ifaces.push(iface);
+  return iface;
 }
 
 /* ---------------------------------------------------------- validation --- */
@@ -91,6 +163,9 @@ function validateArg(type, tok, session) {
     }
     case 'IFACE':    return resolveInterface(session.dev, [tok]) !== null ||
                             /^[a-zA-Z]+$/.test(tok);   // may need a second token
+    case 'IFACE_NEW':return probeInterface(session.dev, [tok]) !== null ||
+                            /^[a-zA-Z]+$/.test(tok);
+    case 'VLANLIST': return /^\d+([,-]\d+)*$/.test(tok);
     default:         return false;
   }
 }
@@ -112,14 +187,21 @@ function matchKeywords(kids, tok) {
 
 /**
  * Walk the tree. Returns
- *   { status, node, args }                    on success
- *   { status:'invalid', index }               with the token index to point at
+ *   { status, node, args, canonical }          on success
+ *   { status:'invalid', index }                with the token index to point at
  *   { status:'ambiguous', index, matches }
  *   { status:'incomplete' }
+ *
+ * `canonical` is the fully spelled-out command the walk resolved to —
+ * `sh ip int br` comes back as `show ip interface brief`, and `int g0/0` as
+ * `interface GigabitEthernet0/0`. Objectives are graded against that string,
+ * never against the raw typing, so an abbreviation still counts and a half
+ * command that never parsed is never recorded at all.
  */
 export function parse(root, tokens, session) {
   let node = root;
   const args = {};
+  const canon = [];
   let i = 0;
 
   while (i < tokens.length) {
@@ -131,6 +213,7 @@ export function parse(root, tokens, session) {
     if (kwMatches.length === 1) {
       node = kwMatches[0];
       if (node.name) args[node.name] = node.kw;
+      canon.push(node.kw);
       i++;
       continue;
     }
@@ -140,16 +223,23 @@ export function parse(root, tokens, session) {
     for (const a of argKids) {
       if (a.argType === 'LINE') {
         args[a.name] = tokens.slice(i).join(' ');
+        canon.push(tokens.slice(i).join(' '));
         node = a; i = tokens.length; advanced = true; break;
       }
-      if (a.argType === 'IFACE') {
-        const r = resolveInterface(session.dev, tokens, i);
+      if (a.argType === 'IFACE' || a.argType === 'IFACE_NEW') {
+        // IFACE_NEW is only ever probed here; `interface vlan 20` does not
+        // actually build the SVI until the command runs.
+        const r = a.argType === 'IFACE'
+          ? resolveInterface(session.dev, tokens, i)
+          : probeInterface(session.dev, tokens, i);
         if (!r) continue;
-        args[a.name] = r.iface;
+        args[a.name] = r.iface || r.name;
+        canon.push(r.iface ? r.iface.name : r.name);
         node = a; i += r.consumed; advanced = true; break;
       }
       if (validateArg(a.argType, tok, session)) {
         args[a.name] = tok;
+        canon.push(tok);
         node = a; i++; advanced = true; break;
       }
     }
@@ -161,7 +251,7 @@ export function parse(root, tokens, session) {
     // Nothing runnable here — either more words are needed, or nothing exists.
     return { status: PARSE.INCOMPLETE, node };
   }
-  return { status: PARSE.OK, node, args };
+  return { status: PARSE.OK, node, args, canonical: canon.join(' ') };
 }
 
 /* ---------------------------------------------------------------- help --- */
@@ -190,7 +280,7 @@ export function createSession(net, deviceId, opts = {}) {
     id: ++sessionSeq,
     net, dev,
     mode: opts.mode || 'user',
-    ctxIface: null, ctxLine: null, ctxPool: null,
+    ctxIface: null, ctxLine: null, ctxPool: null, ctxVlan: null,
     history: [], histIndex: -1,
     pending: null,
     authenticated: false,
@@ -253,8 +343,8 @@ function buildTree() {
 
   const exitN = add(root, n('exit', 'Exit from the EXEC'));
   exitN.run = (s) => {
-    if (s.mode === 'config-if' || s.mode === 'config-line' || s.mode === 'config-dhcp') {
-      s.mode = 'config'; s.ctxIface = null; s.ctxLine = null; s.ctxPool = null; return [];
+    if (CONFIG_MODES.includes(s.mode) && s.mode !== 'config') {
+      s.mode = 'config'; clearSubContext(s); return [];
     }
     if (s.mode === 'config') { s.mode = 'priv'; emit(s, s.dev, '%SYS-5-CONFIG_I: Configured from console by console'); return []; }
     if (s.mode === 'priv') { s.mode = 'user'; return []; }
@@ -264,7 +354,7 @@ function buildTree() {
 
   const endN = add(root, n('end', 'Exit to privileged EXEC mode', { modes: CONFIG_MODES }));
   endN.run = (s) => {
-    s.mode = 'priv'; s.ctxIface = null; s.ctxLine = null; s.ctxPool = null;
+    s.mode = 'priv'; clearSubContext(s);
     emit(s, s.dev, '%SYS-5-CONFIG_I: Configured from console by console');
     return [];
   };
@@ -341,18 +431,35 @@ function buildTree() {
   add(showInt, arg('IFACE', 'Interface name', { name: 'iface' })).run =
     (s, a) => show.showInterface(s.net, s.dev, a.iface);
 
-  add(showN, n('vlan', 'VTP VLAN status')).children.push((() => {
-    const b = n('brief', 'VTP all VLAN status in brief');
-    b.run = (s) => {
-      const out = ['VLAN Name                             Status    Ports',
-                   '---- -------------------------------- --------- -------------------------------'];
-      const ports = s.dev.ifaces.filter(i => i.switchport && i.vlan === 1).map(i => show.shortIf(i.name));
-      out.push('1    default                          active    ' + ports.slice(0, 6).join(', '));
-      for (let k = 6; k < ports.length; k += 6) out.push(' '.repeat(48) + ports.slice(k, k + 6).join(', '));
-      return out;
-    };
-    return b;
-  })());
+  const showVlan = add(showN, n('vlan', 'VTP VLAN status'));
+  showVlan.run = (s) => show.showVlan(s.net, s.dev, false);
+  add(showVlan, n('brief', 'VTP all VLAN status in brief')).run = (s) => show.showVlan(s.net, s.dev, true);
+
+  add(showInt, n('trunk', 'Interface trunk information')).run =
+    (s) => show.showInterfacesTrunk(s.net, s.dev);
+  const showSwp = add(showInt, n('switchport', 'Interface switchport information'));
+  showSwp.run = (s) => show.showInterfacesSwitchport(s.net, s.dev);
+
+  const showStp = add(showN, n('spanning-tree', 'Spanning tree topology'));
+  showStp.run = (s) => show.showSpanningTree(s.net, s.dev, null);
+  const showStpVlan = add(showStp, n('vlan', 'VLAN Switch Spanning Trees'));
+  add(showStpVlan, arg('NUMBER', 'VLAN id', { name: 'vlan' })).run =
+    (s, a) => show.showSpanningTree(s.net, s.dev, +a.vlan);
+  add(showStp, n('summary', 'Summary of port states')).run =
+    (s) => show.showSpanningTreeSummary(s.net, s.dev);
+
+  const showIpOspf = add(showIp, n('ospf', 'OSPF information'));
+  showIpOspf.run = (s) => show.showIpOspf(s.net, s.dev);
+  add(showIpOspf, n('neighbor', 'Neighbor list')).run = (s) => show.showIpOspfNeighbor(s.net, s.dev);
+  const showOspfInt = add(showIpOspf, n('interface', 'Interface information'));
+  add(showOspfInt, n('brief', 'Brief summary of interfaces')).run =
+    (s) => show.showIpOspfInterfaceBrief(s.net, s.dev);
+
+  add(showIp, n('protocols', 'IP routing protocol process parameters and statistics')).run =
+    (s) => show.showIpProtocols(s.net, s.dev);
+
+  add(showIpRoute, n('ospf', 'Open Shortest Path First (OSPF)')).run =
+    (s) => show.showIpRoute(s.net, s.dev, 'ospf');
 
   /* ---------------- privileged actions ---------------- */
 
@@ -525,8 +632,162 @@ function buildTree() {
   };
 
   const iface = add(root, n('interface', 'Select an interface to configure', cfgOnly));
-  add(iface, arg('IFACE', 'Interface name', { name: 'iface' })).run = (s, a) => {
-    s.mode = 'config-if'; s.ctxIface = a.iface; return [];
+  add(iface, arg('IFACE_NEW', 'Interface name', { name: 'iface' })).run = (s, a) => {
+    // `interface vlan 20` and `interface g0/0.30` create as they select.
+    const target = typeof a.iface === 'string'
+      ? realizeInterface(s.dev, tokenize(a.iface))
+      : a.iface;
+    if (!target) return ['% Invalid interface', ''];
+    if (a.no) {
+      if (!target.parent && !target.svi) return ['% Cannot remove a physical interface', ''];
+      s.dev.ifaces = s.dev.ifaces.filter(i => i !== target);
+      stpDirty(s.net);
+      return [];
+    }
+    s.ctxIface = target;
+    s.mode = target.parent ? 'config-subif' : 'config-if';
+    return [];
+  };
+
+  /* ---------------- VLAN database ---------------- */
+
+  const vlanCfg = add(root, n('vlan', 'VLAN commands', cfgOnly));
+  add(vlanCfg, arg('NUMBER', 'ISL VLAN IDs 1-4094', { name: 'id' })).run = (s, a) => {
+    const id = +a.id;
+    if (id < 1 || id > 4094) return ['% Invalid input detected', ''];
+    if (s.dev.kind !== 'switch') return ['% Invalid input detected', ''];
+    if (a.no) {
+      if (id === 1) return ['Default VLAN 1 may not be deleted.', ''];
+      s.dev.vlans = s.dev.vlans.filter(v => v.id !== id);
+      // Ports left stranded in a deleted VLAN go inactive, exactly as they do
+      // on a real switch — a favourite competition trap.
+      stpDirty(s.net);
+      return [];
+    }
+    if (!s.dev.vlans.some(v => v.id === id)) {
+      s.dev.vlans.push({ id, name: `VLAN${String(id).padStart(4, '0')}` });
+      s.dev.vlans.sort((x, y) => x.id - y.id);
+      stpDirty(s.net);
+    }
+    s.mode = 'config-vlan';
+    s.ctxVlan = s.dev.vlans.find(v => v.id === id);
+    return [];
+  };
+
+  const vlanName = add(root, n('name', 'Ascii name of the VLAN', { modes: ['config-vlan'] }));
+  add(vlanName, arg('WORD', 'The ascii name for the VLAN', { name: 'name' })).run = (s, a) => {
+    if (s.ctxVlan) s.ctxVlan.name = a.no ? `VLAN${String(s.ctxVlan.id).padStart(4, '0')}` : a.name;
+    return [];
+  };
+
+  /* ---------------- spanning tree, globally ---------------- */
+
+  const stCfg = add(root, n('spanning-tree', 'Spanning Tree Subsystem', cfgOnly));
+  const stMode = add(stCfg, n('mode', 'Spanning tree mode'));
+  for (const m of ['pvst', 'rapid-pvst']) {
+    add(stMode, n(m, m === 'pvst' ? 'Per-Vlan spanning tree mode' : 'Per-Vlan rapid spanning tree mode'))
+      .run = (s) => { s.dev.stp.mode = m; return []; };
+  }
+  const stVlan = add(stCfg, n('vlan', 'VLAN Switch Spanning Tree'));
+  const stVlanId = add(stVlan, arg('VLANLIST', 'vlan range, example: 1,3-5', { name: 'vlans' }));
+  const stPrio = add(stVlanId, n('priority', 'Set the bridge priority for the spanning tree'));
+  add(stPrio, arg('NUMBER', 'bridge priority in increments of 4096', { name: 'value' })).run = (s, a) => {
+    const v = +a.value;
+    if (v % 4096 !== 0 || v > 61440) return ['% Bridge Priority must be in increments of 4096.', ''];
+    for (const id of expandVlanList(a.vlans)) {
+      if (a.no) delete s.dev.stp.priority[id]; else s.dev.stp.priority[id] = v;
+    }
+    stpDirty(s.net);
+    return [];
+  };
+  const stRoot = add(stVlanId, n('root', 'Configure switch as root'));
+  add(stRoot, n('primary', 'Configure this switch as primary root for this spanning tree')).run = (s, a) => {
+    for (const id of expandVlanList(a.vlans)) s.dev.stp.priority[id] = 24576;
+    stpDirty(s.net);
+    return [];
+  };
+  add(stRoot, n('secondary', 'Configure switch as secondary root')).run = (s, a) => {
+    for (const id of expandVlanList(a.vlans)) s.dev.stp.priority[id] = 28672;
+    stpDirty(s.net);
+    return [];
+  };
+  const stPortfastGlobal = add(stCfg, n('portfast', 'Spanning tree portfast options'));
+  add(stPortfastGlobal, n('default', 'Enable portfast by default on all access ports')).run = (s, a) => {
+    s.dev.stp.portfastDefault = !a.no; return [];
+  };
+
+  /* ---------------- layer 3 switching ---------------- */
+
+  add(ipCfg, n('routing', 'Enable IP routing')).run = (s, a) => {
+    if (!s.dev.layer3Capable) return ['% Invalid input detected', ''];
+    s.dev.ipRouting = !a.no;
+    return [];
+  };
+
+  /* ---------------- OSPF ---------------- */
+
+  const routerCfg = add(root, n('router', 'Enable a routing process', cfgOnly));
+  const routerOspf = add(routerCfg, n('ospf', 'Open Shortest Path First (OSPF)'));
+  add(routerOspf, arg('NUMBER', 'Process ID', { name: 'pid' })).run = (s, a) => {
+    if (!s.dev.ipRouting) return ['% IP routing not enabled', ''];
+    if (a.no) { s.dev.ospf = null; return []; }
+    if (!s.dev.ospf || s.dev.ospf.pid !== +a.pid) s.dev.ospf = newOspfProcess(a.pid);
+    s.mode = 'config-router';
+    return [];
+  };
+
+  const rtrOnly = { modes: ['config-router'] };
+
+  const oNet = add(root, n('network', 'Enable routing on an IP network', rtrOnly));
+  const oNetA = add(oNet, arg('A.B.C.D', 'Network number', { name: 'network' }));
+  const oNetW = add(oNetA, arg('A.B.C.D', 'OSPF wild card bits', { name: 'wildcard' }));
+  const oNetArea = add(oNetW, n('area', 'Set the OSPF area ID'));
+  add(oNetArea, arg('NUMBER', 'OSPF area ID as a decimal value', { name: 'area' })).run = (s, a) => {
+    const entry = { network: a.network, wildcard: a.wildcard, area: +a.area };
+    s.dev.ospf.networks = s.dev.ospf.networks.filter(x =>
+      !(x.network === entry.network && x.wildcard === entry.wildcard));
+    if (!a.no) s.dev.ospf.networks.push(entry);
+    return [];
+  };
+
+  const oRid = add(root, n('router-id', 'router-id for this OSPF process', rtrOnly));
+  add(oRid, arg('A.B.C.D', 'OSPF router-id in IP address format', { name: 'id' })).run = (s, a) => {
+    s.dev.ospf.routerId = a.no ? null : a.id;
+    return a.no ? [] : ['% OSPF: Reload or use "clear ip ospf process" command, for this to take effect', ''];
+  };
+
+  const oPassive = add(root, n('passive-interface', 'Suppress routing updates on an interface', rtrOnly));
+  add(oPassive, n('default', 'Suppress routing updates on all interfaces')).run = (s, a) => {
+    s.dev.ospf.passiveDefault = !a.no;
+    s.dev.ospf.passive = [];
+    return [];
+  };
+  add(oPassive, arg('IFACE', 'Interface name', { name: 'iface' })).run = (s, a) => {
+    const name = a.iface.name;
+    const list = s.dev.ospf.passive;
+    const on = s.dev.ospf.passiveDefault ? !!a.no : !a.no;
+    // With passive-interface default in force the list holds the exceptions,
+    // so `no passive-interface g0/0` adds to it rather than removing.
+    const want = s.dev.ospf.passiveDefault ? !on : on;
+    const idx = list.indexOf(name);
+    if (want && idx < 0) list.push(name);
+    if (!want && idx >= 0) list.splice(idx, 1);
+    return [];
+  };
+
+  const oAutoCost = add(root, n('auto-cost', 'Calculate OSPF interface cost according to bandwidth', rtrOnly));
+  const oRefBw = add(oAutoCost, n('reference-bandwidth', 'Use reference bandwidth method'));
+  add(oRefBw, arg('NUMBER', 'The reference bandwidth in terms of Mbits per second', { name: 'mbps' })).run = (s, a) => {
+    s.dev.ospf.refBw = a.no ? 100 : +a.mbps; return [];
+  };
+
+  const oDefInfo = add(root, n('default-information', 'Control distribution of default information', rtrOnly));
+  const oDefOrig = add(oDefInfo, n('originate', 'Distribute a default route'));
+  oDefOrig.run = (s, a) => { s.dev.ospf.defaultOriginate = !a.no; return []; };
+  add(oDefOrig, n('always', 'Always advertise default route')).run = (s, a) => {
+    s.dev.ospf.defaultOriginate = !a.no;
+    s.dev.ospf.defaultAlways = !a.no;
+    return [];
   };
 
   const line = add(root, n('line', 'Configure a terminal line', cfgOnly));
@@ -543,7 +804,7 @@ function buildTree() {
 
   /* ---------------- interface configuration ---------------- */
 
-  const ifOnly = { modes: ['config-if'] };
+  const ifOnly = { modes: IF_MODES };
 
   const ifIp = add(root, n('ip', 'Interface Internet Protocol config commands', ifOnly));
   const ifIpAddr = add(ifIp, n('address', 'Set the IP address of an interface'));
@@ -595,19 +856,139 @@ function buildTree() {
   shut.run = (s, a) => {
     const before = lineStatus(s.net, s.dev, s.ctxIface);
     s.ctxIface.shutdown = !a.no;
+    stpDirty(s.net);
     linkMessages(s, s.dev, s.ctxIface, before);
     notifyPeer(s, s.ctxIface);
     return [];
   };
 
+  /* ---------------- switchport ---------------- */
+
   const swp = add(root, n('switchport', 'Set switching mode characteristics', ifOnly));
+
+  // `no switchport` turns a layer 3 switch port into a routed port. That is
+  // the whole difference between a 2960 and a 3560 in one command.
+  swp.run = (s, a) => {
+    const i = s.ctxIface;
+    if (!a.no) return ['% Incomplete command.', ''];
+    if (!s.dev.layer3Capable) return ['% Invalid input detected', ''];
+    if (i.svi || i.parent) return ['% Invalid input detected', ''];
+    i.switchport = false;
+    i.swMode = null; i.vlan = null; i.trunkNative = null; i.trunkAllowed = null;
+    stpDirty(s.net);
+    return [];
+  };
+
   const swpAccess = add(swp, n('access', 'Set access mode characteristics'));
   const swpVlan = add(swpAccess, n('vlan', 'Set VLAN when interface is in access mode'));
   add(swpVlan, arg('NUMBER', 'VLAN ID of the VLAN', { name: 'vlan' })).run = (s, a) => {
-    s.ctxIface.vlan = a.no ? 1 : +a.vlan; return [];
+    const i = s.ctxIface;
+    if (!i.switchport) return ['% Invalid input detected', ''];
+    const id = a.no ? 1 : +a.vlan;
+    if (id < 1 || id > 4094) return ['% Invalid input detected', ''];
+    i.vlan = id;
+    stpDirty(s.net);
+    // A switch creates the VLAN silently when a port is assigned to one it
+    // does not have — the reason a typo'd VLAN number is so hard to spot.
+    if (!a.no && !s.dev.vlans.some(v => v.id === id)) {
+      s.dev.vlans.push({ id, name: `VLAN${String(id).padStart(4, '0')}` });
+      s.dev.vlans.sort((x, y) => x.id - y.id);
+      return [`% Access VLAN does not exist. Creating vlan ${id}`, ''];
+    }
+    return [];
   };
+
   const swpMode = add(swp, n('mode', 'Set trunking mode of the interface'));
-  add(swpMode, n('access', 'Set trunking mode to ACCESS unconditionally')).run = () => [];
+  add(swpMode, n('access', 'Set trunking mode to ACCESS unconditionally')).run = (s, a) => {
+    s.ctxIface.swMode = a.no ? 'dynamic-auto' : 'access'; stpDirty(s.net); return [];
+  };
+  add(swpMode, n('trunk', 'Set trunking mode to TRUNK unconditionally')).run = (s, a) => {
+    if (!s.ctxIface.switchport) return ['% Invalid input detected', ''];
+    s.ctxIface.swMode = a.no ? 'dynamic-auto' : 'trunk'; stpDirty(s.net); return [];
+  };
+  const swpDyn = add(swpMode, n('dynamic', 'Set trunking mode to dynamically negotiate'));
+  add(swpDyn, n('auto', 'Set trunking mode dynamic negotiation parameter to AUTO')).run = (s) => {
+    s.ctxIface.swMode = 'dynamic-auto'; stpDirty(s.net); return [];
+  };
+  add(swpDyn, n('desirable', 'Set trunking mode dynamic negotiation parameter to DESIRABLE')).run = (s) => {
+    s.ctxIface.swMode = 'dynamic-desirable'; stpDirty(s.net); return [];
+  };
+
+  const swpTrunk = add(swp, n('trunk', 'Set trunking characteristics of the interface'));
+  const swpNative = add(swpTrunk, n('native', 'Set trunking native characteristics'));
+  const swpNativeVlan = add(swpNative, n('vlan', 'Set native VLAN when interface is in trunking mode'));
+  add(swpNativeVlan, arg('NUMBER', 'VLAN ID of the native VLAN', { name: 'vlan' })).run = (s, a) => {
+    s.ctxIface.trunkNative = a.no ? 1 : +a.vlan; return [];
+  };
+  const swpAllowed = add(swpTrunk, n('allowed', 'Set allowed VLAN characteristics when interface is in trunking mode'));
+  const swpAllowedVlan = add(swpAllowed, n('vlan', 'Set allowed VLANs when interface is in trunking mode'));
+  add(swpAllowedVlan, n('all', 'All VLANs')).run = (s) => { s.ctxIface.trunkAllowed = null; stpDirty(s.net); return []; };
+  add(swpAllowedVlan, n('none', 'No VLANs')).run = (s) => { s.ctxIface.trunkAllowed = []; stpDirty(s.net); return []; };
+  add(swpAllowedVlan, arg('VLANLIST', 'VLAN IDs of the allowed VLANs', { name: 'vlans' })).run = (s, a) => {
+    s.ctxIface.trunkAllowed = expandVlanList(a.vlans); stpDirty(s.net); return [];
+  };
+  const swpAllowedAdd = add(swpAllowedVlan, n('add', 'add VLANs to the current list'));
+  add(swpAllowedAdd, arg('VLANLIST', 'VLAN IDs of the allowed VLANs', { name: 'vlans' })).run = (s, a) => {
+    const cur = s.ctxIface.trunkAllowed || [];
+    s.ctxIface.trunkAllowed = [...new Set([...cur, ...expandVlanList(a.vlans)])].sort((x, y) => x - y);
+    stpDirty(s.net);
+    return [];
+  };
+  const swpAllowedRemove = add(swpAllowedVlan, n('remove', 'remove VLANs from the current list'));
+  add(swpAllowedRemove, arg('VLANLIST', 'VLAN IDs of the disallowed VLANS', { name: 'vlans' })).run = (s, a) => {
+    const drop = expandVlanList(a.vlans);
+    const cur = s.ctxIface.trunkAllowed || allVlanIds(s.dev);
+    s.ctxIface.trunkAllowed = cur.filter(v => !drop.includes(v));
+    stpDirty(s.net);
+    return [];
+  };
+  add(swp, n('nonegotiate', 'Device will not engage in negotiation protocol on this interface')).run = () => [];
+
+  /* ---------------- spanning tree, per port ---------------- */
+
+  const stIf = add(root, n('spanning-tree', 'Spanning Tree Subsystem', ifOnly));
+  const stIfPortfast = add(stIf, n('portfast', 'Enable an interface to move directly to forwarding on link up'));
+  stIfPortfast.run = (s, a) => {
+    s.ctxIface.portfast = !a.no;
+    return a.no ? [] : [
+      '%Warning: portfast should only be enabled on ports connected to a single',
+      ' host. Connecting hubs, concentrators, switches, bridges, etc... to this',
+      ' interface when portfast is enabled, can cause temporary bridging loops.',
+      ''];
+  };
+  const stIfBpdu = add(stIf, n('bpduguard', 'Don\'t accept BPDUs on this interface'));
+  add(stIfBpdu, n('enable', 'Enable BPDU guard on this interface')).run = (s, a) => {
+    s.ctxIface.bpduguard = !a.no; return [];
+  };
+  add(stIfBpdu, n('disable', 'Disable BPDU guard on this interface')).run = (s) => {
+    s.ctxIface.bpduguard = false; return [];
+  };
+  const stIfCost = add(stIf, n('cost', 'Change an interface\'s spanning tree path cost'));
+  add(stIfCost, arg('NUMBER', 'Change an interface\'s spanning tree path cost', { name: 'cost' })).run = (s, a) => {
+    s.ctxIface.stpCost = a.no ? null : +a.cost; stpDirty(s.net); return [];
+  };
+  const stIfPrio = add(stIf, n('port-priority', 'Change an interface\'s spanning tree port priority'));
+  add(stIfPrio, arg('NUMBER', 'Port priority in increments of 16', { name: 'prio' })).run = (s, a) => {
+    s.ctxIface.stpPortPriority = a.no ? 128 : +a.prio; stpDirty(s.net); return [];
+  };
+
+  /* ---------------- dot1Q subinterfaces ---------------- */
+
+  const encap = add(root, n('encapsulation', 'Set encapsulation type for an interface',
+                            { modes: ['config-subif'] }));
+  const encapDot1q = add(encap, n('dot1Q', 'IEEE 802.1Q Virtual LAN'));
+  const encapVlanArg = add(encapDot1q, arg('NUMBER', 'IEEE 802.1Q VLAN ID', { name: 'vlan' }));
+  encapVlanArg.run = (s, a) => {
+    if (a.no) { s.ctxIface.encapVlan = null; s.ctxIface.encapNative = false; return []; }
+    s.ctxIface.encapVlan = +a.vlan;
+    s.ctxIface.encapNative = false;
+    return [];
+  };
+  add(encapVlanArg, n('native', 'Make this as native vlan')).run = (s, a) => {
+    s.ctxIface.encapVlan = +a.vlan;
+    s.ctxIface.encapNative = !a.no;
+    return [];
+  };
 
   /* ---------------- line configuration ---------------- */
 
@@ -654,6 +1035,26 @@ function buildTree() {
 }
 
 /* --------------------------------------------------------- run helpers --- */
+
+/** "10", "1,3-5" -> [10] / [1,3,4,5]. The form every VLAN command takes. */
+export function expandVlanList(spec) {
+  const out = new Set();
+  for (const part of String(spec).split(',')) {
+    const m = part.match(/^(\d+)-(\d+)$/);
+    if (m) { for (let v = +m[1]; v <= +m[2]; v++) out.add(v); }
+    else if (/^\d+$/.test(part)) out.add(+part);
+  }
+  return [...out].sort((a, b) => a - b);
+}
+
+function allVlanIds(dev) {
+  return dev.vlans.length ? dev.vlans.map(v => v.id) : [1];
+}
+
+/** Drop whatever sub-mode context the session was holding. */
+function clearSubContext(s) {
+  s.ctxIface = null; s.ctxLine = null; s.ctxPool = null; s.ctxVlan = null;
+}
 
 function overlapCheck(s, ip, mask) {
   return s.dev.ifaces.find(i =>
@@ -732,10 +1133,24 @@ function doReload(s) {
   dev.domainLookup = true;
   dev.defaultGateway = null;
   dev.lines = { console: { password: null, login: false }, vty: { password: null, login: false } };
+  dev.vlans = dev.kind === 'switch' ? [{ id: 1, name: 'default' }] : [];
+  dev.stp = { mode: 'pvst', priority: {}, cost: {} };
+  dev.ospf = null;
+  dev.ipRouting = dev.kind === 'router';
+  // Subinterfaces and extra SVIs exist only because somebody configured them.
+  dev.ifaces = dev.ifaces.filter(i => !i.parent && !(i.svi && i.vlan !== 1));
   for (const i of dev.ifaces) {
     i.ip = null; i.mask = null; i.ipv6 = []; i.description = null;
+    i.switchport = MODELS[dev.model].ifaces.some(m => m.name === i.name && m.switchport);
+    i.swMode = i.switchport ? 'dynamic-auto' : null;
+    i.vlan = i.svi ? 1 : (i.switchport ? 1 : null);
+    i.trunkNative = i.switchport ? 1 : null;
+    i.trunkAllowed = null;
+    i.portfast = false; i.bpduguard = false;
+    i.stpCost = null; i.stpPortPriority = 128;
     i.shutdown = !i.host && !i.switchport;
   }
+  stpDirty(s.net);
   dev.hostname = dev.kind === 'switch' ? 'Switch' : 'Router';
 
   // NVRAM comes back.
@@ -744,14 +1159,14 @@ function doReload(s) {
     dev.savedSignature = configSignature(s.net, dev);
   }
   s.mode = 'user';
-  s.ctxIface = null; s.ctxLine = null; s.ctxPool = null;
+  clearSubContext(s);
 }
 
 /** Re-apply a text configuration by running it back through the CLI.
  *  Used by the sandbox's "paste a config" affordance, not by reload. */
 export
 function replayConfig(s, lines) {
-  const sub = { ...s, mode: 'priv', ctxIface: null, ctxLine: null, ctxPool: null, pending: null };
+  const sub = { ...s, mode: 'priv', ctxIface: null, ctxLine: null, ctxPool: null, ctxVlan: null, pending: null };
   sub.dev = s.dev; sub.net = s.net;
   execute(sub, 'configure terminal');
   for (const raw of lines) {
@@ -849,7 +1264,7 @@ export function execute(session, rawLine) {
     const retry = parse(TREE, tokens, probe);
     if (retry.status === PARSE.OK) {
       session.mode = 'config';
-      session.ctxIface = null; session.ctxLine = null; session.ctxPool = null;
+      clearSubContext(session);
       result = retry;
     }
   }
@@ -864,13 +1279,14 @@ export function execute(session, rawLine) {
     return { lines: ['% Incomplete command.', ''] };
   }
 
+  const canonical = (no ? 'no ' : '') + result.canonical;
   const out = result.node.run(session, { ...result.args, no }) || [];
   session.onChange(session);
   if (session.pending) {
-    return { lines: out, prompt: session.pending.prompt, secret: !!session.pending.secret,
+    return { lines: out, canonical, prompt: session.pending.prompt, secret: !!session.pending.secret,
              multiline: !!session.pending.multiline };
   }
-  return { lines: out };
+  return { lines: out, canonical };
 }
 
 /** IOS points at the first word it could not parse. Getting this right matters. */

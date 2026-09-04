@@ -1,0 +1,180 @@
+{
+  "slug": "cli-v5-vlan-faults",
+  "name": "Two VLAN Faults",
+  "unit": "v1",
+  "topic": "vlans",
+  "modules": [
+    16
+  ],
+  "round": "semis",
+  "priority": "P1",
+  "estMinutes": 20,
+  "difficulty": 4,
+  "startDevice": "PC1",
+  "focus": [
+    "show vlan brief",
+    "show interfaces trunk",
+    "switchport access vlan",
+    "switchport trunk allowed vlan"
+  ],
+  "brief": "This network worked yesterday. STAFF is VLAN 10, STUDENT is VLAN 20, both switches carry both, and the uplink between them is a trunk. Since somebody was in the switches this morning, PC1 cannot reach PC3 and PC2 cannot reach PC4.\n\nThere are exactly two faults and they are not the same fault. Find them with show commands before you change anything — the point of this lab is the diagnosis, not the typing.",
+  "watchFor": "Two different symptoms with one cause is common. Two symptoms with two causes, like this, is where people fix the first fault, retest, see something still broken and undo their own correct fix.",
+  "topologyRef": "vlan-two-switches",
+  "config": {
+    "SW1": {
+      "ifaces": {
+        "GigabitEthernet0/1": {
+          "mode": "trunk"
+        }
+      }
+    },
+    "SW2": {
+      "ifaces": {
+        "GigabitEthernet0/1": {
+          "mode": "trunk"
+        }
+      }
+    }
+  },
+  "faults": [
+    {
+      "type": "wrong-vlan",
+      "device": "SW2",
+      "iface": "FastEthernet0/1",
+      "vlan": 30
+    },
+    {
+      "type": "trunk-vlan-missing",
+      "device": "SW1",
+      "iface": "GigabitEthernet0/1",
+      "vlan": 20
+    }
+  ],
+  "tasks": [
+    {
+      "id": "see-it",
+      "text": "From PC1, confirm the reported symptom: the ping to PC3 at 192.168.10.13 fails.",
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "cmd": "ping 192.168.10.13"
+      }
+    },
+    {
+      "id": "look-vlan",
+      "text": "Run show vlan brief on SW2 and read where Fa0/1 actually is.",
+      "hint": "Compare it against SW1, where the same VLAN is set up correctly.",
+      "check": {
+        "type": "commandUsed",
+        "device": "SW2",
+        "cmd": "show vlan brief"
+      }
+    },
+    {
+      "id": "look-trunk",
+      "text": "Run show interfaces trunk on SW1 and read the allowed VLAN list.",
+      "hint": "A trunk that is up and passing one VLAN but not another is telling you about its allowed list.",
+      "check": {
+        "type": "commandUsed",
+        "device": "SW1",
+        "cmd": "show interfaces trunk"
+      }
+    },
+    {
+      "id": "fix-port",
+      "text": "Fix the access port: PC3 belongs in VLAN 10.",
+      "check": {
+        "type": "accessPort",
+        "device": "SW2",
+        "if": "FastEthernet0/1",
+        "vlan": 10
+      }
+    },
+    {
+      "id": "fix-trunk",
+      "text": "Fix the trunk so it carries VLAN 20 again.",
+      "hint": "switchport trunk allowed vlan add 20, or set the whole list again.",
+      "check": {
+        "type": "trunkPort",
+        "device": "SW1",
+        "if": "GigabitEthernet0/1",
+        "carries": [
+          10,
+          20
+        ]
+      }
+    },
+    {
+      "id": "staff",
+      "text": "Prove STAFF works: PC1 reaches PC3.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.10.13"
+      }
+    },
+    {
+      "id": "student",
+      "text": "Prove STUDENT works: PC2 reaches PC4 at 192.168.20.14.",
+      "check": {
+        "type": "reachability",
+        "from": "PC2",
+        "to": "192.168.20.14"
+      }
+    },
+    {
+      "id": "separate",
+      "text": "And confirm you did not fix it by merging the VLANs: PC1 still cannot reach 192.168.20.12.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.20.12",
+        "expect": false
+      }
+    }
+  ],
+  "extension": "Write the two faults down as a competition checklist entry each: what you would look at, in what order, to catch the same thing in under a minute.",
+  "debrief": "The two faults look identical from a PC and completely different from a switch. A port in the wrong VLAN takes one machine off the network; a VLAN missing from a trunk takes a whole VLAN off one side of the building. show vlan brief finds the first, show interfaces trunk finds the second, and neither command finds the other one.\n\nThat is the argument for running both before touching anything.",
+  "solution": [
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.10.13"
+      ]
+    },
+    {
+      "device": "SW2",
+      "cmds": [
+        "enable",
+        "show vlan brief",
+        "configure terminal",
+        "interface FastEthernet0/1",
+        "switchport access vlan 10",
+        "end"
+      ]
+    },
+    {
+      "device": "SW1",
+      "cmds": [
+        "enable",
+        "show interfaces trunk",
+        "configure terminal",
+        "interface GigabitEthernet0/1",
+        "switchport trunk allowed vlan add 20",
+        "end"
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.10.13"
+      ]
+    },
+    {
+      "device": "PC2",
+      "cmds": [
+        "ping 192.168.20.14"
+      ]
+    }
+  ]
+}

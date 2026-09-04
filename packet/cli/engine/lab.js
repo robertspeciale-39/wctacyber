@@ -79,9 +79,23 @@ export function loadLab(lab, topologies) {
   };
 }
 
-/** Record a command for the objectives that care that a diagnostic was run. */
-export function recordCommand(ctx, deviceId, line) {
-  if (!line || !line.trim()) return;
-  ctx.transcript.push({ device: deviceId, line: line.trim(), at: Date.now() });
+/**
+ * Record a command for the objectives that care that a diagnostic was run.
+ *
+ * Only a command the CLI actually accepted and ran carries a `canonical`
+ * form, and `canonical` is the only thing the grader looks at. A half-typed
+ * or wrong command produces an error instead of a canonical form, so it can
+ * never satisfy an objective. `raw` is kept for the transcript view only.
+ *
+ *   recordCommand(ctx, 'R1', { raw: 'sh ip int br',
+ *                              canonical: 'show ip interface brief' })
+ *   recordCommand(ctx, 'R1', { raw: 'show ip ?', help: true })
+ */
+export function recordCommand(ctx, deviceId, entry) {
+  const e = typeof entry === 'string' ? { raw: entry } : (entry || {});
+  const raw = String(e.raw ?? '').trim();
+  const canonical = e.canonical ? String(e.canonical).trim().replace(/\s+/g, ' ') : null;
+  if (!raw && !canonical) return;
+  ctx.transcript.push({ device: deviceId, raw, canonical, help: !!e.help, at: Date.now() });
   if (ctx.transcript.length > 500) ctx.transcript.shift();
 }

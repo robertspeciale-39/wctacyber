@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const suites = ['run.js', 'cli.test.js', 'labs.test.js', 'e2e.js'];
+const suites = ['run.js', 'cli.test.js', 'switching.test.js', 'labs.test.js', 'e2e.js'];
 let failed = 0;
 
 for (const s of suites) {

@@ -54,7 +54,6 @@
     {
       "id": "exclude",
       "text": "Exclude 192.168.20.1 through 192.168.20.10 from DHCP.",
-      "points": 3,
       "hint": "`ip dhcp excluded-address 192.168.20.1 192.168.20.10` in global configuration mode.",
       "check": {
         "type": "dhcpExcluded",
@@ -66,7 +65,6 @@
     {
       "id": "pool",
       "text": "Create a DHCP pool named LAN20 for the 192.168.20.0/24 network.",
-      "points": 3,
       "hint": "`ip dhcp pool LAN20`, then `network 192.168.20.0 255.255.255.0`. Notice the prompt becomes (dhcp-config)#.",
       "check": {
         "type": "dhcpPool",
@@ -79,7 +77,6 @@
     {
       "id": "router",
       "text": "Set the default gateway option to 192.168.20.1.",
-      "points": 2,
       "hint": "The command is `default-router`, not `gateway`.",
       "check": {
         "type": "dhcpPool",
@@ -91,7 +88,6 @@
     {
       "id": "dns",
       "text": "Set the DNS server option to 192.168.10.50.",
-      "points": 2,
       "check": {
         "type": "dhcpPool",
         "device": "R1",
@@ -102,7 +98,6 @@
     {
       "id": "client",
       "text": "Switch PC2 to DHCP and confirm it received an address.",
-      "points": 4,
       "hint": "Use the IP Configuration panel on PC2, or run `ipconfig /renew` at its command prompt.",
       "check": {
         "type": "dhcpLease",
@@ -114,27 +109,27 @@
     {
       "id": "ipconfig",
       "text": "Run ipconfig /all on PC2 and read back the address, gateway and DNS server it was handed.",
-      "points": 2,
       "check": {
         "type": "commandUsed",
         "device": "PC2",
-        "re": "ipconfig\\s*/all"
+        "cmd": "ipconfig /all"
       }
     },
     {
       "id": "binding",
       "text": "On R1, confirm the lease with show ip dhcp binding.",
-      "points": 2,
       "check": {
         "type": "commandUsed",
         "device": "R1",
-        "re": "sh(o(w)?)?\\s+ip\\s+dh"
+        "anyOf": [
+          "show ip dhcp binding",
+          "show ip dhcp pool"
+        ]
       }
     },
     {
       "id": "reach",
       "text": "From PC2, ping PC1 at 192.168.10.20 to prove the lease is usable.",
-      "points": 2,
       "check": {
         "type": "reachability",
         "from": "PC2",

@@ -1,0 +1,161 @@
+{
+  "slug": "cli-s1-stp-read",
+  "name": "Reading the Spanning Tree",
+  "unit": "s1",
+  "topic": "stp",
+  "modules": [
+    16
+  ],
+  "round": "semis",
+  "priority": "P1",
+  "estMinutes": 18,
+  "difficulty": 3,
+  "startDevice": "SW1",
+  "focus": [
+    "show spanning-tree",
+    "show spanning-tree summary",
+    "bridge ID",
+    "root port",
+    "blocking"
+  ],
+  "brief": "Three switches wired in a ring. Every cable is good and every link is up, and yet PC1 can reach PC2 without the network melting down — because spanning tree has already picked one port and put it in blocking, turning the ring into a tree.\n\nNothing here needs configuring. Your job is to read the topology out of the switches and be able to say who won the root election, why, and which port paid for it.",
+  "watchFor": "Every switch here has the default priority of 32768, so the election came down to the tiebreaker. Look at the bridge addresses before you guess.",
+  "topologyRef": "stp-ring",
+  "tasks": [
+    {
+      "id": "look-sw1",
+      "text": "Run show spanning-tree on SW1 and read the Root ID and Bridge ID blocks.",
+      "hint": "When those two blocks match, the switch you are looking at is the root.",
+      "check": {
+        "type": "commandUsed",
+        "device": "SW1",
+        "cmd": "show spanning-tree"
+      }
+    },
+    {
+      "id": "look-sw2",
+      "text": "Run show spanning-tree on SW2.",
+      "check": {
+        "type": "commandUsed",
+        "device": "SW2",
+        "cmd": "show spanning-tree"
+      }
+    },
+    {
+      "id": "look-sw3",
+      "text": "Run show spanning-tree on SW3.",
+      "check": {
+        "type": "commandUsed",
+        "device": "SW3",
+        "cmd": "show spanning-tree"
+      }
+    },
+    {
+      "id": "who-root",
+      "text": "Which switch is the root bridge for VLAN 1? Type its name below.",
+      "hint": "Priorities are all equal, so the lowest bridge MAC address wins.",
+      "check": {
+        "type": "answer",
+        "id": "stp-root",
+        "value": "SW1"
+      }
+    },
+    {
+      "id": "why-root",
+      "text": "What decided it — priority or address? Answer 'priority' or 'address'.",
+      "check": {
+        "type": "answer",
+        "id": "stp-why",
+        "value": "address"
+      }
+    },
+    {
+      "id": "which-blocked",
+      "text": "Which switch has the blocked port? Type its name.",
+      "hint": "The blocked port shows as Altn BLK in the port table. Two of the three switches have only forwarding ports.",
+      "check": {
+        "type": "answer",
+        "id": "stp-blocked-switch",
+        "value": "SW3"
+      }
+    },
+    {
+      "id": "which-port",
+      "text": "Which port is blocked on that switch? Type it in the short form the table uses, like Gi0/1.",
+      "check": {
+        "type": "answer",
+        "id": "stp-blocked-port",
+        "value": "Gi0/2"
+      }
+    },
+    {
+      "id": "confirm-blocking",
+      "text": "Confirm from the switch itself that exactly one port in VLAN 1 is blocking.",
+      "hint": "show spanning-tree summary counts them for you.",
+      "checks": [
+        {
+          "type": "stpBlocking",
+          "vlan": 1,
+          "count": 1
+        },
+        {
+          "type": "commandUsed",
+          "device": "SW3",
+          "anyOf": [
+            "show spanning-tree summary",
+            "show spanning-tree"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "still-works",
+      "text": "Prove the ring still carries traffic: PC1 can reach PC2 at 192.168.1.12.",
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.1.12"
+      }
+    }
+  ],
+  "extension": "Shut down the port that spanning tree chose as SW3's root port and run show spanning-tree again. The blocked port should come out of blocking. Work out why that takes real switches about thirty seconds and this one no time at all.",
+  "debrief": "Spanning tree elects a root, every other switch picks the one port with the cheapest path back to it, every segment keeps one designated port, and everything left over blocks. That is the whole algorithm, and reading it off show spanning-tree is faster than reasoning about it in the abstract.\n\nThe election here was decided by MAC address, which is a bad way to run a network: the oldest switch in the building usually has the lowest address, and it is usually the worst candidate. That is the argument for setting priority by hand, which is the next lab.",
+  "solution": [
+    {
+      "device": "SW1",
+      "cmds": [
+        "enable",
+        "show spanning-tree"
+      ]
+    },
+    {
+      "device": "SW2",
+      "cmds": [
+        "enable",
+        "show spanning-tree"
+      ]
+    },
+    {
+      "device": "SW3",
+      "cmds": [
+        "enable",
+        "show spanning-tree",
+        "show spanning-tree summary"
+      ]
+    },
+    {
+      "answers": {
+        "stp-root": "SW1",
+        "stp-why": "address",
+        "stp-blocked-switch": "SW3",
+        "stp-blocked-port": "Gi0/2"
+      }
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.1.12"
+      ]
+    }
+  ]
+}

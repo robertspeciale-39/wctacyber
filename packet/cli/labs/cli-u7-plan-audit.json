@@ -42,17 +42,15 @@
     {
       "id": "survey",
       "text": "Start with ipconfig on each PC and show ip interface brief on each router. Write down what you see before you change anything.",
-      "points": 3,
       "check": {
         "type": "commandUsed",
         "device": "PC-A",
-        "re": "^\\s*ipconfig"
+        "re": "^ipconfig( /all| /renew| /release)?$"
       }
     },
     {
       "id": "fix-pcb",
       "text": "Fault one: PC-B is not on LAN-B at all. Put it back at 192.168.50.70/27.",
-      "points": 6,
       "hint": ".96 is the network address of LAN-C. It is not a host address anywhere, and it is nowhere near LAN-B.",
       "check": {
         "type": "host",
@@ -65,7 +63,6 @@
     {
       "id": "fix-r2",
       "text": "Fault two: R2 GigabitEthernet0/1 carries the wrong mask. LAN-C is a /28.",
-      "points": 6,
       "hint": "A /24 there swallows every other subnet in the plan, so R2 starts sending LAN-A traffic out of its own LAN port.",
       "check": {
         "type": "interface",
@@ -79,7 +76,6 @@
     {
       "id": "fix-pcc",
       "text": "Fault three: PC-C is pointed at the wrong gateway. LAN-C's gateway is .97.",
-      "points": 6,
       "hint": ".65 is LAN-B's router. It is not on PC-C's subnet, so PC-C cannot even ARP for it.",
       "check": {
         "type": "host",
@@ -90,7 +86,6 @@
     {
       "id": "verify-ac",
       "text": "Prove PC-A can reach PC-C.",
-      "points": 5,
       "check": {
         "type": "reachability",
         "from": "PC-A",
@@ -100,7 +95,6 @@
     {
       "id": "verify-bc",
       "text": "Prove PC-B can reach the server at 192.168.50.110.",
-      "points": 5,
       "check": {
         "type": "reachability",
         "from": "PC-B",
@@ -110,7 +104,6 @@
     {
       "id": "verify-ca",
       "text": "Prove it works in the other direction too: PC-C can reach PC-A.",
-      "points": 4,
       "check": {
         "type": "reachability",
         "from": "PC-C",

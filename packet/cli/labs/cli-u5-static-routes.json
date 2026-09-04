@@ -2,51 +2,140 @@
   "slug": "cli-u5-static-routes",
   "name": "Static Routes",
   "unit": "u5",
-  "modules": [12, 14],
+  "modules": [
+    12,
+    14
+  ],
   "round": "state",
   "priority": "P2",
   "estMinutes": 15,
   "difficulty": 2,
   "startDevice": "PC1",
-  "focus": ["ip route", "show ip route", "ping", "tracert"],
+  "focus": [
+    "ip route",
+    "show ip route",
+    "ping",
+    "tracert"
+  ],
   "brief": "Two LANs, two routers, and no routing between them. Every interface is addressed and up, every cable is right, and PC1 still cannot reach PC2. Your job is to give each router the one thing it is missing: a route to the network on the far side.\n\nStart by proving the failure rather than assuming it. Ping the gateway from PC1, then ping across. The difference between those two results tells you the problem is routing and not addressing.",
   "watchFor": "Adding the route on R1 alone will not fix it. A packet that gets there but cannot get back looks exactly like a packet that never left.",
   "topology": {
     "devices": [
-      { "id": "PC1", "model": "pc", "hostname": "PC1", "x": 0, "y": 1 },
-      { "id": "SW1", "model": "switch-2960", "hostname": "SW1", "x": 1, "y": 1 },
-      { "id": "R1", "model": "router-1941", "hostname": "R1", "x": 2, "y": 1 },
-      { "id": "R2", "model": "router-1941", "hostname": "R2", "x": 3, "y": 1 },
-      { "id": "SW2", "model": "switch-2960", "hostname": "SW2", "x": 4, "y": 1 },
-      { "id": "PC2", "model": "pc", "hostname": "PC2", "x": 5, "y": 1 }
+      {
+        "id": "PC1",
+        "model": "pc",
+        "hostname": "PC1",
+        "x": 0,
+        "y": 1
+      },
+      {
+        "id": "SW1",
+        "model": "switch-2960",
+        "hostname": "SW1",
+        "x": 1,
+        "y": 1
+      },
+      {
+        "id": "R1",
+        "model": "router-1941",
+        "hostname": "R1",
+        "x": 2,
+        "y": 1
+      },
+      {
+        "id": "R2",
+        "model": "router-1941",
+        "hostname": "R2",
+        "x": 3,
+        "y": 1
+      },
+      {
+        "id": "SW2",
+        "model": "switch-2960",
+        "hostname": "SW2",
+        "x": 4,
+        "y": 1
+      },
+      {
+        "id": "PC2",
+        "model": "pc",
+        "hostname": "PC2",
+        "x": 5,
+        "y": 1
+      }
     ],
     "links": [
-      { "from": "PC1:FastEthernet0", "to": "SW1:FastEthernet0/1" },
-      { "from": "SW1:GigabitEthernet0/1", "to": "R1:GigabitEthernet0/0" },
-      { "from": "R1:GigabitEthernet0/1", "to": "R2:GigabitEthernet0/0" },
-      { "from": "R2:GigabitEthernet0/1", "to": "SW2:GigabitEthernet0/1" },
-      { "from": "SW2:FastEthernet0/1", "to": "PC2:FastEthernet0" }
+      {
+        "from": "PC1:FastEthernet0",
+        "to": "SW1:FastEthernet0/1"
+      },
+      {
+        "from": "SW1:GigabitEthernet0/1",
+        "to": "R1:GigabitEthernet0/0"
+      },
+      {
+        "from": "R1:GigabitEthernet0/1",
+        "to": "R2:GigabitEthernet0/0"
+      },
+      {
+        "from": "R2:GigabitEthernet0/1",
+        "to": "SW2:GigabitEthernet0/1"
+      },
+      {
+        "from": "SW2:FastEthernet0/1",
+        "to": "PC2:FastEthernet0"
+      }
     ],
     "config": {
       "R1": {
         "ifaces": {
-          "GigabitEthernet0/0": { "ip": "192.168.10.1", "cidr": 24, "description": "LAN 10" },
-          "GigabitEthernet0/1": { "ip": "10.0.0.1", "cidr": 24, "description": "Link to R2" }
+          "GigabitEthernet0/0": {
+            "ip": "192.168.10.1",
+            "cidr": 24,
+            "description": "LAN 10"
+          },
+          "GigabitEthernet0/1": {
+            "ip": "10.0.0.1",
+            "cidr": 24,
+            "description": "Link to R2"
+          }
         }
       },
       "R2": {
         "ifaces": {
-          "GigabitEthernet0/0": { "ip": "10.0.0.2", "cidr": 24, "description": "Link to R1" },
-          "GigabitEthernet0/1": { "ip": "192.168.20.1", "cidr": 24, "description": "LAN 20" }
+          "GigabitEthernet0/0": {
+            "ip": "10.0.0.2",
+            "cidr": 24,
+            "description": "Link to R1"
+          },
+          "GigabitEthernet0/1": {
+            "ip": "192.168.20.1",
+            "cidr": 24,
+            "description": "LAN 20"
+          }
         }
       },
       "PC1": {
-        "ifaces": { "FastEthernet0": { "ip": "192.168.10.20", "cidr": 24 } },
-        "host": { "gateway": "192.168.10.1" }
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.10.20",
+            "cidr": 24
+          }
+        },
+        "host": {
+          "gateway": "192.168.10.1"
+        }
       },
       "PC2": {
-        "ifaces": { "FastEthernet0": { "ip": "192.168.20.20", "cidr": 24 } },
-        "host": { "gateway": "192.168.20.1" }
+        "ifaces": {
+          "FastEthernet0": {
+            "ip": "192.168.20.20",
+            "cidr": 24
+          }
+        },
+        "host": {
+          "gateway": "192.168.20.1"
+        }
       }
     }
   },
@@ -54,66 +143,133 @@
     {
       "id": "prove-local",
       "text": "From PC1, prove the local network works: ping the default gateway 192.168.10.1.",
-      "points": 1,
       "hint": "The PC command prompt is on PC1. A gateway that answers means your address, mask and gateway are all right.",
-      "check": { "type": "commandUsed", "device": "PC1", "re": "^\\s*ping\\s+192\\.168\\.10\\.1" }
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "cmd": "ping 192.168.10.1"
+      }
     },
     {
       "id": "prove-remote-fails",
       "text": "From PC1, try to ping PC2 at 192.168.20.20 and watch it fail.",
-      "points": 1,
       "hint": "Diagnose before you configure. You want to see the failure with your own eyes.",
-      "check": { "type": "commandUsed", "device": "PC1", "re": "^\\s*ping\\s+192\\.168\\.20\\.20" }
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "cmd": "ping 192.168.20.20"
+      }
     },
     {
       "id": "r1-route",
       "text": "On R1, add a static route to 192.168.20.0/24 through R2 at 10.0.0.2.",
-      "points": 3,
       "hint": "ip route <network> <mask> <next-hop>  — in global configuration mode.",
-      "check": { "type": "route", "device": "R1", "prefix": "192.168.20.0", "cidr": 24, "nextHop": "10.0.0.2" }
+      "check": {
+        "type": "route",
+        "device": "R1",
+        "prefix": "192.168.20.0",
+        "cidr": 24,
+        "nextHop": "10.0.0.2"
+      }
     },
     {
       "id": "r2-route",
       "text": "On R2, add the return route to 192.168.10.0/24 through R1 at 10.0.0.1.",
-      "points": 3,
       "hint": "A reply has to find its way home. Without this route R2 receives the ping and has nowhere to send the answer.",
-      "check": { "type": "route", "device": "R2", "prefix": "192.168.10.0", "cidr": 24, "nextHop": "10.0.0.1" }
+      "check": {
+        "type": "route",
+        "device": "R2",
+        "prefix": "192.168.10.0",
+        "cidr": 24,
+        "nextHop": "10.0.0.1"
+      }
     },
     {
       "id": "verify-route-table",
       "text": "Confirm the route appears in R1's routing table with show ip route.",
-      "points": 1,
       "hint": "Look for the S code and the [1/0] administrative distance and metric.",
-      "check": { "type": "commandUsed", "device": "R1", "re": "sh(o(w)?)?\\s+ip\\s+ro" }
+      "check": {
+        "type": "commandUsed",
+        "device": "R1",
+        "anyOf": [
+          "show ip route",
+          "show ip route static",
+          "show ip route connected",
+          "show ip route ospf"
+        ]
+      }
     },
     {
       "id": "end-to-end",
       "text": "Prove it: PC1 can reach PC2.",
-      "points": 4,
       "hint": "If it still fails, check both routes and both PC gateways before changing anything else.",
-      "check": { "type": "reachability", "from": "PC1", "to": "192.168.20.20" }
+      "check": {
+        "type": "reachability",
+        "from": "PC1",
+        "to": "192.168.20.20"
+      }
     },
     {
       "id": "reverse",
       "text": "Prove it in both directions: PC2 can reach PC1.",
-      "points": 2,
-      "check": { "type": "reachability", "from": "PC2", "to": "192.168.10.20" }
+      "check": {
+        "type": "reachability",
+        "from": "PC2",
+        "to": "192.168.10.20"
+      }
     },
     {
       "id": "trace",
       "text": "From PC1, run tracert 192.168.20.20 and confirm the path crosses both routers.",
-      "points": 1,
       "hint": "Hop 1 should be 192.168.10.1, hop 2 should be 10.0.0.2.",
-      "check": { "type": "commandUsed", "device": "PC1", "re": "^\\s*tracert\\s+192\\.168\\.20\\.20" }
+      "check": {
+        "type": "commandUsed",
+        "device": "PC1",
+        "cmd": "tracert 192.168.20.20"
+      }
     }
   ],
   "extension": "Remove both static routes and get the same result using a default route on each router instead. Then explain why that works here and why it would be a bad idea if R1 also had a link to the internet.",
   "debrief": "The signature failure in this lab is one-way routing. R1 knew how to deliver the packet; R2 did not know how to return the reply, and the symptom on PC1 was an unremarkable 'Request timed out.' Nothing in that message points at R2.\n\nThis is why the routing table is evidence. When a ping fails, look at what each device believes before you change what any device does.",
   "solution": [
-    { "device": "PC1", "cmds": ["ping 192.168.10.1", "ping 192.168.20.20"] },
-    { "device": "R1", "cmds": ["enable", "configure terminal", "ip route 192.168.20.0 255.255.255.0 10.0.0.2", "end", "show ip route"] },
-    { "device": "R2", "cmds": ["enable", "configure terminal", "ip route 192.168.10.0 255.255.255.0 10.0.0.1", "end"] },
-    { "device": "PC1", "cmds": ["ping 192.168.20.20", "tracert 192.168.20.20"] },
-    { "device": "PC2", "cmds": ["ping 192.168.10.20"] }
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.10.1",
+        "ping 192.168.20.20"
+      ]
+    },
+    {
+      "device": "R1",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "ip route 192.168.20.0 255.255.255.0 10.0.0.2",
+        "end",
+        "show ip route"
+      ]
+    },
+    {
+      "device": "R2",
+      "cmds": [
+        "enable",
+        "configure terminal",
+        "ip route 192.168.10.0 255.255.255.0 10.0.0.1",
+        "end"
+      ]
+    },
+    {
+      "device": "PC1",
+      "cmds": [
+        "ping 192.168.20.20",
+        "tracert 192.168.20.20"
+      ]
+    },
+    {
+      "device": "PC2",
+      "cmds": [
+        "ping 192.168.10.20"
+      ]
+    }
   ]
 }

@@ -4,8 +4,10 @@
 // planted faults. Faults are applied last, so a scenario is written as
 // "here is the working network, now break these two things."
 
-import { createNet, addDevice, addLink, getDevice, getIface, applyDhcp } from './net.js';
+import { createNet, addDevice, addLink, getDevice, getIface, applyDhcp, ensureSvi } from './net.js';
 import { cidrToMask, isValidMask, maskToCidr } from './addr.js';
+import { stpDirty } from './stp.js';
+import { newOspfProcess } from './ospf.js';
 
 /**
  * spec = {
@@ -58,10 +60,57 @@ export function applyDeviceConfig(net, devId, cfg) {
   if (cfg.ipv6Routing) dev.ipv6Routing = true;
   if (cfg.domainLookup === false) dev.domainLookup = false;
   if (cfg.defaultGateway) dev.defaultGateway = cfg.defaultGateway;
+  if (cfg.ipRouting != null) dev.ipRouting = !!cfg.ipRouting;
+
+  // VLAN database: [{id, name}] or a bare list of ids.
+  for (const v of cfg.vlans || []) {
+    const entry = typeof v === 'object' ? v : { id: v };
+    const id = +entry.id;
+    const existing = dev.vlans.find(x => x.id === id);
+    if (existing) { if (entry.name) existing.name = entry.name; continue; }
+    dev.vlans.push({ id, name: entry.name || `VLAN${String(id).padStart(4, '0')}` });
+  }
+  dev.vlans.sort((a, b) => a.id - b.id);
+
+  // Spanning tree: { mode: "rapid-pvst", priority: { "10": 24576 } }
+  if (cfg.stp) {
+    if (cfg.stp.mode) dev.stp.mode = cfg.stp.mode;
+    for (const [vlan, prio] of Object.entries(cfg.stp.priority || {})) dev.stp.priority[+vlan] = +prio;
+  }
+
+  // OSPF: { pid: 1, routerId, networks: ["192.168.10.0 0.0.0.255 area 0"], passive: [...] }
+  if (cfg.ospf) {
+    const o = newOspfProcess(cfg.ospf.pid ?? 1);
+    o.routerId = cfg.ospf.routerId || null;
+    o.passiveDefault = !!cfg.ospf.passiveDefault;
+    o.passive = [...(cfg.ospf.passive || [])];
+    if (cfg.ospf.refBw) o.refBw = +cfg.ospf.refBw;
+    if (cfg.ospf.defaultOriginate) o.defaultOriginate = true;
+    for (const n of cfg.ospf.networks || []) o.networks.push(normalizeOspfNetwork(n));
+    dev.ospf = o;
+  }
 
   for (const [ifName, i] of Object.entries(cfg.ifaces || {})) {
-    const iface = getIface(dev, ifName);
+    // `interface vlan 20` in a seed builds the SVI, same as typing it would.
+    // So does a name with a dot in it: `GigabitEthernet0/0.10`.
+    const iface = resolveSeedInterface(dev, ifName);
     if (!iface) throw new Error(`${devId} has no interface ${ifName}`);
+
+    if (i.routed) {
+      iface.switchport = false; iface.swMode = null;
+      iface.vlan = null; iface.trunkNative = null; iface.trunkAllowed = null;
+    }
+    if (i.mode) iface.swMode = i.mode;    // access | trunk | dynamic-auto | dynamic-desirable
+    if (i.accessVlan != null) { iface.vlan = +i.accessVlan; iface.swMode = i.mode || 'access'; }
+    if (i.nativeVlan != null) iface.trunkNative = +i.nativeVlan;
+    if (i.allowedVlans) iface.trunkAllowed = i.allowedVlans.map(Number);
+    if (i.portfast) iface.portfast = true;
+    if (i.bpduguard) iface.bpduguard = true;
+    if (i.stpCost != null) iface.stpCost = +i.stpCost;
+    if (i.encapVlan != null) {
+      iface.encapVlan = +i.encapVlan;
+      iface.encapNative = !!i.encapNative;
+    }
     if (i.ip) {
       iface.ip = i.ip;
       iface.mask = i.mask || (i.cidr != null ? cidrToMask(i.cidr) : '255.255.255.0');
@@ -95,6 +144,43 @@ export function applyDeviceConfig(net, devId, cfg) {
   if (cfg.host && dev.host) {
     Object.assign(dev.host, cfg.host);
   }
+
+  stpDirty(net);
+}
+
+/** A seed can name an interface that does not exist yet — an SVI or a
+ *  dot1Q subinterface — and mean "create it". */
+function resolveSeedInterface(dev, ifName) {
+  const existing = getIface(dev, ifName);
+  if (existing) return existing;
+
+  const svi = ifName.match(/^vlan\s*(\d+)$/i);
+  if (svi && dev.kind === 'switch') return ensureSvi(dev, +svi[1]);
+
+  const dot = ifName.indexOf('.');
+  if (dot > 0) {
+    const parent = getIface(dev, ifName.slice(0, dot));
+    if (!parent) return null;
+    const iface = {
+      ...JSON.parse(JSON.stringify(parent)),
+      name: ifName, parent: parent.name,
+      ip: null, mask: null, ipv6: [], description: null,
+      encapVlan: null, encapNative: false, shutdown: false, svi: false
+    };
+    dev.ifaces.push(iface);
+    return iface;
+  }
+  return null;
+}
+
+/** "192.168.10.0 0.0.0.255 area 0" or {network, wildcard, area}. */
+function normalizeOspfNetwork(n) {
+  if (typeof n === 'string') {
+    const m = n.match(/^(\S+)\s+(\S+)\s+area\s+(\d+)$/i);
+    if (!m) throw new Error(`bad ospf network: ${n}`);
+    return { network: m[1], wildcard: m[2], area: +m[3] };
+  }
+  return { network: n.network, wildcard: n.wildcard, area: +(n.area ?? 0) };
 }
 
 function normalizeRoute(r) {
@@ -163,6 +249,79 @@ export const FAULTS = {
     const dev = getDevice(net, f.device);
     if (f.service === 'dns') dev.dns.enabled = false;
     if (f.service === 'http') dev.http.enabled = false;
+  },
+
+  /* --- switching --- */
+
+  /** The port is in the wrong VLAN. The single most common VLAN mistake. */
+  'wrong-vlan': (net, f) => {
+    getIface(getDevice(net, f.device), f.iface).vlan = f.vlan;
+    stpDirty(net);
+  },
+  /** A VLAN was never created, so every port assigned to it is inactive. */
+  'missing-vlan': (net, f) => {
+    const dev = getDevice(net, f.device);
+    dev.vlans = dev.vlans.filter(v => v.id !== f.vlan);
+    stpDirty(net);
+  },
+  /** The uplink was left as an access port. Only one VLAN gets across. */
+  'access-instead-of-trunk': (net, f) => {
+    const iface = getIface(getDevice(net, f.device), f.iface);
+    iface.swMode = 'access';
+    if (f.vlan != null) iface.vlan = f.vlan;
+    stpDirty(net);
+  },
+  /** A VLAN pruned off the trunk — traffic in it stops at the uplink. */
+  'trunk-vlan-missing': (net, f) => {
+    const dev = getDevice(net, f.device);
+    const iface = getIface(dev, f.iface);
+    const all = dev.vlans.map(v => v.id);
+    iface.trunkAllowed = (iface.trunkAllowed || all).filter(v => v !== f.vlan);
+    stpDirty(net);
+  },
+  /** Native VLAN mismatch across a trunk. */
+  'native-vlan-mismatch': (net, f) => {
+    getIface(getDevice(net, f.device), f.iface).trunkNative = f.vlan;
+  },
+  /** Somebody set a priority that hands the root role to the wrong switch. */
+  'stp-priority': (net, f) => {
+    const dev = getDevice(net, f.device);
+    dev.stp.priority[f.vlan ?? 1] = f.priority;
+    stpDirty(net);
+  },
+
+  /* --- routing protocols --- */
+
+  /** The wrong wildcard mask, so the interface never joins the process. */
+  'ospf-wrong-wildcard': (net, f) => {
+    const o = getDevice(net, f.device).ospf;
+    const nw = o?.networks.find(n => n.network === f.network);
+    if (nw) nw.wildcard = f.wildcard;
+  },
+  /** A network statement that was never typed. */
+  'ospf-missing-network': (net, f) => {
+    const o = getDevice(net, f.device).ospf;
+    if (o) o.networks = o.networks.filter(n => n.network !== f.network);
+  },
+  /** The right networks, in the wrong area — neighbours never come up. */
+  'ospf-wrong-area': (net, f) => {
+    const o = getDevice(net, f.device).ospf;
+    const nw = o?.networks.find(n => n.network === f.network);
+    if (nw) nw.area = f.area;
+  },
+  /** passive-interface on the link that needed the adjacency. */
+  'ospf-passive': (net, f) => {
+    const o = getDevice(net, f.device).ospf;
+    if (o && !o.passive.includes(f.iface)) o.passive.push(f.iface);
+  },
+  /** A layer 3 switch that was never told to route. */
+  'no-ip-routing': (net, f) => {
+    getDevice(net, f.device).ipRouting = false;
+  },
+  /** A subinterface missing its encapsulation — the router-on-a-stick trap. */
+  'missing-encapsulation': (net, f) => {
+    const iface = getIface(getDevice(net, f.device), f.iface);
+    if (iface) { iface.encapVlan = null; iface.encapNative = false; }
   }
 };
 
