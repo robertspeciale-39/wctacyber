@@ -4,7 +4,7 @@
   "subtitle": "Club-only practice tools for CyberPatriot. Pick a module to launch it.",
   "updated": "2026-10-28",
   "apps": [
-    {"name": "Mint vs Debian Lab", "url": "", "description": "Side-by-side Linux Mint 21 and Debian 12 sandbox for Round 2: what changed, scoring-style missions and a predict drill."},
+    {"name": "Mint vs Debian Lab", "url": "https://linuxtraining.vercel.app/", "description": "Side-by-side Linux Mint 21 and Debian 12 sandbox for Round 2: what changed, scoring-style missions and a predict drill."},
     {"name": "Cisco Networking Challenge Hub", "url": "https://www.wctacyber.org/packet/", "description": "Module explainers, labs, round playbooks and the scoreboard for the Cisco Networking Challenge."}
   ]
 }
