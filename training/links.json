@@ -1,0 +1,10 @@
+{
+  "_comment": "WCTA CyberPatriot Training data. Edit THIS FILE to add/remove modules - no code changes needed. One card per module. Each needs: name, url, description. Leave url as \"\" for a Coming soon card. Cards appear in the order listed. NOTE: JSON does not allow a trailing comma after the last item - the last entry must end with } and no comma.",
+  "title": "CyberPatriot Training",
+  "subtitle": "Club-only practice tools for CyberPatriot. Pick a module to launch it.",
+  "updated": "2026-10-28",
+  "apps": [
+    {"name": "Mint vs Debian Lab", "url": "", "description": "Side-by-side Linux Mint 21 and Debian 12 sandbox for Round 2: what changed, scoring-style missions and a predict drill."},
+    {"name": "Cisco Networking Challenge Hub", "url": "https://www.wctacyber.org/packet/", "description": "Module explainers, labs, round playbooks and the scoreboard for the Cisco Networking Challenge."}
+  ]
+}
