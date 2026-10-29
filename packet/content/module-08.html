@@ -1,0 +1,101 @@
+<p>Module 8 is where the course introduces the address you will spend the rest of the season
+reading. Everything in Units 3 through 7 assumes you can look at an IP address and a mask and
+instantly know which network the host belongs to. Start building that reflex now.</p>
+
+<h3>What an IPv4 address is</h3>
+
+<p>An IPv4 address is <strong>32 bits</strong> long. Humans do not read 32 ones and zeros, so
+we cut it into four groups of 8 bits, called <strong>octets</strong>, convert each octet to
+decimal, and separate them with dots. That format is <strong>dotted decimal</strong>.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>11000000.10101000.00001010.00000101    <span class="cmt">binary, 4 octets</span>
+   192  .   168  .    10  .     5       <span class="cmt">dotted decimal</span></pre></div>
+
+<p>Each octet runs from 0 to 255, because 8 bits can hold 256 values. An "address" like
+<code>192.168.10.300</code> is invalid, and spotting that is a classic free point.</p>
+
+<h3>Two parts: network and host</h3>
+
+<p>Every IPv4 address is really two pieces glued together. The <strong>network portion</strong>
+says which network the device is on. The <strong>host portion</strong> says which device it is
+on that network. It works like a street address: the network is the street, the host is the
+house number.</p>
+
+<p>The address alone does not tell you where the split falls. The <strong>subnet mask</strong>
+does. Wherever the mask has a 1, that bit belongs to the network portion. Wherever it has a 0,
+that bit belongs to the host portion. A mask is always a solid run of ones followed by a solid
+run of zeros, never mixed.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Address  192.168.10.5   11000000.10101000.00001010.00000101
+Mask     255.255.255.0  11111111.11111111.11111111.00000000
+                        |------ network ------|  |- host -|</pre></div>
+
+<p>Here the network is <code>192.168.10.0</code> and this host is number 5 on it.</p>
+
+<h3>Mask notation: dotted decimal and CIDR</h3>
+
+<p>The same mask can be written two ways. <strong>Dotted decimal</strong> is
+<code>255.255.255.0</code>. <strong>CIDR</strong> (or prefix length) just counts the ones:
+<code>/24</code>. You must be able to flip between them without thinking, because exam
+questions switch freely.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Prefix</th><th>Dotted decimal</th><th>Last mask octet in binary</th></tr></thead>
+<tbody>
+<tr><td>/8</td><td>255.0.0.0</td><td>all of octet 1 is network</td></tr>
+<tr><td>/16</td><td>255.255.0.0</td><td>all of octets 1 and 2 are network</td></tr>
+<tr><td>/24</td><td>255.255.255.0</td><td>all of octets 1 to 3 are network</td></tr>
+<tr><td>/25</td><td>255.255.255.128</td><td>10000000</td></tr>
+<tr><td>/26</td><td>255.255.255.192</td><td>11000000</td></tr>
+<tr><td>/27</td><td>255.255.255.224</td><td>11100000</td></tr>
+<tr><td>/28</td><td>255.255.255.240</td><td>11110000</td></tr>
+<tr><td>/29</td><td>255.255.255.248</td><td>11111000</td></tr>
+<tr><td>/30</td><td>255.255.255.252</td><td>11111100</td></tr>
+</tbody></table></div>
+
+<p>The shortcut: the values a mask octet can take are 0, 128, 192, 224, 240, 248, 252, 254, 255.
+Those are what you get by adding 128, 64, 32, 16, 8, 4, 2, 1 from the left. Learn that list and
+you can decode any mask.</p>
+
+<h3>Logical and physical addresses</h3>
+
+<p>A device has two addresses and they do different jobs.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th></th><th>MAC address</th><th>IP address</th></tr></thead>
+<tbody>
+<tr><td>Layer</td><td>2, Data Link</td><td>3, Network</td></tr>
+<tr><td>Also called</td><td>Physical address</td><td>Logical address</td></tr>
+<tr><td>Size</td><td>48 bits, hex</td><td>32 bits, dotted decimal (IPv4)</td></tr>
+<tr><td>Assigned by</td><td>Manufacturer, burned into the NIC</td><td>An admin or DHCP, and it can change</td></tr>
+<tr><td>Has network structure?</td><td>No, it is flat</td><td>Yes, network portion plus host portion</td></tr>
+<tr><td>Used for</td><td>Delivery on the local link</td><td>Delivery across networks</td></tr>
+</tbody></table></div>
+
+<p>Why both? The MAC address gets a frame to the next device on the same link. The IP address
+gets a packet to its final destination, however many links away. Because IP addresses have
+network structure, a router can make a decision from the network portion alone without knowing
+every host in the world. MAC addresses cannot do that.</p>
+
+<h3>Seeing it on a real device</h3>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>C:\&gt; ipconfig
+
+   IPv4 Address. . . . . . . . . . . : 192.168.10.5
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 192.168.10.1
+
+C:\&gt; ipconfig /all        <span class="cmt">adds the MAC address and DHCP details</span></pre></div>
+
+<p>In Packet Tracer, click a PC, open the Desktop tab, then IP Configuration, and you will see
+the same three values.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Say how many bits are in an IPv4 address, an octet, and a MAC address.</li>
+  <li>Convert /24, /16, /8, /25, /26, /27, /28, /30 to dotted decimal and back, no notes.</li>
+  <li>Given <code>172.16.5.20</code> with mask <code>255.255.0.0</code>, name the network
+      portion and the host portion.</li>
+  <li>Explain in one sentence why a device needs both a MAC address and an IP address.</li>
+</ul>

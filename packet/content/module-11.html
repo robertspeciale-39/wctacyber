@@ -1,0 +1,102 @@
+<p>Module 11 is DHCP. It is a short protocol and it shows up everywhere: quiz questions about the
+four-message exchange, labs that make you configure a pool, and troubleshooting scenarios where
+a client has a 169.254 address. Learn the sequence and the five lines of configuration.</p>
+
+<h3>What DHCP does</h3>
+
+<p>Dynamic Host Configuration Protocol hands out IP configuration automatically. A client does
+not just get an address. It normally gets four things: an <strong>IP address</strong>, a
+<strong>subnet mask</strong>, a <strong>default gateway</strong>, and a <strong>DNS server</strong>.
+Miss one of the last two and the client can ping local hosts but cannot reach other networks or
+use names.</p>
+
+<h3>Static or dynamic</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th></th><th>Static</th><th>Dynamic (DHCP)</th></tr></thead>
+<tbody>
+<tr><td>Set by</td><td>A person, by hand</td><td>A server, automatically</td></tr>
+<tr><td>Best for</td><td>Servers, routers, printers, anything others must find at a fixed address</td><td>Laptops, phones, and most user devices</td></tr>
+<tr><td>Risk</td><td>Typos, duplicate addresses</td><td>If the server is down, clients have no address</td></tr>
+</tbody></table></div>
+
+<p>A <strong>reservation</strong> blends the two: DHCP always hands the same address to a given
+MAC address, so the device is dynamic in setup and fixed in practice.</p>
+
+<h3>DORA: the four-message exchange</h3>
+
+<p>Memorize it as <strong>Discover, Offer, Request, Acknowledge</strong>. The order is what gets
+tested.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>#</th><th>Message</th><th>From, to</th><th>Delivery</th><th>Says</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><b>D</b>iscover</td><td>Client to anyone</td><td>Broadcast</td><td>"Is there a DHCP server out there?"</td></tr>
+<tr><td>2</td><td><b>O</b>ffer</td><td>Server to client</td><td>Unicast (or broadcast)</td><td>"Here is an address you can have."</td></tr>
+<tr><td>3</td><td><b>R</b>equest</td><td>Client to server</td><td>Broadcast</td><td>"I accept that offer."</td></tr>
+<tr><td>4</td><td><b>A</b>cknowledge</td><td>Server to client</td><td>Unicast (or broadcast)</td><td>"It is yours for the lease time."</td></tr>
+</tbody></table></div>
+
+<p>Discover is a broadcast because the client has no address and does not know any server yet.
+The Request is a broadcast too, which lets any <em>other</em> servers that made an offer know
+theirs was not chosen. Clients use UDP: the server listens on port 67 and the client on port 68.</p>
+
+<h3>Leases</h3>
+
+<p>An address is <strong>leased</strong>, not given. It is good for a set time. Partway through,
+the client tries to renew with the same server, and if it stops renewing, the address returns to
+the pool. A short lease suits a coffee shop where devices come and go; a long lease suits a
+stable office.</p>
+
+<h3>Configuring a pool on a Cisco router</h3>
+
+<p>Order matters in one place: exclude addresses <em>first</em>, before you build the pool, so
+the router never hands out the gateway's own address.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Router(config)# ip dhcp excluded-address 192.168.10.1 192.168.10.9
+Router(config)# ip dhcp pool LAN10
+Router(dhcp-config)# network 192.168.10.0 255.255.255.0
+Router(dhcp-config)# default-router 192.168.10.1
+Router(dhcp-config)# dns-server 8.8.8.8
+Router(dhcp-config)# end</pre></div>
+
+<p>Read it line by line. The first command reserves .1 through .9 for static devices. The pool
+name <code>LAN10</code> is just a label. <code>network</code> defines the range to hand out.
+<code>default-router</code> is the gateway the client will receive, which is an easily forgotten
+line with a confusing name. <code>dns-server</code> is the DNS the client receives.</p>
+
+<h3>Verifying</h3>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Router# show ip dhcp binding        <span class="cmt">who has which address</span>
+Router# show ip dhcp pool           <span class="cmt">pool settings and usage</span>
+
+C:\&gt; ipconfig /release              <span class="cmt">give the address back</span>
+C:\&gt; ipconfig /renew                <span class="cmt">run DORA again</span></pre></div>
+
+<p>In Packet Tracer, set a PC's IP Configuration to <strong>DHCP</strong> and watch it pick up
+a lease. If it comes up with <code>169.254.x.x</code> instead, DORA did not complete.</p>
+
+<h3>When the client and server are on different networks</h3>
+
+<p>Broadcasts stop at routers, so a DHCP server on one network cannot hear a Discover from
+another. The fix is a <strong>DHCP relay</strong>: the router interface facing the clients is
+told where the server is and forwards the request as a unicast.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Router(config-if)# ip helper-address 10.0.0.5     <span class="cmt">address of the DHCP server</span></pre></div>
+
+<h3>The security angle</h3>
+
+<p>A client trusts the first Offer it sees. A <strong>rogue DHCP server</strong> that answers
+faster can give clients a bad gateway or bad DNS, quietly steering their traffic through an
+attacker. The standard defense on a switch is <strong>DHCP snooping</strong>, which allows
+Offers only from ports you have marked trusted.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Spell out DORA in order and say which messages are broadcast.</li>
+  <li>List the four things a client typically receives.</li>
+  <li>Write a working pool from memory, including the excluded range.</li>
+  <li>Explain what a 169.254 address means and the three things you would check.</li>
+  <li>Describe what a rogue DHCP server can do.</li>
+</ul>

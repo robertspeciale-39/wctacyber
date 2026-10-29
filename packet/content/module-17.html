@@ -1,0 +1,101 @@
+<p>Module 17 is about discipline. Anyone can run <code>ping</code>. The students who win State
+run the right tool, in the right order, and can say what the result proved. The competition
+rewards the method, because the lab is built so that random changes make things worse.</p>
+
+<h3>The tools and what each one proves</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Tool</th><th>What it does</th><th>What a good result proves</th><th>What it does <em>not</em> prove</th></tr></thead>
+<tbody>
+<tr><td><b>ipconfig</b> (Windows)<br><b>ifconfig / ip a</b> (Linux)</td><td>Shows the host's address, mask, gateway, DNS</td><td>The configuration is what you think it is</td><td>That any of it works</td></tr>
+<tr><td><b>ping</b></td><td>Sends ICMP echo requests, waits for echo replies</td><td>Two-way reachability at Layer 3 to that address</td><td>That a service on it works; a firewall may also block ping while the service is fine</td></tr>
+<tr><td><b>tracert</b> (Windows)<br><b>traceroute</b> (Linux, Cisco)</td><td>Lists each router hop on the way</td><td>Where along the path traffic stops</td><td>Why it stops</td></tr>
+<tr><td><b>nslookup</b></td><td>Asks DNS for a name's address</td><td>DNS is reachable and has the record</td><td>That the address it returns is reachable</td></tr>
+</tbody></table></div>
+
+<h3>Reading ping</h3>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>C:\&gt; ping 192.168.20.5
+
+Pinging 192.168.20.5 with 32 bytes of data:
+Reply from 192.168.20.5: bytes=32 time&lt;1ms TTL=127
+Request timed out.
+Reply from 192.168.20.5: bytes=32 time&lt;1ms TTL=127
+Reply from 192.168.20.5: bytes=32 time&lt;1ms TTL=127
+
+Packets: Sent = 4, Received = 3, Lost = 1 (25% loss)</pre></div>
+
+<p>Know the failure messages, because each means something different.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Result</th><th>Usually means</th></tr></thead>
+<tbody>
+<tr><td><b>Reply from ...</b></td><td>Working</td></tr>
+<tr><td><b>Request timed out</b></td><td>The packet was sent but no reply came: no return route, a firewall dropping it, or the target is down. It also appears once at the start while ARP resolves, which is normal</td></tr>
+<tr><td><b>Destination host unreachable</b></td><td>A router (or your own host) is telling you it has no route to that network. The problem is on the path or in the routing table</td></tr>
+<tr><td>Replies with high <b>time</b> or intermittent loss</td><td>Congestion, a bad cable, or a duplex mismatch</td></tr>
+</tbody></table></div>
+
+<p><strong>TTL</strong> (Time To Live) starts at a fixed number and drops by one at every router.
+When it hits zero the packet is discarded. That stops packets from looping forever, and it is
+exactly how <code>tracert</code> works: it sends packets with TTL 1, 2, 3, and so on, and each
+router that discards one reveals itself.</p>
+
+<h3>The standard diagnostic sequence</h3>
+
+<p>Work from the inside out, one layer of distance at a time. The first failure is where the
+problem is, and everything after it is not worth testing yet.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>1. ipconfig                    <span class="cmt">is the config sane? address, mask, gateway, DNS</span>
+2. ping 127.0.0.1              <span class="cmt">is the TCP/IP stack on this PC working?</span>
+3. ping (own IP address)       <span class="cmt">is the NIC up and configured?</span>
+4. ping (default gateway)      <span class="cmt">can I reach the local network and the door out?</span>
+5. ping (remote router/host)   <span class="cmt">does routing work beyond the gateway?</span>
+6. tracert (remote host)       <span class="cmt">where along the path does it stop?</span>
+7. nslookup (name)             <span class="cmt">if IP works but names do not</span></pre></div>
+
+<p>Each failure maps to a place to look:</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>First step that fails</th><th>Where to look</th></tr></thead>
+<tbody>
+<tr><td>Step 1 shows wrong or 169.254 values</td><td>Static settings, or DHCP (Modules 8, 9, 11)</td></tr>
+<tr><td>Step 2 or 3</td><td>This PC's NIC, driver, or cable (Layer 1 and 2)</td></tr>
+<tr><td>Step 4</td><td>Switch ports, VLAN, wrong gateway (Modules 7, 12)</td></tr>
+<tr><td>Step 5</td><td>Router interfaces, missing or one-way routes (Module 14)</td></tr>
+<tr><td>Step 6 stops at hop N</td><td>The router at hop N or the link after it</td></tr>
+<tr><td>Step 7 only</td><td>DNS (Module 16)</td></tr>
+</tbody></table></div>
+
+<h3>Habits that score points</h3>
+
+<ul>
+  <li><strong>Change one thing, then retest.</strong> If you change three things and it works,
+      you do not know which one fixed it and you may have broken something else.</li>
+  <li><strong>Check the lights first.</strong> A red or amber link in Packet Tracer is a Layer 1
+      or interface problem. No amount of IP editing will fix it.</li>
+  <li><strong>Check both directions.</strong> A one-way ping failure often means a missing
+      return route.</li>
+  <li><strong>Write down what you found.</strong> Competition checklists reward documented
+      findings as well as fixes.</li>
+</ul>
+
+<h3>On the Cisco CLI</h3>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Router# ping 10.0.0.2
+Router# traceroute 192.168.20.5
+Router# show ip interface brief       <span class="cmt">up/up on every link you expect?</span>
+Router# show ip route</pre></div>
+
+<p>On a router, ping prints <code>!</code> for each reply and <code>.</code> for each timeout.
+<code>!!!!!</code> is success, <code>.....</code> is none, and <code>.!!!!</code> is the normal
+first-packet timeout during ARP.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Recite the seven-step sequence and say what each step tests.</li>
+  <li>Say what "Request timed out" and "Destination host unreachable" each point to.</li>
+  <li>Explain how TTL makes tracert work.</li>
+  <li>Given a failure pattern, name the next command you would run and why.</li>
+</ul>

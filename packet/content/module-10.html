@@ -1,0 +1,116 @@
+<p>IPv6 looks intimidating the first time and turns out to be mostly rules about writing things
+shorter. The competition is generous here: compression questions and address-type questions are
+close to free points once you know the rules. Learn them and take the points.</p>
+
+<h3>Why IPv6 exists</h3>
+
+<p>IPv4 has about 4.3 billion addresses and the world ran out of new ones to hand out. IPv6
+uses <strong>128 bits</strong>, which is enough for every device to have a unique public
+address, so the address-saving tricks of IPv4 are not needed.</p>
+
+<h3>Reading an address</h3>
+
+<p>An IPv6 address is written as <strong>eight groups of four hexadecimal digits</strong>,
+separated by colons. Each group is called a <strong>hextet</strong> and holds 16 bits. 8 hextets
+times 16 bits gives 128.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>2001:0db8:acad:0001:0000:0000:0000:0001    <span class="cmt">full form, 8 hextets</span></pre></div>
+
+<h3>The two compression rules</h3>
+
+<p>Writing all that out is miserable, so there are exactly two ways to shorten an address.</p>
+
+<ol>
+  <li><strong>Drop leading zeros</strong> in each hextet. <code>0db8</code> becomes
+      <code>db8</code>, and <code>0001</code> becomes <code>1</code>. A hextet that is all
+      zeros becomes a single <code>0</code>.</li>
+  <li><strong>Replace one run of consecutive all-zero hextets with <code>::</code></strong>.
+      This can be done <em>only once</em> per address, otherwise you could not tell how many
+      zeros each one stood for.</li>
+</ol>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>2001:0db8:acad:0001:0000:0000:0000:0001
+2001:db8:acad:1:0:0:0:1        <span class="cmt">rule 1: leading zeros gone</span>
+2001:db8:acad:1::1             <span class="cmt">rule 2: three zero hextets become ::</span></pre></div>
+
+<p>To <strong>expand</strong> a compressed address, reverse it. Count the hextets you can see,
+subtract from 8, and that is how many zero hextets <code>::</code> hides. In
+<code>2001:db8:acad:1::1</code> you can see 5 hextets, so <code>::</code> is 3 of them.</p>
+
+<p>Two traps: <code>::</code> cannot be used twice, and you may only compress zeros, never
+other digits. If two runs of zeros tie, compress the leftmost one. If the choice is between a
+long run and a single zero hextet, the standard says use <code>::</code> on the longer run.</p>
+
+<h3>Address types by prefix</h3>
+
+<p>Look at the start of an address and you can say what kind it is.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Type</th><th>Prefix</th><th>What it is</th></tr></thead>
+<tbody>
+<tr><td><b>Global unicast</b></td><td>2000::/3 (starts with 2 or 3)</td><td>The public, routable address. The IPv6 equivalent of a public IPv4 address.</td></tr>
+<tr><td><b>Link-local</b></td><td>FE80::/10</td><td>Works only on the local link. Every IPv6 interface has one. Routers do not forward it.</td></tr>
+<tr><td><b>Unique local</b></td><td>FC00::/7 (in practice FD00::/8)</td><td>Private addressing for inside a site, like RFC 1918.</td></tr>
+<tr><td><b>Multicast</b></td><td>FF00::/8</td><td>Group delivery. IPv6 has <em>no broadcast</em>; multicast does that job.</td></tr>
+<tr><td>Loopback</td><td>::1/128</td><td>Same idea as 127.0.0.1.</td></tr>
+<tr><td>Unspecified</td><td>::/128</td><td>"I have no address yet."</td></tr>
+</tbody></table></div>
+
+<p>That "no broadcast" line is worth remembering. Things IPv4 did with broadcast, such as ARP,
+are done in IPv6 with multicast and a protocol called Neighbor Discovery.</p>
+
+<h3>Structure of a global unicast address</h3>
+
+<p>A typical address splits into a 48-bit <strong>global routing prefix</strong> given out by
+the ISP, a 16-bit <strong>subnet ID</strong> that you choose, and a 64-bit <strong>interface
+ID</strong> that identifies the device. That is why the standard LAN prefix is
+<strong>/64</strong>: 64 bits of network, 64 bits of host.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>2001:db8:acad : 0001 : 0000:0000:0000:0001
+|-- global --|  subnet  |------ interface ID ------|
+   prefix (48)  ID (16)           (64)</pre></div>
+
+<h3>How a host gets its interface ID</h3>
+
+<p>Three options: configure it by hand, get it from DHCPv6, or build it itself. <strong>EUI-64</strong>
+is the self-building method. It takes the 48-bit MAC address, splits it in half, inserts
+<code>FFFE</code> in the middle, and flips the seventh bit (the universal/local bit).</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>MAC           00:1A:2B:3C:4D:5E
+split         00:1A:2B  |  3C:4D:5E
+insert FFFE   00:1A:2B:FF:FE:3C:4D:5E
+flip 7th bit  00 = 00000000  -&gt;  00000010 = 02
+EUI-64        021A:2BFF:FE3C:4D5E</pre></div>
+
+<p>The bit flip is the step people forget. In the first byte it turns a leading <code>00</code>
+into <code>02</code>.</p>
+
+<h3>Configuring it on a Cisco router</h3>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Router(config)# ipv6 unicast-routing
+Router(config)# interface g0/0
+Router(config-if)# ipv6 address 2001:db8:acad:1::1/64
+Router(config-if)# ipv6 address fe80::1 link-local
+Router(config-if)# no shutdown
+Router# show ipv6 interface brief</pre></div>
+
+<p><code>ipv6 unicast-routing</code> is the line that turns the router into an IPv6 router. Without
+it, the router has addresses but will not forward IPv6 between interfaces. Forgetting it is the
+most common IPv6 lab mistake. Setting the link-local address to something simple like
+<code>fe80::1</code> makes show output readable.</p>
+
+<h3>Dual stack</h3>
+
+<p>Most networks are moving slowly, so most devices run <strong>dual stack</strong>: IPv4 and
+IPv6 both configured and both working side by side. It is the simplest transition method and
+the one the course expects you to name.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Compress <code>2001:0db8:0000:0000:0000:ff00:0042:8329</code>.</li>
+  <li>Expand <code>fe80::1</code> to all eight hextets.</li>
+  <li>Say what <code>FE80</code>, <code>FF02</code>, and <code>2001</code> addresses are.</li>
+  <li>Give the command that makes a Cisco router forward IPv6.</li>
+  <li>Explain why the answer to "what is the IPv6 broadcast address?" is "there is none."</li>
+</ul>

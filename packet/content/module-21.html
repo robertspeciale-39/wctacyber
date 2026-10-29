@@ -1,0 +1,105 @@
+<p>Module 21 unlocks at Round 2, out of numeric order, and it is the deep dive on what you
+first saw in Module 7. If Module 7 was "how the switch learns," this is "predict exactly what
+it does, every time." The questions give you a MAC table and a frame and ask what happens.
+Once you have the three-way decision, they stop being hard.</p>
+
+<h3>The full forwarding decision</h3>
+
+<p>Every frame that arrives at a switch goes through the same two steps.</p>
+
+<ol>
+  <li><strong>Learn from the source.</strong> Record the frame's <em>source</em> MAC address and
+      the port it arrived on, replacing any older entry for that MAC. (Refresh the aging timer.)</li>
+  <li><strong>Decide from the destination.</strong> Look up the <em>destination</em> MAC.</li>
+</ol>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Destination MAC is</th><th>Switch does</th><th>Name</th></tr></thead>
+<tbody>
+<tr><td>In the table, on a <em>different</em> port than it arrived on</td><td>Sends out that one port only</td><td><b>Forward</b></td></tr>
+<tr><td>In the table, on the <em>same</em> port it arrived on</td><td>Drops the frame. The destination is already on that segment</td><td><b>Filter</b></td></tr>
+<tr><td>Not in the table (<b>unknown unicast</b>)</td><td>Sends out every port except the one it arrived on</td><td><b>Flood</b></td></tr>
+<tr><td>FF:FF:FF:FF:FF:FF (broadcast)</td><td>Sends out every port except the one it arrived on</td><td><b>Flood</b></td></tr>
+</tbody></table></div>
+
+<p>Two details that decide questions. First, a switch <strong>never sends a frame back out the
+port it came in on</strong>. Second, a source MAC address is never a broadcast, so a switch can
+never <em>learn</em> FF:FF:FF:FF:FF:FF.</p>
+
+<h3>Worked example</h3>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>MAC table:
+   Port 1   AAAA.0001
+   Port 2   BBBB.0002
+   Port 3   (empty)
+
+Frame arrives on Port 1:   src AAAA.0001   dst CCCC.0003</pre></div>
+
+<p>Step 1: the source <code>AAAA.0001</code> is already on Port 1, so nothing changes (the timer
+refreshes). Step 2: <code>CCCC.0003</code> is not in the table, so it is unknown unicast and the
+switch <strong>floods</strong> out Ports 2, 3, and every other port except Port 1. When CCCC
+replies from Port 3, the switch learns that entry, and from then on traffic to CCCC is
+forwarded, not flooded.</p>
+
+<p>Now a second frame on Port 2: <code>src BBBB.0002 dst AAAA.0001</code>. Source already known.
+The destination is on Port 1, a different port, so the switch <strong>forwards</strong> to Port
+1 only.</p>
+
+<h3>Aging</h3>
+
+<p>Table entries do not last forever. If a MAC has not been seen as a source for a while
+(300 seconds is the default on Cisco switches), the entry is removed. This stops the table
+filling with devices that left, and it means a device that moves to another port will be
+relearned there. The table has a limited size, too: a flood of fake source addresses can fill
+it, which forces the switch to flood everything. That attack is called <strong>MAC
+flooding</strong>.</p>
+
+<h3>Domains</h3>
+
+<p>Two terms get tested a lot.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th></th><th>Collision domain</th><th>Broadcast domain</th></tr></thead>
+<tbody>
+<tr><td>Meaning</td><td>Devices whose transmissions can collide</td><td>Devices that receive each other's broadcasts</td></tr>
+<tr><td>Hub</td><td>One shared domain for all ports</td><td>One</td></tr>
+<tr><td><b>Switch</b></td><td><b>One per port</b></td><td><b>One for the whole switch</b> (per VLAN)</td></tr>
+<tr><td><b>Router</b></td><td>One per interface</td><td><b>One per interface</b></td></tr>
+</tbody></table></div>
+
+<p>A switch splits collision domains and does not split broadcast domains. A router (or a VLAN)
+splits broadcast domains. Counting domains on a diagram: one collision domain per switch port
+or per link, and one broadcast domain per router interface or per VLAN.</p>
+
+<p>Modern switch ports run <strong>full duplex</strong>: send and receive at once with no
+collisions at all. The two ends of a link must agree on duplex and speed. A <strong>duplex
+mismatch</strong> produces slow, lossy links that still show "up."</p>
+
+<h3>Forwarding methods</h3>
+
+<ul>
+  <li><strong>Store-and-forward</strong> receives the entire frame, checks the FCS, then
+      forwards. It drops bad frames. This is the Cisco default.</li>
+  <li><strong>Cut-through</strong> starts forwarding as soon as it has read the destination
+      MAC. It is faster and passes along damaged frames because it forwarded before checking.</li>
+</ul>
+
+<h3>Commands</h3>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Switch# show mac address-table               <span class="cmt">the table</span>
+Switch# show interfaces status               <span class="cmt">port state, speed, duplex, VLAN</span>
+Switch# clear mac address-table dynamic      <span class="cmt">empty it, then watch it relearn</span></pre></div>
+
+<p>An exercise worth doing in Packet Tracer: clear the table, run
+<code>show mac address-table</code> and see it empty, ping between two PCs, and show it again.
+Then clear it and use Simulation mode to watch the first frame flood and the next one forward.
+Seeing a flood happen is worth ten paragraphs.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>State the two-step rule and the three outcomes from memory.</li>
+  <li>Given a table and a frame, predict forward, filter, or flood, and say what gets learned.</li>
+  <li>Count collision and broadcast domains on a diagram with a switch and a router.</li>
+  <li>Say why a MAC flooding attack makes a switch behave like a hub.</li>
+</ul>

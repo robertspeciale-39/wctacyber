@@ -124,7 +124,7 @@
       "title": "The Internet Protocol",
       "unit": "u3",
       "strand": "A",
-      "explainer": false,
+      "explainer": true,
       "summary": "What an IP address is, how the mask splits it, and why Layer 2 and Layer 3 addressing both have to exist.",
       "objectives": [
         "Explain the purpose of an IP address and the structure of IPv4",
@@ -141,7 +141,7 @@
       "title": "IPv4 and Network Segmentation",
       "unit": "u3",
       "strand": "A",
-      "explainer": false,
+      "explainer": true,
       "summary": "Address types, reserved ranges, and the question everything else depends on: are these two hosts on the same network?",
       "objectives": [
         "Distinguish unicast, multicast, and broadcast traffic",
@@ -158,7 +158,7 @@
       "title": "IPv6 Addressing Formats and Rules",
       "unit": "u3",
       "strand": "A",
-      "explainer": false,
+      "explainer": true,
       "summary": "128 bits in hex, the two compression rules, and how to tell an address type at a glance.",
       "objectives": [
         "Read, compress, and expand IPv6 addresses correctly",
@@ -175,7 +175,7 @@
       "title": "Dynamic Addressing with DHCP",
       "unit": "u3",
       "strand": "B",
-      "explainer": false,
+      "explainer": true,
       "summary": "DORA, the pool, and what a client is actually handed besides an address.",
       "objectives": [
         "Explain DHCP operation and trace the DORA exchange",
@@ -192,7 +192,7 @@
       "title": "Gateways to Other Networks",
       "unit": "u5",
       "strand": "C",
-      "explainer": false,
+      "explainer": true,
       "summary": "The default gateway: what a host does when the destination is not local, and what happens when the gateway is wrong.",
       "objectives": [
         "Explain the role of the default gateway in packet forwarding",
@@ -209,7 +209,7 @@
       "title": "The ARP Process",
       "unit": "u5",
       "strand": "C",
-      "explainer": false,
+      "explainer": true,
       "summary": "How a host turns an IP address into a MAC address, and why it ARPs for the gateway, not the far host.",
       "objectives": [
         "Explain ARP request broadcast and unicast reply",
@@ -226,7 +226,7 @@
       "title": "Routing Between Networks",
       "unit": "u5",
       "strand": "C",
-      "explainer": false,
+      "explainer": true,
       "summary": "The routing table: what is in it, where entries come from, and how the router picks one.",
       "objectives": [
         "Explain why a router is required for communication between networks",
@@ -243,7 +243,7 @@
       "title": "TCP and UDP",
       "unit": "u6",
       "strand": "C",
-      "explainer": false,
+      "explainer": true,
       "summary": "The transport layer: reliability versus speed, ports and sockets, and the numbers you have to know cold.",
       "objectives": [
         "Distinguish TCP from UDP by behavior and by use case",
@@ -260,7 +260,7 @@
       "title": "Application Layer Services",
       "unit": "u6",
       "strand": "B",
-      "explainer": false,
+      "explainer": true,
       "summary": "DNS, HTTP, email, and FTP: configuring them on a Packet Tracer server and tracing what a client actually does.",
       "objectives": [
         "Explain and configure DNS, HTTP/HTTPS, email, FTP, and DHCP on a Packet Tracer server",
@@ -277,7 +277,7 @@
       "title": "Network Testing Utilities",
       "unit": "u6",
       "strand": "E",
-      "explainer": false,
+      "explainer": true,
       "summary": "The tools, what each one actually proves, and the fixed order you run them in.",
       "objectives": [
         "Use ping, tracert/traceroute, ipconfig, ifconfig/ip, and nslookup correctly",
@@ -294,7 +294,7 @@
       "title": "Network Design",
       "unit": "u7",
       "strand": "D",
-      "explainer": false,
+      "explainer": true,
       "summary": "Hierarchical design, redundancy, and choosing devices to meet a stated requirement instead of a habit.",
       "objectives": [
         "Explain hierarchical network design and the access/distribution/core roles",
@@ -311,7 +311,7 @@
       "title": "Cloud and Virtualization",
       "unit": "u7",
       "strand": "D",
-      "explainer": false,
+      "explainer": true,
       "summary": "Virtual machines, virtual networks, and where the line between local and cloud actually sits.",
       "objectives": [
         "Explain virtual machines and the role of a hypervisor",
@@ -328,7 +328,7 @@
       "title": "Number Systems",
       "unit": "u7",
       "strand": "A",
-      "explainer": false,
+      "explainer": true,
       "summary": "Binary, decimal, and hex conversion: the prerequisite skill for Module 23 and the whole Semifinals.",
       "objectives": [
         "Convert fluently between binary, decimal, and hexadecimal",
@@ -345,7 +345,7 @@
       "title": "Ethernet Switching",
       "unit": "u4",
       "strand": "C",
-      "explainer": false,
+      "explainer": true,
       "summary": "The switch forwarding decision in depth: the deep-dive counterpart to Module 7. Unlocks at Round 2.",
       "objectives": [
         "Walk the full switch forwarding decision: learn source, look up destination, then forward, flood, or filter",
@@ -362,7 +362,7 @@
       "title": "Network Layer",
       "unit": "u4",
       "strand": "C",
-      "explainer": false,
+      "explainer": true,
       "summary": "How a router forwards a packet, what the headers carry, and the one fact that ties the whole course together.",
       "objectives": [
         "Describe Layer 3 operation and the fields of an IPv4 and an IPv6 packet header",
@@ -379,7 +379,7 @@
       "title": "IPv4 Address Structure",
       "unit": "u7",
       "strand": "A",
-      "explainer": false,
+      "explainer": true,
       "summary": "Subnetting. The highest-value skill in the Semifinals, and the most common place points are lost.",
       "objectives": [
         "Perform binary ANDing to derive a network address",

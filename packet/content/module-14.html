@@ -1,0 +1,99 @@
+<p>Module 14 is where Packet Tracer starts to fight back. Building a LAN is easy. Getting two
+LANs to talk through a router, then figuring out why they do not, is the skill that wins State.
+Read the routing table like a sentence and the rest follows.</p>
+
+<h3>Why a router is required</h3>
+
+<p>Hosts on different networks cannot reach each other directly, because a host only delivers
+locally and a switch only forwards within one network. A router sits on more than one network,
+and its job is to move packets from one to another. No router, no communication between
+networks. It is that simple.</p>
+
+<h3>The routing table</h3>
+
+<p>Every router keeps a <strong>routing table</strong>: a list of destination networks and what
+to do for each. For a packet it looks for the entry that matches the destination, and when
+several match, it picks the <strong>longest prefix</strong> (most specific). It does not look at
+the source address at all.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Router# show ip route
+Codes: C - connected, S - static, L - local, * - candidate default
+
+Gateway of last resort is 10.0.0.2 to network 0.0.0.0
+
+C    192.168.10.0/24 is directly connected, GigabitEthernet0/0
+L    192.168.10.1/32 is directly connected, GigabitEthernet0/0
+C    10.0.0.0/30 is directly connected, GigabitEthernet0/1
+S    192.168.20.0/24 [1/0] via 10.0.0.2
+S*   0.0.0.0/0 [1/0] via 10.0.0.2</pre></div>
+
+<h3>Where entries come from</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Code</th><th>Source</th><th>How it gets there</th></tr></thead>
+<tbody>
+<tr><td><b>C</b></td><td>Directly connected</td><td>Automatically, when an interface has an address and is <em>up</em></td></tr>
+<tr><td><b>L</b></td><td>Local</td><td>Automatically, the router's own interface address as a /32</td></tr>
+<tr><td><b>S</b></td><td>Static</td><td>You type it</td></tr>
+<tr><td><b>S*</b></td><td>Static default</td><td>You type it, a route to <code>0.0.0.0/0</code></td></tr>
+<tr><td>O, R, D</td><td>Dynamic (OSPF, RIP, EIGRP)</td><td>Learned from neighbor routers</td></tr>
+</tbody></table></div>
+
+<p>Note the first row carefully: a connected route appears only if the interface is
+<strong>up/up</strong>. A forgotten <code>no shutdown</code> means the route is missing, and
+everything behind that interface is unreachable.</p>
+
+<h3>Configuring static routes</h3>
+
+<p>A static route says "to reach this network, send packets to this next hop." You provide
+the destination network, its mask, and either the neighbor's address (<strong>next hop</strong>)
+or your own outgoing interface (<strong>exit interface</strong>).</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Router(config)# ip route 192.168.20.0 255.255.255.0 10.0.0.2
+                         <span class="cmt">dest network   mask         next hop</span>
+
+Router(config)# ip route 0.0.0.0 0.0.0.0 209.165.200.226
+                         <span class="cmt">default route: match everything, send it here</span>
+
+Router(config)# ipv6 route 2001:db8:acad:2::/64 2001:db8:acad:99::2</pre></div>
+
+<p>The <strong>default route</strong> <code>0.0.0.0/0</code> matches any destination, and
+because it is the shortest possible prefix, it only wins when nothing else matches. This is the
+"gateway of last resort," and it is what you point at your ISP.</p>
+
+<p><strong>Administrative distance</strong> is how much the router trusts a source when two
+sources offer a route to the same network. Lower wins. Connected is 0, static is 1, OSPF is
+110, RIP is 120. This is why a static route overrides a dynamic one.</p>
+
+<h3>Return paths: the part everyone forgets</h3>
+
+<p>Routing is two-way. A ping needs a route from A to B <em>and</em> a route from B back to A.
+If you configure only one direction, the packet arrives, the reply is dropped, and the ping
+times out. It looks as if the forward path is broken when it is the <em>return</em> path.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>PC1 ---- R1 ====== R2 ---- PC2
+
+R1 needs:  ip route (PC2's network)  via R2
+R2 needs:  ip route (PC1's network)  via R1       <span class="cmt">the one people forget</span></pre></div>
+
+<p>Rule of thumb for a one-way failure: when a ping works in one direction only or times out
+with the forward route obviously correct, check the other router for a missing route back.</p>
+
+<h3>Verifying</h3>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Router# show ip route
+Router# show ip route static          <span class="cmt">only the static entries</span>
+Router# show ip interface brief       <span class="cmt">are the interfaces up/up?</span></pre></div>
+
+<p>Start with <code>show ip interface brief</code>. If an interface is down, nothing else
+matters. Then <code>show ip route</code>. Then ping.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Read a routing table aloud and explain each line's code.</li>
+  <li>Write a static route and a default route from a topology diagram.</li>
+  <li>Say what makes a connected route appear, and what makes it disappear.</li>
+  <li>Given a one-way ping failure, name the first thing you check.</li>
+  <li>Explain longest-prefix match and administrative distance in one sentence each.</li>
+</ul>

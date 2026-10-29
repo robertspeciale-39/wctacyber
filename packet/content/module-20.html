@@ -1,0 +1,132 @@
+<p>Module 20 is the foundation for Module 23 and for the whole Semifinals. It is also the module
+where practice matters more than understanding. You will understand binary in ten minutes.
+You will be <em>fast</em> after a week of daily drills, and speed is what wins the subnetting
+rounds. Spend your time on drills, not rereading this page.</p>
+
+<h3>Three number systems</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>System</th><th>Base</th><th>Digits</th><th>Where you meet it</th></tr></thead>
+<tbody>
+<tr><td>Decimal</td><td>10</td><td>0 to 9</td><td>Everyday numbers, IPv4 dotted decimal</td></tr>
+<tr><td>Binary</td><td>2</td><td>0 and 1</td><td>How devices actually store addresses and masks</td></tr>
+<tr><td>Hexadecimal</td><td>16</td><td>0 to 9, A to F</td><td>MAC addresses, IPv6 addresses</td></tr>
+</tbody></table></div>
+
+<h3>Binary and place value</h3>
+
+<p>Each position in a binary number is worth double the one to its right. An 8-bit group (a
+<strong>byte</strong>, or in networking an <strong>octet</strong>) has these values. Memorize
+this row. It should be automatic.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>128   64   32   16    8    4    2    1       <span class="cmt">place values, left to right</span>
+ 1     1    0    0    0    0    0    0       = 128 + 64 = 192</pre></div>
+
+<p>The leftmost bit is the <strong>most significant bit</strong>, because it is worth the most.
+Half of a byte (4 bits) is a <strong>nibble</strong>.</p>
+
+<h3>Binary to decimal</h3>
+
+<p>Add up the place values wherever there is a 1.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>1 0 1 0 1 1 0 0
+128 + 32 + 8 + 4 = 172</pre></div>
+
+<h3>Decimal to binary</h3>
+
+<p>Work left to right through the place values. If the value fits in what is left, write 1 and
+subtract it. If not, write 0.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Convert 200:
+128 fits   200 - 128 = 72     1
+ 64 fits    72 -  64 =  8     1
+ 32 no                        0
+ 16 no                        0
+  8 fits     8 -   8 =  0     1
+  4 no                        0
+  2 no                        0
+  1 no                        0
+                            11001000</pre></div>
+
+<p>Check by adding: 128 + 64 + 8 = 200.</p>
+
+<h3>Values you should know on sight</h3>
+
+<p>These are the only ones that appear in masks. Memorize them as a set and you can read any
+mask.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Binary</th><th>Decimal</th><th>Ones</th></tr></thead>
+<tbody>
+<tr><td>10000000</td><td>128</td><td>1</td></tr>
+<tr><td>11000000</td><td>192</td><td>2</td></tr>
+<tr><td>11100000</td><td>224</td><td>3</td></tr>
+<tr><td>11110000</td><td>240</td><td>4</td></tr>
+<tr><td>11111000</td><td>248</td><td>5</td></tr>
+<tr><td>11111100</td><td>252</td><td>6</td></tr>
+<tr><td>11111110</td><td>254</td><td>7</td></tr>
+<tr><td>11111111</td><td>255</td><td>8</td></tr>
+</tbody></table></div>
+
+<h3>Hexadecimal</h3>
+
+<p>One hex digit is exactly 4 bits, so one byte is exactly two hex digits. That is why hex is
+used for MAC and IPv6 addresses: it is compact and converts cleanly.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Dec</th><th>Bin</th><th>Hex</th><th></th><th>Dec</th><th>Bin</th><th>Hex</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>0000</td><td>0</td><td></td><td>8</td><td>1000</td><td>8</td></tr>
+<tr><td>1</td><td>0001</td><td>1</td><td></td><td>9</td><td>1001</td><td>9</td></tr>
+<tr><td>2</td><td>0010</td><td>2</td><td></td><td>10</td><td>1010</td><td>A</td></tr>
+<tr><td>3</td><td>0011</td><td>3</td><td></td><td>11</td><td>1011</td><td>B</td></tr>
+<tr><td>4</td><td>0100</td><td>4</td><td></td><td>12</td><td>1100</td><td>C</td></tr>
+<tr><td>5</td><td>0101</td><td>5</td><td></td><td>13</td><td>1101</td><td>D</td></tr>
+<tr><td>6</td><td>0110</td><td>6</td><td></td><td>14</td><td>1110</td><td>E</td></tr>
+<tr><td>7</td><td>0111</td><td>7</td><td></td><td>15</td><td>1111</td><td>F</td></tr>
+</tbody></table></div>
+
+<p>To convert, treat each hex digit separately. <code>3C</code> is <code>0011</code> then
+<code>1100</code>, so <code>00111100</code>, which is 60. Going the other way, cut a binary
+number into groups of four starting from the right, and convert each group.</p>
+
+<h3>Binary ANDing: finding the network address</h3>
+
+<p>This is the operation that turns an address and a mask into a network. Compare bit by bit:
+the result is 1 only if <strong>both</strong> bits are 1.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Address bit</th><th>Mask bit</th><th>Result</th></tr></thead>
+<tbody>
+<tr><td>0</td><td>0</td><td>0</td></tr>
+<tr><td>0</td><td>1</td><td>0</td></tr>
+<tr><td>1</td><td>0</td><td>0</td></tr>
+<tr><td>1</td><td>1</td><td>1</td></tr>
+</tbody></table></div>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Address  192.168.10.77    11000000.10101000.00001010.01001101
+Mask     255.255.255.192  11111111.11111111.11111111.11000000
+AND                       11000000.10101000.00001010.01000000
+Network  192.168.10.64</pre></div>
+
+<p>Where the mask has 1s, the address passes through unchanged. Where the mask has 0s, the
+result is forced to 0. In effect, the mask keeps the network portion and wipes the host
+portion. That is all a "network address" is.</p>
+
+<h3>How to get fast</h3>
+
+<ul>
+  <li>Drill the place-value row until you can write it without thinking.</li>
+  <li>Do ten conversions a day, both directions. Time yourself and beat yesterday.</li>
+  <li>Learn the eight mask values as a set.</li>
+  <li>Convert mask octets and common octets (192, 168, 10, 172, 16) until they are reflexes.</li>
+</ul>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Convert 172, 10, 224, 77 to binary and 11010110, 01100100 to decimal.</li>
+  <li>Convert hex <code>BE</code> and <code>2F</code> to binary and decimal.</li>
+  <li>Write a MAC address's first byte in binary.</li>
+  <li>AND <code>172.16.45.9</code> with <code>255.255.240.0</code> and get the network address.</li>
+</ul>

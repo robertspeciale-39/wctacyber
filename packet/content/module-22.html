@@ -1,0 +1,104 @@
+<p>This is the module that ties the course together. Everything from Modules 7, 8, 12, 13, and
+14 meets here in one idea, and that idea is the highest-value concept in Round 2. If you leave
+with one fact, leave with this: <strong>across a routed path, the MAC addresses change at every
+hop and the IP addresses never do.</strong></p>
+
+<h3>What Layer 3 does</h3>
+
+<p>The network layer moves a packet from its source <em>host</em> to its destination
+<em>host</em>, across as many networks as it takes. It provides logical addressing (IP), and
+routers make a forwarding decision at this layer. It does not guarantee delivery or ordering.
+That is Layer 4's job.</p>
+
+<h3>The IPv4 header</h3>
+
+<p>You do not need bit offsets, but you need the fields that matter and what they do.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Field</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>Version</td><td>4 for IPv4</td></tr>
+<tr><td>Source IP address</td><td>Who sent the packet</td></tr>
+<tr><td>Destination IP address</td><td>Who it is for. The router's lookup key</td></tr>
+<tr><td><b>TTL</b> (Time To Live)</td><td>Decremented by 1 at each router. At 0 the packet is discarded, which stops routing loops</td></tr>
+<tr><td><b>Protocol</b></td><td>What is inside: 6 is TCP, 17 is UDP, 1 is ICMP</td></tr>
+<tr><td>Header checksum</td><td>Detects corruption in the header, recalculated at each hop</td></tr>
+<tr><td>Differentiated services (DSCP)</td><td>Priority marking for QoS</td></tr>
+</tbody></table></div>
+
+<p>IPv6 simplified the header. The <strong>TTL became Hop Limit</strong> (same job, new name),
+the <strong>Protocol field became Next Header</strong>, and the checksum was removed to make
+routers faster. The addresses grew to 128 bits each.</p>
+
+<h3>Host forwarding logic</h3>
+
+<p>Before any router is involved, the source host decides what to do, using the question from
+Module 12: is the destination on my network?</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Destination</th><th>Host sends the frame to</th><th>Needs the MAC of</th></tr></thead>
+<tbody>
+<tr><td>Same network</td><td>The destination directly</td><td>The destination (via ARP)</td></tr>
+<tr><td>Different network</td><td>The default gateway</td><td>The gateway (via ARP)</td></tr>
+</tbody></table></div>
+
+<h3>What a router does to a packet</h3>
+
+<ol>
+  <li>Receives a frame whose destination MAC is its own interface.</li>
+  <li><strong>De-encapsulates</strong>: strips the Ethernet header and trailer.</li>
+  <li>Reads the destination IP and looks it up in the routing table.</li>
+  <li>Decrements the TTL, and if it hits 0, discards the packet and tells the sender.</li>
+  <li>Finds the exit interface and next hop, <strong>ARPs</strong> for the next hop's MAC if it
+      does not have it.</li>
+  <li><strong>Re-encapsulates</strong> in a <em>brand new</em> Ethernet header, with its own MAC
+      as the source and the next hop's MAC as the destination.</li>
+  <li>Sends it out.</li>
+</ol>
+
+<h3>The signature table: what changes and what does not</h3>
+
+<p>Follow one packet from PC1 to PC2 across two routers. Study how each row of the table
+differs from the one above it, and which columns never move.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>PC1 --- R1 --- R2 --- PC2
+
+Where the frame is        Src MAC    Dst MAC    Src IP     Dst IP
+PC1  to R1                PC1        R1-left    PC1        PC2
+R1   to R2                R1-right   R2-left    PC1        PC2
+R2   to PC2               R2-right   PC2        PC1        PC2</pre></div>
+
+<p>Look at the IP columns: <code>PC1</code> and <code>PC2</code> on every row, from end to end.
+Now look at the MAC columns: different on every row. The MAC addresses describe <em>one hop</em>
+only. The IP addresses describe the <em>whole journey</em>.</p>
+
+<p>There is one exception worth knowing, and it proves the rule. If NAT is on the path, the
+router rewrites the source IP too. Without NAT, the IPs never change.</p>
+
+<h3>Why the design works</h3>
+
+<p>MAC addresses have no structure, so they can only identify a device on the local link. IP
+addresses have network structure, so a router can look at the network portion of the
+destination and make a forwarding choice without knowing every device. Each layer does the job
+it is built for: Layer 2 gets the frame across <em>this</em> link, Layer 3 gets the packet
+across <em>all</em> the links.</p>
+
+<h3>Verifying it yourself</h3>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Router# show ip route
+Router# show ip interface brief
+Router# show arp</pre></div>
+
+<p>Then do the real exercise. In Packet Tracer, open <strong>Simulation mode</strong>, ping
+across a router, and click the PDU at each device to open the PDU Information window. Read the
+Ethernet and IP boxes at every hop and fill in the table above yourself. That is the U4 mastery
+gate, and no cheat sheet replaces seeing it.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>List the IPv4 header fields that matter and what each does.</li>
+  <li>Say what TTL and Hop Limit each do and why.</li>
+  <li>Given a two-router topology, fill in source and destination MAC and IP at every hop.</li>
+  <li>Explain in one sentence why routers rewrite MAC addresses but leave IP addresses alone.</li>
+</ul>

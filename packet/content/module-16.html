@@ -1,0 +1,98 @@
+<p>The application layer is the part of the network a person actually touches, and Module 16 is
+the one where you configure services on a Packet Tracer server and then trace what a client
+does with them. The single most useful fact to leave with: when pinging an IP address works
+and pinging a name does not, <strong>it is DNS</strong>.</p>
+
+<h3>The client/server model</h3>
+
+<p>At this layer, one device runs a program that <strong>requests</strong> (the client) and
+another runs a program that <strong>answers</strong> (the server). Remember from Module 1 that
+these are roles, not hardware. One PC can be a web client and a file server at the same time.</p>
+
+<h3>DNS: names to addresses</h3>
+
+<p>People remember names; networks route addresses. The <strong>Domain Name System</strong>
+translates between them. A client's <strong>resolver</strong> asks a DNS server "what is the
+address for <code>www.example.com</code>?" and the answer comes back as an
+<strong>A record</strong> (name to IPv4 address). An AAAA record is the IPv6 version.</p>
+
+<ol>
+  <li>You type a name into a browser.</li>
+  <li>The client checks its own cache.</li>
+  <li>If it is not cached, it sends a query to the DNS server it was given (usually by DHCP),
+      using <strong>UDP port 53</strong>.</li>
+  <li>The server replies with the address.</li>
+  <li>The browser now connects to that address.</li>
+</ol>
+
+<p>Notice what that implies. The DNS server's address is a setting on the client, and if it is
+wrong or missing, <em>every name fails while every IP address still works</em>. To a user, "the
+internet is down." To you, it is one line in <code>ipconfig</code>.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>C:\&gt; nslookup www.example.com
+Server:   dns.lab
+Address:  192.168.10.10
+
+Name:     www.example.com
+Address:  192.168.10.20</pre></div>
+
+<h3>The other services</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Service</th><th>Port</th><th>Job</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><b>HTTP</b></td><td>80</td><td>Web pages</td><td>Plain text. Anyone on the path can read it.</td></tr>
+<tr><td><b>HTTPS</b></td><td>443</td><td>Web pages, encrypted</td><td>HTTP over TLS. Use this for anything with a login.</td></tr>
+<tr><td><b>SMTP</b></td><td>25</td><td>Send email</td><td>Client to server, and server to server.</td></tr>
+<tr><td><b>POP3</b></td><td>110</td><td>Retrieve email</td><td>Downloads to one device, usually removes it from the server.</td></tr>
+<tr><td><b>IMAP</b></td><td>143</td><td>Retrieve email</td><td>Mail stays on the server, so all devices see the same inbox.</td></tr>
+<tr><td><b>FTP</b></td><td>20 / 21</td><td>File transfer</td><td>Needs a login. Sends credentials unencrypted.</td></tr>
+<tr><td><b>TFTP</b></td><td>69 (UDP)</td><td>Simple file transfer</td><td>No login. Often used to back up Cisco configs.</td></tr>
+<tr><td><b>DHCP</b></td><td>67 / 68 (UDP)</td><td>Addressing</td><td>Module 11.</td></tr>
+</tbody></table></div>
+
+<p>A URL like <code>https://www.example.com/index.html</code> has three parts: the protocol
+(<code>https</code>), the server name (<code>www.example.com</code>), and the file
+(<code>/index.html</code>).</p>
+
+<h3>Configuring services on a Packet Tracer server</h3>
+
+<p>Click the server, open the <strong>Services</strong> tab, and you will see each one in the
+left list. The tasks the competition uses most:</p>
+
+<ul>
+  <li><strong>DNS:</strong> turn the service <em>On</em>, then add a record with a name and the
+      address it should resolve to, and click <strong>Add</strong>. Forgetting to click Add
+      is the classic miss.</li>
+  <li><strong>HTTP:</strong> turn the service on. The default page is editable under
+      <em>index.html</em>.</li>
+  <li><strong>Email:</strong> set a domain name, then create users with passwords under the
+      same tab.</li>
+  <li><strong>FTP:</strong> create a user with permissions to read, write, or delete.</li>
+  <li><strong>DHCP:</strong> create a pool with gateway, DNS, and start address, and turn the
+      service on.</li>
+</ul>
+
+<p>Then test from a PC. In the Desktop tab, the <em>Web Browser</em> opens by name or address,
+and the <em>Command Prompt</em> runs <code>nslookup</code> and <code>ping</code>. Always test
+from a client, because a service that is "on" but unreachable earns nothing.</p>
+
+<h3>Diagnosing it</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>You see</th><th>Likely cause</th></tr></thead>
+<tbody>
+<tr><td>Ping by IP works, ping by name fails</td><td>DNS server wrong or missing on the client, or the record does not exist</td></tr>
+<tr><td>Browser by IP works, by name fails</td><td>The same: DNS</td></tr>
+<tr><td>Name resolves but the page will not load</td><td>Web service off, or a firewall or ACL is blocking port 80/443</td></tr>
+<tr><td>Cannot ping the server at all</td><td>Not a service problem. Go back to addressing, gateway, and routing</td></tr>
+</tbody></table></div>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Walk through a name lookup step by step, naming the protocol and port.</li>
+  <li>Say how POP3 and IMAP differ in one sentence.</li>
+  <li>List the Packet Tracer steps to add a DNS record and test it.</li>
+  <li>Explain why a DNS failure looks like a connectivity failure to a user.</li>
+</ul>

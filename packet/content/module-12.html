@@ -1,0 +1,89 @@
+<p>Module 12 is short and carries one of the most reliable troubleshooting patterns in the whole
+competition. A host that can reach its neighbors but nothing beyond them has a gateway problem,
+and you should be able to say so within about three seconds.</p>
+
+<h3>The decision every host makes</h3>
+
+<p>Before a host sends anything, it asks one question: <strong>is the destination on my own
+network?</strong> It answers by comparing the destination address to its own address under its
+own mask, exactly the skill from Module 9.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Destination is</th><th>Host does</th></tr></thead>
+<tbody>
+<tr><td><b>Local</b> (same network)</td><td>Sends directly to the destination. It needs that host's MAC address.</td></tr>
+<tr><td><b>Remote</b> (different network)</td><td>Sends to the <strong>default gateway</strong> and lets the router take over. It needs the gateway's MAC address.</td></tr>
+</tbody></table></div>
+
+<p>A host does not need to know <em>how</em> to reach a remote network. It only needs to know
+where the exit is.</p>
+
+<h3>The default gateway</h3>
+
+<p>The <strong>default gateway</strong> is the IP address of the router interface on the host's
+own network. It is the door out. By convention it is often the first or last usable address
+(<code>.1</code> or <code>.254</code>), but that is habit, not a rule.</p>
+
+<p>Two requirements that students forget. The gateway must be <strong>on the same network</strong>
+as the host, so a host at <code>192.168.10.5/24</code> cannot use a gateway of
+<code>192.168.20.1</code>. And the gateway address must be the router's actual interface
+address, not a made-up one.</p>
+
+<h3>Routers are boundaries</h3>
+
+<p>A router connects different networks and keeps them apart. It does not forward broadcasts,
+so each interface is its own broadcast domain. It also makes a forwarding decision for every
+packet based on the destination's network. That is why the router's interface address on a LAN
+is also that LAN's gateway.</p>
+
+<h3>What the failure looks like</h3>
+
+<p>Memorize this table. These are the symptoms, ordered from "most local" to "most remote," and
+they tell you where the problem is.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Symptom</th><th>Points to</th></tr></thead>
+<tbody>
+<tr><td>Cannot ping anything, even neighbors</td><td>Cable, interface down, or wrong IP/mask on this host</td></tr>
+<tr><td>Can ping neighbors, cannot ping the gateway</td><td>Wrong gateway address, or the router interface is down or misconfigured</td></tr>
+<tr><td>Can ping the gateway, cannot ping other networks</td><td>A routing problem on the router or beyond (Module 14)</td></tr>
+<tr><td><b>Can ping local hosts, nothing outside</b></td><td><b>Missing or wrong default gateway</b></td></tr>
+<tr><td>Can ping outside by IP, but not by name</td><td>DNS (Module 16), not routing</td></tr>
+</tbody></table></div>
+
+<p>The bold row is the one the quiz writers love. If the question says "can communicate with
+devices on the same network but not with devices on other networks," the answer is the default
+gateway every time.</p>
+
+<h3>Checking it</h3>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>C:\&gt; ipconfig
+   IPv4 Address. . . . . . . . . . . : 192.168.10.5
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 192.168.10.1
+
+C:\&gt; ping 192.168.10.1            <span class="cmt">can I reach the door?</span></pre></div>
+
+<h3>NAT in one idea</h3>
+
+<p>Private addresses (Module 9) cannot cross the internet. At the edge of the network, the
+router performs <strong>Network Address Translation</strong>: it rewrites the private source
+address to a public one on the way out, remembers the conversation, and rewrites it back on the
+return. That is how a whole building of devices on <code>192.168.x.x</code> shares one public
+address. At this level, you need the concept, not the configuration: NAT is
+<strong>private-to-public translation at the boundary</strong>.</p>
+
+<h3>Gateway of last resort</h3>
+
+<p>You will see this phrase when you read a router's routing table in Module 14. It means the
+same idea one level up: the route a router uses when it has no specific match, the router's own
+"send it that way and hope" exit.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>State the question a host asks before it sends, and what it does with each answer.</li>
+  <li>Explain why a host with no default gateway can still talk to its own LAN.</li>
+  <li>Given the symptom list, name the likely cause of each row without notes.</li>
+  <li>Say in one sentence what NAT does and where it happens.</li>
+</ul>

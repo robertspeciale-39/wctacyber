@@ -1,0 +1,89 @@
+<p>ARP is the glue between Layer 3 and Layer 2, and it is the quiet reason the course teaches
+both addressing systems. Module 13 has one signature idea that, once you hold it, makes routed
+forwarding in Module 22 almost obvious: <strong>for a remote destination, a host ARPs for its
+gateway, not for the destination.</strong></p>
+
+<h3>The problem ARP solves</h3>
+
+<p>A host knows the destination's IP address (from a name lookup, or because you typed it). But
+an Ethernet frame needs a destination <em>MAC</em> address. Something has to turn one into the
+other. That something is the <strong>Address Resolution Protocol</strong>.</p>
+
+<h3>How it works</h3>
+
+<ol>
+  <li>The host checks its <strong>ARP cache</strong> for the MAC it needs. If it is there, done.</li>
+  <li>If not, it sends an <strong>ARP request</strong>: a <strong>broadcast</strong> to
+      <code>FF:FF:FF:FF:FF:FF</code> that asks "Who has 192.168.10.1? Tell 192.168.10.5."</li>
+  <li>Every device on the network receives it. Only the owner of that IP answers.</li>
+  <li>The owner sends an <strong>ARP reply</strong> as a <strong>unicast</strong> straight back,
+      saying "192.168.10.1 is at AA:BB:CC:00:00:01."</li>
+  <li>The asking host stores the answer in its ARP cache and finally sends the real frame.</li>
+</ol>
+
+<p>The shape to remember: <strong>request is a broadcast, reply is a unicast.</strong> That
+pairing is a frequent quiz question.</p>
+
+<h3>The signature idea: who do you ARP for?</h3>
+
+<p>ARP only works <em>within one network</em>, because broadcasts do not cross routers. So a
+host can only ever ARP for something on its own network.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Destination</th><th>Host ARPs for</th><th>Frame is addressed to</th><th>Packet is addressed to</th></tr></thead>
+<tbody>
+<tr><td>Local host, same network</td><td>That host's IP</td><td>That host's MAC</td><td>That host's IP</td></tr>
+<tr><td><b>Remote host, other network</b></td><td><b>The default gateway's IP</b></td><td><b>The gateway's MAC</b></td><td>The <em>remote host's</em> IP</td></tr>
+</tbody></table></div>
+
+<p>Read the bold row twice. The frame and the packet inside it are addressed to <em>different
+devices</em>. The frame goes to the gateway because that is the next stop. The packet inside
+keeps the real destination IP because that is where it is ultimately going. This is the
+single most important fact connecting Modules 12, 13, and 22.</p>
+
+<h3>The ARP cache</h3>
+
+<p>Hosts remember what they learn, so they do not ARP for every frame. Entries are
+<strong>aged</strong> out after a few minutes if unused, which keeps the table honest when
+devices change.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>C:\&gt; arp -a                    <span class="cmt">show the cache on a PC</span>
+Interface: 192.168.10.5
+  Internet Address      Physical Address      Type
+  192.168.10.1          aabb.cc00.0001        dynamic
+
+C:\&gt; arp -d                     <span class="cmt">clear the cache</span>
+
+Router# show ip arp             <span class="cmt">the same table on a Cisco router</span></pre></div>
+
+<p>A good drill: clear the cache with <code>arp -d</code>, run <code>arp -a</code> and see it
+empty, ping the gateway, then run <code>arp -a</code> again and watch the gateway appear. You
+have just proved that ARP runs on demand.</p>
+
+<p>Do not confuse this with the <strong>switch's MAC address table</strong> from Module 7. The
+ARP cache maps <em>IP to MAC</em> and lives on hosts and routers. The MAC table maps <em>MAC to
+port</em> and lives on switches. Questions mix them up on purpose.</p>
+
+<h3>The security angle</h3>
+
+<p>ARP has no authentication. Any device can send a reply claiming to own an address, and hosts
+will accept it. In <strong>ARP spoofing</strong>, an attacker answers for the gateway so victims
+send their traffic to the attacker first. A <strong>gratuitous ARP</strong> is an unrequested
+announcement ("this IP is at this MAC"), used legitimately when a device comes up or fails over,
+and abused by attackers for the same reason it is useful.</p>
+
+<h3>IPv6 note</h3>
+
+<p>IPv6 does not use ARP. Neighbor Discovery does the same job with multicast instead of
+broadcast.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Say which ARP message is broadcast and which is unicast.</li>
+  <li>For a ping to a host on another network, name the IP and the MAC the frame leaves the
+      sender with.</li>
+  <li>Say what <code>arp -a</code> and <code>show ip arp</code> display, and why each table
+      differs from a switch's MAC table.</li>
+  <li>Explain why an attacker can poison an ARP cache and not an IP routing table.</li>
+</ul>

@@ -1,0 +1,92 @@
+<p>Module 19 is mostly vocabulary and sorting. It rewards precise definitions, and the
+questions cluster around two things: the two kinds of hypervisor and "who manages what" in each
+cloud service model. Get those two tables into your head and the module is done.</p>
+
+<h3>Virtualization</h3>
+
+<p><strong>Virtualization</strong> lets one physical computer run several independent
+<strong>virtual machines</strong> (VMs). Each VM acts like a complete computer with its own
+operating system, but they share the real hardware underneath. The software that creates and
+manages them is the <strong>hypervisor</strong>.</p>
+
+<ul>
+  <li>The real machine is the <strong>host</strong> and runs the <strong>host OS</strong> (or
+      the hypervisor directly).</li>
+  <li>Each virtual machine runs a <strong>guest OS</strong>.</li>
+</ul>
+
+<p>The payoff is efficiency. A server that used to sit at 10% load running one job can run a
+dozen VMs, and you can copy, move, snapshot, and restore a VM as easily as a file.</p>
+
+<h3>Two kinds of hypervisor</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th></th><th>Type 1 (bare metal)</th><th>Type 2 (hosted)</th></tr></thead>
+<tbody>
+<tr><td>Runs on</td><td>Directly on the hardware</td><td>On top of a normal operating system</td></tr>
+<tr><td>Performance</td><td>Better, no extra OS layer</td><td>Lower, goes through the host OS</td></tr>
+<tr><td>Used for</td><td>Data centers and servers</td><td>Desktops, labs, and learning</td></tr>
+<tr><td>Examples</td><td>VMware ESXi, Microsoft Hyper-V, KVM</td><td>VirtualBox, VMware Workstation</td></tr>
+</tbody></table></div>
+
+<p>If your CyberPatriot VM runs in VirtualBox on a school PC, that is a Type 2 hypervisor.</p>
+
+<h3>Virtual networks</h3>
+
+<p>VMs need to talk to each other and to the outside world, so hypervisors include
+<strong>virtual switches</strong> and virtual network cards. A virtual network behaves like a
+physical one, with VLANs, subnets, and firewall rules, but it is all software. Network designs
+can be built, changed, and torn down in minutes with no cabling. This is also why Packet Tracer
+itself is useful: it simulates a network in software.</p>
+
+<p>A <strong>data center</strong> is a facility full of servers, storage, and networking that
+hosts these virtual machines. Cloud providers run very large ones.</p>
+
+<h3>What "the cloud" means</h3>
+
+<p>Cloud computing is renting computing resources over a network instead of owning them. Five
+traits define it: on-demand self-service, access over the network, shared resources, rapid
+elasticity (scale up and down fast), and metered, pay-for-what-you-use billing.</p>
+
+<h3>Cloud service models</h3>
+
+<p>The question is always <em>who manages which layers</em>. Memorize this table.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Model</th><th>You get</th><th>Provider manages</th><th>You manage</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><b>SaaS</b><br>Software</td><td>A finished application</td><td>Everything</td><td>Your data and your settings</td><td>Gmail, Canvas, Microsoft 365</td></tr>
+<tr><td><b>PaaS</b><br>Platform</td><td>A place to build and run apps</td><td>Hardware, OS, runtime</td><td>Your application and its data</td><td>A managed web-app or database platform</td></tr>
+<tr><td><b>IaaS</b><br>Infrastructure</td><td>Virtual servers, storage, networks</td><td>Physical hardware and virtualization</td><td>OS, software, data, configuration</td><td>A rented virtual server</td></tr>
+</tbody></table></div>
+
+<p>One-line version: <strong>SaaS you use, PaaS you build on, IaaS you run.</strong> Moving
+from IaaS to PaaS to SaaS, you manage less and the provider manages more.</p>
+
+<h3>Deployment models</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Model</th><th>Meaning</th></tr></thead>
+<tbody>
+<tr><td><b>Public cloud</b></td><td>Owned by a provider and shared by many customers over the internet</td></tr>
+<tr><td><b>Private cloud</b></td><td>Dedicated to one organization, on its own or hosted hardware</td></tr>
+<tr><td><b>Hybrid cloud</b></td><td>A mix, with workloads able to move between private and public</td></tr>
+<tr><td><b>Community cloud</b></td><td>Shared by several organizations with common needs</td></tr>
+</tbody></table></div>
+
+<h3>Local or cloud?</h3>
+
+<p>Scenario questions test whether you can tell where a resource lives. A file on your
+computer's hard drive is local. A Google Doc is in the cloud. A virtual server running on your
+own school's hardware is local virtualization, not cloud, even though it is virtual. Do not
+treat "virtual" and "cloud" as synonyms: virtualization is a technology, and cloud is a
+delivery model that usually relies on it.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Say the difference between a Type 1 and Type 2 hypervisor and give an example of each.</li>
+  <li>Sort ten services into SaaS, PaaS, and IaaS.</li>
+  <li>State who manages the operating system in each of the three models.</li>
+  <li>Explain why virtual does not automatically mean cloud.</li>
+</ul>

@@ -1,0 +1,159 @@
+<p>Subnetting. This is the highest-value skill in the Semifinals and the place most points are
+lost, and it is not because it is hard. It is because it has to be fast and exact. You will
+need Module 20 (binary and the place values) solid before this makes sense. If you are still
+slow converting, go drill that first.</p>
+
+<h3>What you must produce</h3>
+
+<p>Given an address and a prefix, you should be able to produce all seven items, on demand, in
+under a minute.</p>
+
+<ol>
+  <li>The subnet mask in dotted decimal.</li>
+  <li>The network address.</li>
+  <li>The broadcast address.</li>
+  <li>The first usable host.</li>
+  <li>The last usable host.</li>
+  <li>The number of usable hosts.</li>
+  <li>The number of subnets, if you are splitting a larger network.</li>
+</ol>
+
+<h3>The key numbers</h3>
+
+<p>For any prefix, two numbers drive everything.</p>
+
+<ul>
+  <li><strong>Host bits</strong> = 32 minus the prefix. These are the zeros in the mask.</li>
+  <li><strong>Usable hosts</strong> = 2<sup>host bits</sup> minus 2. (One address is the network,
+      one is the broadcast.)</li>
+  <li><strong>Block size</strong> (also called the magic number) = 256 minus the mask value in
+      the interesting octet. Equivalently, the value of the last 1 bit in the mask.</li>
+</ul>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Prefix</th><th>Mask</th><th>Host bits</th><th>Usable hosts</th><th>Block size</th></tr></thead>
+<tbody>
+<tr><td>/24</td><td>255.255.255.0</td><td>8</td><td>254</td><td>256 (the whole octet)</td></tr>
+<tr><td>/25</td><td>255.255.255.128</td><td>7</td><td>126</td><td>128</td></tr>
+<tr><td>/26</td><td>255.255.255.192</td><td>6</td><td>62</td><td>64</td></tr>
+<tr><td>/27</td><td>255.255.255.224</td><td>5</td><td>30</td><td>32</td></tr>
+<tr><td>/28</td><td>255.255.255.240</td><td>4</td><td>14</td><td>16</td></tr>
+<tr><td>/29</td><td>255.255.255.248</td><td>3</td><td>6</td><td>8</td></tr>
+<tr><td>/30</td><td>255.255.255.252</td><td>2</td><td>2</td><td>4</td></tr>
+</tbody></table></div>
+
+<p>Memorize the usable-hosts column and the block sizes together: 128, 64, 32, 16, 8, 4 for
+blocks, and 126, 62, 30, 14, 6, 2 for hosts. Notice that each is the block size minus 2. A /30
+with 2 hosts is the standard size for a link between two routers.</p>
+
+<h3>The fast method</h3>
+
+<p>Find the <strong>interesting octet</strong>, the one where the mask is neither 255 nor 0.
+Subnets start at multiples of the block size in that octet.</p>
+
+<p><strong>Example:</strong> what network is <code>192.168.10.77/26</code> in?</p>
+
+<ol>
+  <li>/26 means mask <code>255.255.255.192</code>. The interesting octet is the fourth.</li>
+  <li>Block size is 256 minus 192, so <strong>64</strong>.</li>
+  <li>Subnets in the fourth octet start at 0, 64, 128, 192.</li>
+  <li>77 falls between 64 and 127, so the network address is <code>192.168.10.64</code>.</li>
+  <li>The next subnet starts at 128, so the broadcast is one less: <code>192.168.10.127</code>.</li>
+  <li>First host is network plus 1: <code>192.168.10.65</code>.</li>
+  <li>Last host is broadcast minus 1: <code>192.168.10.126</code>.</li>
+  <li>Hosts: 2<sup>6</sup> minus 2 = 62.</li>
+</ol>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Address       192.168.10.77/26
+Mask          255.255.255.192
+Network       192.168.10.64
+First host    192.168.10.65
+Last host     192.168.10.126
+Broadcast     192.168.10.127
+Usable hosts  62</pre></div>
+
+<p>Check it with the binary AND from Module 20: 77 is <code>01001101</code> and 192 is
+<code>11000000</code>, and the AND is <code>01000000</code>, which is 64. They agree.</p>
+
+<h3>Working across octets</h3>
+
+<p>When the interesting octet is not the fourth, the same method works one octet to the left,
+and the octets after it become 0 (network) or 255 (broadcast).</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Address       172.16.45.9/20       mask 255.255.240.0
+Interesting   third octet, block size 256 - 240 = 16
+Subnets       172.16.0.0, 16.0, 32.0, 48.0 ...
+45 is in      32 to 47
+Network       172.16.32.0
+Broadcast     172.16.47.255
+First host    172.16.32.1
+Last host     172.16.47.254
+Usable hosts  2^12 - 2 = 4,094</pre></div>
+
+<h3>Choosing the right size for a requirement</h3>
+
+<p>The other half of the module runs backwards. You are told how many hosts a subnet needs and
+must choose the prefix. <strong>Add 2</strong> (network plus broadcast), then find the smallest
+power of two that is at least that number. The exponent is the host bits, and the prefix is 32
+minus it.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Need</th><th>Add 2</th><th>Smallest power of 2</th><th>Host bits</th><th>Prefix</th></tr></thead>
+<tbody>
+<tr><td>2 hosts (a router link)</td><td>4</td><td>4</td><td>2</td><td>/30</td></tr>
+<tr><td>10 hosts</td><td>12</td><td>16</td><td>4</td><td>/28</td></tr>
+<tr><td>50 hosts</td><td>52</td><td>64</td><td>6</td><td>/26</td></tr>
+<tr><td>100 hosts</td><td>102</td><td>128</td><td>7</td><td>/25</td></tr>
+<tr><td>200 hosts</td><td>202</td><td>256</td><td>8</td><td>/24</td></tr>
+</tbody></table></div>
+
+<p>A subnet that is too small leaves devices without addresses. One that is much too large
+wastes address space. The exam answer is the <strong>smallest subnet that still fits</strong>.</p>
+
+<h3>Splitting a network into subnets</h3>
+
+<p>To cut a network into equal pieces, borrow host bits and give them to the network. Each
+borrowed bit <strong>doubles the number of subnets</strong> and <strong>halves the hosts in
+each</strong>. Subnets = 2<sup>borrowed bits</sup>.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Split 192.168.1.0/24 into 4 subnets:
+  4 = 2^2, so borrow 2 bits  -&gt;  /26, block size 64
+  192.168.1.0/26     hosts .1   to .62     broadcast .63
+  192.168.1.64/26    hosts .65  to .126    broadcast .127
+  192.168.1.128/26   hosts .129 to .190    broadcast .191
+  192.168.1.192/26   hosts .193 to .254    broadcast .255</pre></div>
+
+<h3>VLSM: different sizes for different needs</h3>
+
+<p><strong>Variable Length Subnet Masking</strong> means every subnet gets the size it needs,
+not the same size. The rule that keeps it from overlapping: <strong>assign the largest subnet
+first</strong>, starting at the beginning of the address space, then carve each smaller one from
+what is left.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Given 192.168.1.0/24:  LAN A needs 100, LAN B needs 50, a router link needs 2
+
+LAN A   100 hosts -&gt; /25   192.168.1.0/25     (.0   to .127)
+LAN B    50 hosts -&gt; /26   192.168.1.128/26   (.128 to .191)
+Link      2 hosts -&gt; /30   192.168.1.192/30   (.192 to .195)
+Free space remains from 192.168.1.196 onward.</pre></div>
+
+<h3>How to get fast</h3>
+
+<ul>
+  <li>Do ten subnetting problems a day, and time them. Aim for under a minute each.</li>
+  <li>Memorize the block-size and host-count table rather than recomputing it.</li>
+  <li>Always find the interesting octet first.</li>
+  <li>Verify with the AND method until you trust the shortcut.</li>
+  <li>Write the next subnet's start, then subtract one for the broadcast. It is the fastest way
+      to avoid arithmetic mistakes.</li>
+</ul>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>For <code>10.1.5.200/27</code>, produce mask, network, broadcast, first host, last host,
+      and host count.</li>
+  <li>Choose a prefix for 25, 60, and 500 hosts.</li>
+  <li>Split a /24 into 8 equal subnets and list them.</li>
+  <li>Lay out the VLSM example above for different host counts, without overlap.</li>
+</ul>

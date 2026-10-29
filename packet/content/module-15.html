@@ -1,0 +1,102 @@
+<p>Module 15 is part concept, part memorization, and it is very quiz-friendly. You need to know
+the difference between TCP and UDP and why each exists, and you need the port numbers in your
+head without looking them up. The numbers are free points for anyone who drills them.</p>
+
+<h3>What the transport layer does</h3>
+
+<p>IP delivers a packet to the right <em>device</em>. The transport layer, Layer 4, delivers
+it to the right <em>program</em> on that device. It also decides how careful to be about
+delivery. It has two protocols to choose from, one careful and one fast.</p>
+
+<h3>TCP versus UDP</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th></th><th>TCP</th><th>UDP</th></tr></thead>
+<tbody>
+<tr><td>Style</td><td>Connection-oriented</td><td>Connectionless</td></tr>
+<tr><td>Reliability</td><td>Acknowledges data, retransmits losses</td><td>No acknowledgment, no retransmit</td></tr>
+<tr><td>Ordering</td><td>Sequence numbers put data back in order</td><td>None</td></tr>
+<tr><td>Overhead</td><td>Higher</td><td>Lower, a small header</td></tr>
+<tr><td>PDU name</td><td>Segment</td><td>Datagram</td></tr>
+<tr><td>Used for</td><td>Web, email, file transfer, remote login</td><td>DNS lookups, DHCP, voice and video, streaming, games</td></tr>
+</tbody></table></div>
+
+<p>The rule for choosing: if losing a piece breaks the result, such as a file or a web page, use
+TCP. If a late piece is worse than a missing piece, such as a live call, use UDP. A dropped
+fraction of a second of audio is better than a pause while it is resent.</p>
+
+<h3>Ports and sockets</h3>
+
+<p>A <strong>port</strong> is a 16-bit number that identifies a program or service. There are
+65,536 of them. A <strong>socket</strong> is an IP address plus a port, for example
+<code>192.168.10.5:443</code>, and it names one end of a conversation exactly.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Range</th><th>Name</th><th>Used for</th></tr></thead>
+<tbody>
+<tr><td>0 to 1023</td><td>Well-known</td><td>Standard services (the list below)</td></tr>
+<tr><td>1024 to 49151</td><td>Registered</td><td>Specific applications</td></tr>
+<tr><td>49152 to 65535</td><td>Dynamic / ephemeral</td><td>Chosen at random by the client for each conversation</td></tr>
+</tbody></table></div>
+
+<p>When your browser opens a page, the <em>destination</em> port is 443 (the server's well-known
+port) and the <em>source</em> port is a random ephemeral port. That random source port is how
+many tabs, all talking to the same server, keep their answers separate.</p>
+
+<h3>The ports you must know</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Port</th><th>Protocol</th><th>Transport</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td>20 / 21</td><td>FTP</td><td>TCP</td><td>File transfer (20 data, 21 control)</td></tr>
+<tr><td>22</td><td>SSH</td><td>TCP</td><td>Secure remote login</td></tr>
+<tr><td>23</td><td>Telnet</td><td>TCP</td><td>Remote login, <em>unencrypted</em></td></tr>
+<tr><td>25</td><td>SMTP</td><td>TCP</td><td>Sending email</td></tr>
+<tr><td>53</td><td>DNS</td><td>UDP (and TCP)</td><td>Name resolution</td></tr>
+<tr><td>67 / 68</td><td>DHCP</td><td>UDP</td><td>Server / client</td></tr>
+<tr><td>69</td><td>TFTP</td><td>UDP</td><td>Simple file transfer, no login</td></tr>
+<tr><td>80</td><td>HTTP</td><td>TCP</td><td>Web, unencrypted</td></tr>
+<tr><td>110</td><td>POP3</td><td>TCP</td><td>Retrieving email, downloads it</td></tr>
+<tr><td>143</td><td>IMAP</td><td>TCP</td><td>Retrieving email, leaves it on the server</td></tr>
+<tr><td>443</td><td>HTTPS</td><td>TCP</td><td>Web, encrypted</td></tr>
+</tbody></table></div>
+
+<p>Pairs worth pairing in your head: <strong>22 secure, 23 not</strong>; <strong>80 plain, 443
+encrypted</strong>; <strong>25 sends, 110 and 143 receive</strong>.</p>
+
+<h3>The three-way handshake</h3>
+
+<p>TCP opens a conversation before sending data. It takes three messages.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Client                          Server
+  | ---- SYN ------------------&gt; |   "I want to talk. My sequence starts at X."
+  | &lt;--- SYN, ACK -------------- |   "OK. Mine starts at Y. I got your X."
+  | ---- ACK ------------------&gt; |   "Got your Y. Connection open."</pre></div>
+
+<p>Order: <strong>SYN, SYN-ACK, ACK</strong>. Closing a connection uses FIN and ACK messages.
+Once the connection is open, the receiver acknowledges what has arrived by sending back an
+<strong>ACK</strong> naming the next sequence number it expects. If an expected ACK does not
+come, the sender retransmits.</p>
+
+<h3>Flow control and windowing</h3>
+
+<p>A fast sender can swamp a slow receiver. TCP's answer is <strong>windowing</strong>: the
+receiver advertises how much data it can accept before it must acknowledge, and the sender
+never sends more than that. A bigger window means higher throughput; a window that shrinks
+tells the sender to slow down.</p>
+
+<h3>Why this matters for security</h3>
+
+<p>A <strong>SYN flood</strong> sends huge numbers of SYNs and never completes the handshake,
+leaving the server holding half-open connections until it runs out of room. Port numbers also
+matter to firewalls: a rule that blocks port 23 stops Telnet, and an unexpected open port on a
+device is the first thing an attacker (or a competition scoring engine) looks for.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Choose TCP or UDP for six scenarios and justify each in a sentence.</li>
+  <li>Recite the table of well-known ports, with the transport protocol, from memory.</li>
+  <li>Draw the three-way handshake and label each message.</li>
+  <li>Explain what a socket is and why browser tabs do not mix up their answers.</li>
+</ul>

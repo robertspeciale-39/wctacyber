@@ -1,0 +1,107 @@
+<p>Module 9 teaches two things. First, the different kinds of IPv4 address and which ranges are
+reserved for special jobs. Second, the question that every later module quietly depends on:
+<strong>are these two hosts on the same network?</strong> Get that second skill solid and
+routing, ARP, and troubleshooting all get easier.</p>
+
+<h3>Three ways to send traffic</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Type</th><th>Goes to</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><b>Unicast</b></td><td>One specific host</td><td>Your PC requests a web page from one server</td></tr>
+<tr><td><b>Broadcast</b></td><td>Every host on the local network</td><td>An ARP request, a DHCP Discover</td></tr>
+<tr><td><b>Multicast</b></td><td>A chosen group of hosts that joined</td><td>Routing protocol updates, streaming video</td></tr>
+</tbody></table></div>
+
+<p>Broadcasts do not cross routers. That is a feature, because it keeps one network's chatter
+from flooding every other network. It is also why a router marks the edge of a
+<strong>broadcast domain</strong>.</p>
+
+<h3>Special addresses inside every network</h3>
+
+<p>In any IPv4 network, two addresses are spoken for and cannot be given to a host.</p>
+
+<ul>
+  <li>The <strong>network address</strong> has all host bits set to 0. It names the network
+      itself. For 192.168.10.0/24 that is <code>192.168.10.0</code>.</li>
+  <li>The <strong>broadcast address</strong> has all host bits set to 1. A packet sent there
+      reaches every host on that network. For 192.168.10.0/24 that is
+      <code>192.168.10.255</code>.</li>
+</ul>
+
+<p>Everything between them is a usable host address. For that /24, the usable range is
+<code>192.168.10.1</code> through <code>192.168.10.254</code>.</p>
+
+<h3>Public and private ranges</h3>
+
+<p>Public addresses are unique across the whole internet. There are not enough for every
+device, so RFC 1918 sets aside three <strong>private ranges</strong> that anyone may use inside
+their own network. Routers on the internet will not forward them. Know these three cold.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Range</th><th>CIDR</th><th>Class-style size</th></tr></thead>
+<tbody>
+<tr><td>10.0.0.0 to 10.255.255.255</td><td>10.0.0.0/8</td><td>One huge network</td></tr>
+<tr><td>172.16.0.0 to 172.31.255.255</td><td>172.16.0.0/12</td><td>Sixteen /16 networks</td></tr>
+<tr><td>192.168.0.0 to 192.168.255.255</td><td>192.168.0.0/16</td><td>256 /24 networks, the home default</td></tr>
+</tbody></table></div>
+
+<p>The middle one is the trap. <code>172.16</code> to <code>172.31</code> is private;
+<code>172.15.x.x</code> and <code>172.32.x.x</code> are public. Questions like to use
+<code>172.32.0.5</code> as bait.</p>
+
+<h3>Other reserved ranges</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Range</th><th>Name</th><th>What it means</th></tr></thead>
+<tbody>
+<tr><td>127.0.0.0/8</td><td>Loopback</td><td>The device talking to itself. <code>127.0.0.1</code> tests the local TCP/IP stack and never touches the wire.</td></tr>
+<tr><td>169.254.0.0/16</td><td>Link-local / APIPA</td><td>A client that could not reach a DHCP server gave itself this address.</td></tr>
+<tr><td>224.0.0.0 to 239.255.255.255</td><td>Multicast</td><td>Group addresses, never assigned to a single host.</td></tr>
+<tr><td>255.255.255.255</td><td>Limited broadcast</td><td>Broadcast to the local network, used before a host has an address.</td></tr>
+</tbody></table></div>
+
+<p>The diagnostic fact worth underlining: <strong>if a PC shows 169.254.x.x, DHCP failed.</strong>
+The PC is not broken and the cable may be fine. Check whether a DHCP server exists on that
+network and whether the PC can reach it.</p>
+
+<h3>Same network or not?</h3>
+
+<p>Two hosts are on the same network when their <strong>network portions are identical</strong>
+under the mask. The method works for any mask, and you will make it fast by repetition.</p>
+
+<ol>
+  <li>Write the mask as a prefix and find where the network portion ends.</li>
+  <li>Work out the network address for each host.</li>
+  <li>Same network address means same network.</li>
+</ol>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>PC1  192.168.10.20   mask 255.255.255.0   network 192.168.10.0
+PC2  192.168.10.77   mask 255.255.255.0   network 192.168.10.0   <span class="cmt">same, direct delivery</span>
+PC3  192.168.20.5    mask 255.255.255.0   network 192.168.20.0   <span class="cmt">different, needs a router</span></pre></div>
+
+<p>Masks that stop in the middle of an octet are where people slip. With a /26 mask, the
+networks in the last octet start at 0, 64, 128, and 192. So <code>192.168.1.70</code> and
+<code>192.168.1.120</code> are on the same /26 (both in 64 to 127), but
+<code>192.168.1.70</code> and <code>192.168.1.130</code> are not.</p>
+
+<h3>What "not the same network" costs you</h3>
+
+<p>When the destination is on the same network, the host sends directly. When it is on a
+different network, the host cannot reach it itself and hands the packet to its
+<strong>default gateway</strong>, a router. If there is no gateway, or a wrong one, traffic to
+other networks simply dies. Module 12 covers that failure in detail.</p>
+
+<p><strong>Segmentation</strong> means deliberately splitting one big network into several
+smaller ones. It shrinks broadcast domains, improves performance, and lets you apply security
+rules between segments. The router, or a Layer 3 switch, is what connects them.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Recite the three RFC 1918 ranges without looking.</li>
+  <li>Say whether <code>172.31.4.9</code> and <code>172.32.4.9</code> are public or private.</li>
+  <li>State what 169.254.x.x tells you and what you check first.</li>
+  <li>Given two addresses and a mask, decide same network or different, then say what each case
+      requires.</li>
+</ul>

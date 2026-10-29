@@ -1,0 +1,89 @@
+<p>Module 18 changes the question from "how does this work" to "what should I build." The exam
+gives you a requirement, sometimes with a diagram that has a weakness in it, and asks you to
+pick the design or name the flaw. The habit to build: <strong>find the single point of failure
+first.</strong></p>
+
+<h3>Hierarchical design</h3>
+
+<p>Large networks are built in three layers, each with one job. Keeping the jobs separate makes
+the network easier to grow, secure, and troubleshoot.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Layer</th><th>Job</th><th>Typical devices</th></tr></thead>
+<tbody>
+<tr><td><b>Access</b></td><td>Connects end devices: PCs, phones, printers, access points. Where users plug in and where port security and VLANs apply</td><td>Access switches, wireless APs</td></tr>
+<tr><td><b>Distribution</b></td><td>Aggregates the access switches. Enforces policy, routes between VLANs, filters traffic</td><td>Layer 3 switches, routers</td></tr>
+<tr><td><b>Core</b></td><td>The high-speed backbone. Moves traffic between distribution blocks as fast as possible and does little else</td><td>High-end Layer 3 switches</td></tr>
+</tbody></table></div>
+
+<p>A small network often <strong>collapses the core</strong>, combining core and distribution in
+one set of devices. That is normal and is called a two-tier design. A school the size of yours
+likely looks like that.</p>
+
+<h3>The four design goals</h3>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Goal</th><th>Meaning</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><b>Scalability</b></td><td>Can grow without a redesign</td><td>Adding a new building by adding an access block, not rebuilding the core</td></tr>
+<tr><td><b>Availability / reliability</b></td><td>Stays up. Usually quoted as uptime</td><td>Five nines (99.999%) is about 5 minutes of downtime a year</td></tr>
+<tr><td><b>Redundancy</b></td><td>Duplicate devices and paths so one failure does not matter</td><td>Two uplinks from each access switch to two distribution switches</td></tr>
+<tr><td><b>Fault tolerance</b></td><td>The ability to keep working through a failure</td><td>When one link dies, traffic uses the other with no user impact</td></tr>
+</tbody></table></div>
+
+<h3>Single point of failure</h3>
+
+<p>A <strong>single point of failure</strong> is any one device or link whose loss takes down
+everything behind it. Practice reading a diagram this way: cover up one device at a time and ask
+"does anything stop working?" If yes, you found one.</p>
+
+<div class="codeblock"><button class="copy-btn">COPY</button><pre>Weak:                       Better:
+ PC - SW1 - R1 - Internet    PC - SW1 --+-- R1 -- Internet
+                                   \    |    /
+                                    +-- R2 --+      <span class="cmt">second router, second path</span></pre></div>
+
+<p>Redundancy has side effects. Redundant switch links create loops, and Layer 2 loops melt a
+network, because frames circle forever. <strong>Spanning Tree Protocol (STP)</strong> prevents
+this by logically blocking the redundant links until they are needed. You get the backup
+without the loop.</p>
+
+<h3>Matching a design to a requirement</h3>
+
+<p>Read the requirement for its keywords, then match.</p>
+
+<div class="tbl-wrap"><table class="cs-table">
+<thead><tr><th>Requirement says</th><th>Think</th></tr></thead>
+<tbody>
+<tr><td>"must keep working if one link fails"</td><td>Redundant links, STP, or a routing protocol with a second path</td></tr>
+<tr><td>"will add 200 users next year"</td><td>Scalability: modular design, spare ports, address space planned with room</td></tr>
+<tr><td>"separate student and staff traffic"</td><td>VLANs and subnets, filtered at distribution</td></tr>
+<tr><td>"low cost, small office"</td><td>Collapsed core, one switch per area, a single router</td></tr>
+<tr><td>"voice calls must stay clear"</td><td>Quality of service</td></tr>
+</tbody></table></div>
+
+<h3>Quality of service</h3>
+
+<p>When a link is busy, something has to wait. <strong>QoS</strong> decides what goes first.
+The idea at this level is classification: mark the traffic that cannot tolerate delay (voice,
+video) and give it priority over traffic that can (email, file backup). Without QoS, a large
+download can make a phone call stutter.</p>
+
+<p>The traits QoS protects are <strong>bandwidth</strong> (capacity), <strong>latency</strong>
+(delay), <strong>jitter</strong> (variation in delay), and <strong>packet loss</strong>. Voice
+cares most about latency and jitter. A file transfer cares about none of them as long as it
+finishes.</p>
+
+<h3>Convergence</h3>
+
+<p>A <strong>converged network</strong> carries voice, video, and data over one infrastructure
+instead of three. It saves cost and is the reason QoS exists. It also means one outage affects
+all three, which raises the stakes for redundancy.</p>
+
+<h3>Before you move on</h3>
+
+<ul>
+  <li>Name the three layers of the hierarchy and give one job for each.</li>
+  <li>Given a diagram, find every single point of failure.</li>
+  <li>Say why redundancy needs STP, and what goes wrong without it.</li>
+  <li>Pick a design for each of five stated requirements and defend it in a sentence.</li>
+</ul>
